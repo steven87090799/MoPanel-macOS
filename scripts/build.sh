@@ -19,6 +19,7 @@ source scripts/validation-gates.sh
 python3 scripts/test_validation_gates.py 2>&1 | tee build/reports/validation-gate-harness.log
 python3 scripts/test_smoke_driver.py 2>&1 | tee build/reports/smoke-driver-tests.log
 python3 scripts/test_crash_evidence.py 2>&1 | tee build/reports/crash-evidence-tests.log
+python3 scripts/test_debug_smoke_failure.py 2>&1 | tee build/reports/debug-diagnostic-tests.log
 mopanel_initialize_validation_gates build/reports/validation-gates.json
 build_staging="$(mktemp -d "$project_root/build/staging.XXXXXX")"
 trap 'rm -rf "$build_staging"' EXIT

@@ -1,0 +1,13 @@
+test_debugger_fixed_arguments_and_lifeline_guard (__main__.DebugFailureTests.test_debugger_fixed_arguments_and_lifeline_guard) ... ok
+test_debugger_timeout_closes_lifeline_and_reaps_guardian (__main__.DebugFailureTests.test_debugger_timeout_closes_lifeline_and_reaps_guardian) ... ok
+test_only_copy_is_signed_original_hashes_preserved_and_report_is_separate (__main__.DebugFailureTests.test_only_copy_is_signed_original_hashes_preserved_and_report_is_separate) ... ok
+test_release_policy_accepts_empty_entitlements_and_rejects_unparseable (__main__.DebugFailureTests.test_release_policy_accepts_empty_entitlements_and_rejects_unparseable) ... ok
+test_release_policy_rejects_debug_entitlement_even_if_false (__main__.DebugFailureTests.test_release_policy_rejects_debug_entitlement_even_if_false) ... ok
+test_requires_failed_macos_ci_and_never_runs_after_success (__main__.DebugFailureTests.test_requires_failed_macos_ci_and_never_runs_after_success) ... ok
+test_signing_denial_is_recorded_without_debugger_or_security_changes (__main__.DebugFailureTests.test_signing_denial_is_recorded_without_debugger_or_security_changes) ... ok
+test_unexpected_original_change_is_detected (__main__.DebugFailureTests.test_unexpected_original_change_is_detected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.014s
+
+OK

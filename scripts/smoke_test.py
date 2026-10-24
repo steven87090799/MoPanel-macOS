@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import time
 from crash_evidence import collect_owned_crash
+from debug_smoke_failure import diagnose
 
 SMOKE_DEADLINE_SECONDS = 45
 
@@ -141,6 +142,16 @@ def main():
         report["scope"] = "; ".join(scopes) + ". See individual checks for success or failure."
         report["scope_limits"] = "Route selection does not prove every page rendered correctly. No complete physical-input or VoiceOver/TCC acceptance, real cleanup, app upgrade, launchctl mutation, disk ejection, screen-input interception or hardware-control validation."
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+        failed = (outcome["timed_out"] or outcome["process_exit_code"] != 0
+                  or any(report.get(field) is not True for field in ("success", "window_created", "fixture_only"))
+                  or report.get("checks", {}).get("fixture_resource_inside_app") is not True)
+        if failed:
+            try:
+                report["debug_copy_diagnostic"] = diagnose(args.app, args.output.parent.resolve(), environment, failed=True)
+            except Exception as error:
+                report["debug_copy_diagnostic"] = {"status": "diagnostic_exception", "error_type": type(error).__name__}
+            report["success"] = False
+            args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
         if outcome["timed_out"] or outcome["process_exit_code"] != 0:
             raise RuntimeError(f"UI smoke process failed: exit={outcome['process_exit_code']}, timeout={outcome['timed_out']}; "
                                + json.dumps(report, ensure_ascii=False) + "; stderr=" + bounded_tail(stderr_path))

@@ -34,6 +34,11 @@ crash_evidence_count = re.search(r"Ran (\d+) tests? in", crash_evidence_log)
 if (not crash_evidence_count or not re.search(r"^OK\s*$", crash_evidence_log, re.MULTILINE)
         or re.search(r"^(FAILED|ERROR:)", crash_evidence_log, re.MULTILINE)):
     raise RuntimeError("Own-process crash evidence tests did not finish without failures/skips")
+debug_guard_log = (reports / "debug-diagnostic-tests.log").read_text()
+debug_guard_count = re.search(r"Ran (\d+) tests? in", debug_guard_log)
+if (not debug_guard_count or not re.search(r"^OK\s*$", debug_guard_log, re.MULTILINE)
+        or re.search(r"^(FAILED|ERROR:)", debug_guard_log, re.MULTILINE)):
+    raise RuntimeError("Disposable-debug-copy safety tests did not finish without failures/skips")
 smoke = json.loads((reports / "smoke-test.json").read_text())
 performance = json.loads((reports / "performance.json").read_text())
 if (not smoke.get("success") or not smoke.get("window_created") or not smoke.get("fixture_only")
@@ -90,12 +95,13 @@ lines = ["# 實際建置與驗證報告", "", f"產生時間：{date}", "",
          f"| 獨立驗收 gate harness | {gate_harness_count.group(1)} 個隔離Bash管線案例通過；Swift／smoke／tee非零與skip皆不能進後續phase。見 validation-gate-harness.log |",
          f"| Smoke 診斷 driver | {smoke_driver_count.group(1)} 個隔離案例通過；進度輸出保留、逾時不被診斷錯誤掩蓋、只取樣存活的自身子程序。sampler權限情境使用mock。見 smoke-driver-tests.log |",
          f"| 自身 crash report 辨識 | {crash_evidence_count.group(1)} 個合成案例通過；僅本次 MoPanel PID／時間／名稱符合才保存，拒絕舊報告、其他程式與symlink。見 crash-evidence-tests.log |",
+         f"| 隔離 debug 診斷 guards | {debug_guard_count.group(1)} 個合成／mock案例通過；診斷不能將失敗變成功，正式bundle不允許get-task-allow。見 debug-diagnostic-tests.log |",
          "| XCTest／fixture UI gate | 兩者分別保存command、tee與pipeline退出碼，全部為0且無略過；見 validation-gates.json |",
          f"| Swift 編譯與單元測試 | 合計 {total_swift_tests} 個 XCTest，{skips} skipped，0 failures；多個 .xctest bundle 分別加總。見 swift-test.log |",
          f"| Guardian 程序整合測試 | {guardian_count.group(1)} 個案例通過，0 failures／skipped。見 guardian-test.log |",
          "| ARM64 | 主程式、guardian 與原生 paths 編輯器均通過 lipo 檢查，只有 arm64 |",
          "| App Bundle | Info.plist、主程式、helper、圖示與必要資源存在 |",
-         "| Code Signing | ad-hoc 簽章與 codesign strict/deep 完整性驗證通過 |",
+         "| Code Signing | ad-hoc 簽章與 codesign strict/deep 完整性驗證通過；正式主程式及helpers皆無get-task-allow除錯entitlement |",
          "| Apple 公證 | 未進行；沒有宣稱 Developer ID 身分 |",
          "| UI 啟動 | 原生 App 視窗已建立，fixture-only smoke test 通過 |",
          "| 真實個人資料操作 | 未執行清理、卸載、最佳化或瘦身 |",

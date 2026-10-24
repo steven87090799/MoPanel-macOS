@@ -40,6 +40,7 @@ for executable in "$app_path/Contents/MacOS/MoPanel" "$app_path/Contents/Helpers
     test "$architecture" = arm64
     file "$executable"
     codesign --verify --strict --verbose=4 "$executable"
+    python3 "$(dirname "$0")/signature_policy.py" "$executable"
 done
 codesign --verify --deep --strict --verbose=4 "$app_path"
 codesign -dv --verbose=4 "$app_path" 2>&1

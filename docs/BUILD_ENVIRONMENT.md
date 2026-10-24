@@ -60,11 +60,11 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-[Run 40075604900](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40075604900) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit、6個獨立gate harness與當輪4個smoke driver案例也在真Mac全過。
+[Run 40076181707](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076181707) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit、6個獨立gate harness與5個smoke driver與5個crash辨識案例也在真Mac全過。
 
-本輪UI smoke在3.678秒以SIGSEGV（-11）退出，僅有`[MoPanel smoke] entered`，尚未到`detect begin`；不是逾時。沒有最終App JSON或截圖。這是初始介面生命週期失敗，IOPM、Startup、AX流程尚未開始。`validation-gates.json`分別保留XCTest成功與smoke失敗，最後明確非零退出，未進效能／後續guardian／baseline probe／ZIP。
+本輪UI smoke仍以SIGSEGV（-11）退出，含4秒診斷等待共7.782秒，僅有`[MoPanel smoke] entered`，尚未到`detect begin`；不是逾時。沒有最終App JSON或截圖。這是初始介面生命週期失敗，IOPM、Startup、AX流程尚未開始。`validation-gates.json`分別保留XCTest成功與smoke失敗，最後明確非零退出，未進效能／後續guardian／baseline probe／ZIP。
 
-下一輪包含三處初值通知重入路徑的窄修，尚不宣稱已證明崩潰根因；另增加自身crash收集，僅本次MoPanel PID、名稱、mtime、報告時間與可用路徑吻合才保存，最多等待4秒，不讀其他App檔名的報告。5個合成辨識案例與5個driver回歸已在Linux通過，未知格式、舊報告、symlink及身分不符皆拒絕。
+初值通知重入路徑窄修未消除SIGSEGV。此次自身crash收集未找到任何近期MoPanel候選（0 files examined），沒有讀取其他App報告。下一輪僅在正式smoke失敗後，對獨立臨時App拷貝加入debug-only get-task-allow，由既有guardian管控LLDB批次啟動／backtrace，總診斷上限60秒。正式App與helpers前後SHA核對、發行簽章禁止該debug entitlement；不改主機安全設定，也不以診斷結果替代正式smoke。8個合成／mock guard已通過，真Mac診斷待執行；見`SMOKE_DEBUG_DIAGNOSTICS.md`。
 
 Popen直接保存stdout/stderr。45秒仍是測試成功期限；逾時後僅對同一存活子App嘗試固定2秒`/usr/bin/sample`（command上限8秒）再回收。已退出的App不取樣；crash收集與stack診斷不延長成功期限、不更改安全設定，也不會覆蓋原失敗。run40074913811的45秒逾時為先前另一次執行。
 

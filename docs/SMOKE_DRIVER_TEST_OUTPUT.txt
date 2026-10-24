@@ -5,6 +5,6 @@ test_sampler_never_runs_after_owned_child_exited (__main__.SmokeDriverTests.test
 test_sampler_permission_failure_is_recorded_without_elevation (__main__.SmokeDriverTests.test_sampler_permission_failure_is_recorded_without_elevation) ... ok
 
 ----------------------------------------------------------------------
-Ran 5 tests in 0.270s
+Ran 5 tests in 0.257s
 
 OK
