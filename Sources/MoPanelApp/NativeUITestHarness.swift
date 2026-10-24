@@ -9,8 +9,37 @@ struct NativeUIActionEvidence: Codable {
     let identifier: String
     let role: String
     let enabledBeforePress: Bool
-    let pressAccepted: Bool
+    /// Only the modern API returns Bool. Nil is intentional for a legacy void
+    /// dispatch or when the modern method was never invoked.
+    let pressAccepted: Bool?
     let ownedWindow: Bool
+    let dispatchMethod: String
+    let modernSelectorSupported: Bool
+    let modernSelectorAllowed: Bool?
+    let modernMethodInvoked: Bool
+    let legacyPressAdvertised: Bool
+    let legacyVoidDispatched: Bool
+    var postconditionVerified: Bool
+
+    var hasSingleSuccessfulDispatch: Bool {
+        if dispatchMethod == "legacyAXPress" {
+            return legacyPressAdvertised && legacyVoidDispatched && !modernMethodInvoked && pressAccepted == nil
+        }
+        return dispatchMethod == "modernPerformPress" && modernSelectorSupported && modernSelectorAllowed == true &&
+            modernMethodInvoked && pressAccepted == true && !legacyVoidDispatched
+    }
+}
+
+private struct NativeUIPressDispatch {
+    let method: String
+    let modernSupported: Bool
+    let modernAllowed: Bool?
+    let modernInvoked: Bool
+    let modernResult: Bool?
+    let legacyAdvertised: Bool
+    let legacyDispatched: Bool
+
+    var dispatchedSuccessfully: Bool { legacyDispatched || (modernInvoked && modernResult == true) }
 }
 
 struct NativeUIReport: Codable {
@@ -117,7 +146,7 @@ private enum NativeUIFailure: LocalizedError {
         case .treeLimit: return "The own-window accessibility tree exceeded its bounded traversal limit."
         case .duplicateControl(let id): return "Multiple actionable accessibility elements have identifier \(id)."
         case .unavailableControl(let id): return "No unique enabled own-window accessibility control was exposed for \(id)."
-        case .actionRejected(let id): return "accessibilityPerformPress returned false for \(id)."
+        case .actionRejected(let id): return "No permitted public accessibility press was dispatched successfully for \(id); inspect the recorded interface and actual return value."
         case .unexpectedState(let description): return "Native UI postcondition failed: \(description)."
         case .timedOut(let description): return "Native UI test timed out: \(description)."
         }
@@ -146,13 +175,14 @@ private enum NativeUIFailure: LocalizedError {
     }
     private typealias ObjectGetter = @convention(c) (AnyObject, Selector) -> Unmanaged<AnyObject>?
     private typealias ObjectAttributeGetter = @convention(c) (AnyObject, Selector, AnyObject) -> Unmanaged<AnyObject>?
+    private typealias VoidAction = @convention(c) (AnyObject, Selector, AnyObject) -> Void
     private typealias BooleanGetter = @convention(c) (AnyObject, Selector) -> Bool
     private typealias CharBooleanGetter = @convention(c) (AnyObject, Selector) -> Int8
     private typealias RectGetter = @convention(c) (AnyObject, Selector) -> NSRect
     private typealias SelectorPermission = @convention(c) (AnyObject, Selector, Selector) -> Bool
     private typealias CharSelectorPermission = @convention(c) (AnyObject, Selector, Selector) -> Int8
 
-    private enum ResultKind { case object, boolean, rect }
+    private enum ResultKind { case object, boolean, rect, void }
     private func implementation(_ selector: Selector, result: ResultKind, arguments: [String] = []) -> (IMP, String)? {
         guard object.responds(to: selector), let type = object_getClass(object),
               let method = class_getInstanceMethod(type, selector),
@@ -173,6 +203,7 @@ private enum NativeUIFailure: LocalizedError {
         case .object: guard isObject(resultEncoding) else { return nil }
         case .boolean: guard ["B", "c"].contains(resultEncoding) else { return nil }
         case .rect: guard resultEncoding == String(cString: NSValue(rect: .zero).objCType) else { return nil }
+        case .void: guard resultEncoding == "v" else { return nil }
         }
         return (method_getImplementation(method), resultEncoding)
     }
@@ -262,22 +293,52 @@ private enum NativeUIFailure: LocalizedError {
         children.append(contentsOf: legacyAttribute("AXChildren") as? [Any] ?? [])
         return children
     }
-    func accessibilityPerformPress() -> Bool {
-        let selector = NSSelectorFromString("accessibilityPerformPress")
-        guard object.responds(to: selector) else { return false }
-        if let direct {
-            guard direct.isAccessibilitySelectorAllowed(selector) else { return false }
-            return direct.accessibilityPerformPress()
-        }
+    private func selectorAllowed(_ selector: Selector) -> Bool? {
+        if let direct { return direct.isAccessibilitySelectorAllowed(selector) }
         let permission = NSSelectorFromString("isAccessibilitySelectorAllowed:")
-        if object.responds(to: permission) {
-            guard let (implementation, encoding) = implementation(permission, result: .boolean, arguments: [":"]) else { return false }
-            let allowed = encoding == "c"
-                ? unsafeBitCast(implementation, to: CharSelectorPermission.self)(object, permission, selector) != 0
-                : unsafeBitCast(implementation, to: SelectorPermission.self)(object, permission, selector)
-            guard allowed else { return false }
+        guard object.responds(to: permission),
+              let (implementation, encoding) = implementation(permission, result: .boolean, arguments: [":"]) else { return nil }
+        return encoding == "c"
+            ? unsafeBitCast(implementation, to: CharSelectorPermission.self)(object, permission, selector) != 0
+            : unsafeBitCast(implementation, to: SelectorPermission.self)(object, permission, selector)
+    }
+    func dispatchAccessibilityPress() -> NativeUIPressDispatch {
+        let selector = NSSelectorFromString("accessibilityPerformPress")
+        let modernSupported = object.responds(to: selector) &&
+            (direct != nil || implementation(selector, result: .boolean) != nil)
+        let modernAllowed = modernSupported ? selectorAllowed(selector) : nil
+        let advertised = objectValue("accessibilityActionNames") as? [String]
+        let legacyAdvertised = advertised.map { $0.count <= 256 && $0.contains(NSAccessibility.Action.press.rawValue) } == true
+        let legacySelector = NSSelectorFromString("accessibilityPerformAction:")
+        // NSButtonCell is a real, visible product control's native AX element,
+        // not a proxy introduced by the test. AppKit may implement its action
+        // with the documented key-based interface despite inherited modern
+        // protocol methods. Select one advertised interface BEFORE invocation.
+        let legacyImplementation = object is NSButtonCell && legacyAdvertised
+            ? implementation(legacySelector, result: .void, arguments: ["@"])?.0 : nil
+        let method = legacyImplementation != nil ? "legacyAXPress"
+            : modernSupported && modernAllowed == true ? "modernPerformPress" : "none"
+        if Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"] {
+            let allowed = modernAllowed.map { $0 ? "true" : "false" } ?? "unknown"
+            fputs("[MoPanelNativeUI] press.capability method=\(method) modernSupported=\(modernSupported) modernAllowed=\(allowed) legacyAdvertised=\(legacyAdvertised) legacyABI=\(legacyImplementation != nil)\n", stderr)
+            fflush(stderr)
         }
-        return booleanValue("accessibilityPerformPress") == true
+        if let legacyImplementation {
+            // An advertised fixed AXPress action has a void return. Record only
+            // that dispatch returned; the caller must still prove its effect.
+            let perform = unsafeBitCast(legacyImplementation, to: VoidAction.self)
+            perform(object, legacySelector, NSAccessibility.Action.press.rawValue as NSString)
+            return .init(method: method, modernSupported: modernSupported, modernAllowed: modernAllowed,
+                         modernInvoked: false, modernResult: nil, legacyAdvertised: true, legacyDispatched: true)
+        }
+        if method == "modernPerformPress" {
+            let accepted = direct?.accessibilityPerformPress() ?? booleanValue("accessibilityPerformPress")
+            // Never try a second action API after this call, even on false.
+            return .init(method: method, modernSupported: modernSupported, modernAllowed: modernAllowed,
+                         modernInvoked: true, modernResult: accepted, legacyAdvertised: legacyAdvertised, legacyDispatched: false)
+        }
+        return .init(method: method, modernSupported: modernSupported, modernAllowed: modernAllowed,
+                     modernInvoked: false, modernResult: nil, legacyAdvertised: legacyAdvertised, legacyDispatched: false)
     }
 }
 
@@ -335,6 +396,7 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: statusActivity, command: statusCommand) && self.model.status?.host == "fixture-only"
             }
             try record("snapshot_button_loaded_fixture_metrics", model.error == nil)
+            try verifyLastPress(.snapshot)
 
             model.section = .uninstall
             let inventoryActivity = model.activities.first?.id
@@ -344,6 +406,7 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: inventoryActivity, command: inventoryCommand) && self.model.apps.count == 3
             }
             try record("inventory_button_loaded_fixture_apps", model.error == nil && model.apps.allSatisfy { $0.bundleID.hasPrefix("org.example.fixture.") })
+            try verifyLastPress(.appScan)
 
             model.section = .analyze
             let overviewActivity = model.activities.first?.id
@@ -354,6 +417,7 @@ private enum NativeUIFailure: LocalizedError {
             }
             try record("overview_button_preserved_partial_and_unavailable", model.error == nil && model.analysis?.scanStatus == .partial &&
                        model.analysis?.entries.contains(where: { $0.scanStatus == .unavailable && $0.measuredBytes == nil }) == true)
+            try verifyLastPress(.overview)
 
             let rescanActivity = model.activities.first?.id
             try await press(.rescan)
@@ -362,6 +426,7 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: rescanActivity, command: rescanCommand) && self.model.analysis != nil
             }
             try record("rescan_button_used_current_fixture_path", model.error == nil)
+            try verifyLastPress(.rescan)
 
             let parentActivity = model.activities.first?.id
             try await press(.parent)
@@ -370,20 +435,24 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: parentActivity, command: parentCommand) && self.model.analysis != nil
             }
             try record("parent_button_requested_parent_path", model.error == nil)
+            try verifyLastPress(.parent)
 
             // The exact mock overview branch delays output for three seconds.
             // Nothing is seeded directly into the model to imitate a scan.
             let cancelledScanActivity = model.activities.first?.id
             try await press(.overview)
             try await waitFor("overview scan entered busy state") { self.model.busy == overviewCommand }
+            try verifyLastPress(.overview)
             try await press(.scanStop)
             try await waitFor("scan cancellation settled") {
                 self.completedActivity(after: cancelledScanActivity, command: overviewCommand) && self.model.error != nil
             }
             try record("scan_stop_button_cancelled_without_partial_json", model.analysis == nil && !model.hasRunningOperation)
+            try verifyLastPress(.scanStop)
             try await press(.dismissError)
             try await waitFor("error dismissal") { self.model.error == nil }
             try record("dismiss_error_button_cleared_message", true)
+            try verifyLastPress(.dismissError)
 
             model.section = .clean
             try await press(.preview)
@@ -392,29 +461,36 @@ private enum NativeUIFailure: LocalizedError {
                 self.model.showOperation && self.model.operationSession.running && self.model.operationCommand == previewCommand
             }
             try record("preview_button_started_dry_run_without_confirmation", model.operationWasPreview && model.pending == nil)
+            try verifyLastPress(.preview)
             try await press(.operationStop)
             try await waitFor("operation cancellation settled") {
                 !self.model.operationSession.running && self.model.operationResult?.cancelled == true
             }
             try record("operation_stop_button_cancelled_fixture_child", true)
+            try verifyLastPress(.operationStop)
             try await press(.operationClose)
             try await waitFor("operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("operation_close_button_returned_to_page", true)
+            try verifyLastPress(.operationClose)
 
             let beforeReview = model.activities.first?.id
             try await press(.review)
             try await waitFor("review confirmation opened") { self.model.pending?.invocation.arguments == ["clean"] }
             let disabledContinue = try await find(.confirm, enabled: false)
             try record("confirmation_requires_acknowledgement", !disabledContinue.isAccessibilityEnabled() && !model.operationSession.running)
+            try verifyLastPress(.review)
             try await press(.confirmationCancel)
             try await waitFor("review cancellation closed sheet") { self.model.pending == nil && self.window.attachedSheet == nil }
             try record("confirmation_cancel_did_not_execute", model.activities.first?.id == beforeReview && !model.showOperation)
+            try verifyLastPress(.confirmationCancel)
 
             try await press(.review)
             try await waitFor("second review confirmation opened") { self.model.pending?.invocation.arguments == ["clean"] }
+            try verifyLastPress(.review)
             try await press(.acknowledge)
             _ = try await find(.confirm, enabled: true)
             try record("acknowledgement_enabled_continue", true)
+            try verifyLastPress(.acknowledge)
             let confirmationActivity = model.activities.first?.id
             try await press(.confirm)
             let cleanCommand = try MoleInvocation.make(command: .clean).displayCommand
@@ -428,9 +504,13 @@ private enum NativeUIFailure: LocalizedError {
             try validateContext()
             try record("confirmation_button_executed_only_mock", model.installation?.source == .fixture && model.pending == nil && !model.operationSession.running)
             try record("interactive_output_remained_unretained", model.operationIsInteractive && model.operationResult?.stdout.isEmpty == true && model.operationResult?.stderr.isEmpty == true)
+            try verifyLastPress(.confirm)
             try await press(.operationClose)
             try await waitFor("confirmed operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("confirmed_operation_returned_to_page", !model.hasRunningOperation && model.error == nil)
+            try verifyLastPress(.operationClose)
+            try record("all_17_dispatches_have_verified_postconditions", actions.count == 17 &&
+                       actions.allSatisfy { $0.hasSingleSuccessfulDispatch && $0.postconditionVerified })
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true
         } catch {
@@ -448,7 +528,7 @@ private enum NativeUIFailure: LocalizedError {
         }
         breadcrumb("run.report")
         return NativeUIReport(passed: errors.isEmpty && checks["fixture_guard_retained_after_all_actions"] == true && checks.values.allSatisfy { $0 },
-            mechanism: "AppKit own-window accessibility tree, protocol/public selector accessors and accessibilityPerformPress", fixtureOnly: contextWasValidated,
+            mechanism: "AppKit own-window accessibility tree; one public modern press or advertised NSButtonCell AXPress, followed by explicit postcondition verification", fixtureOnly: contextWasValidated,
             ownProcessOnly: true, physicalInputInjected: false, accessibilityPermissionRequested: false,
             routeSetupUsesModelState: true, directActionFallbackUsed: false, cleanupRequestedAfterFailure: cleanupRequested,
             publicAccessibilityEnvironmentEnabled: publicAccessibilityEnvironmentEnabled,
@@ -555,12 +635,28 @@ private enum NativeUIFailure: LocalizedError {
             throw NativeUIFailure.unavailableControl(control.rawValue)
         }
         breadcrumb("press.perform.begin", role: role)
-        let accepted = element.accessibilityPerformPress()
-        breadcrumb(accepted ? "press.perform.accepted" : "press.perform.rejected", role: role)
+        let dispatch = element.dispatchAccessibilityPress()
+        breadcrumb(dispatch.dispatchedSuccessfully ? "press.perform.dispatched" : "press.perform.rejected", role: role)
         actions.append(.init(identifier: control.rawValue, role: role, enabledBeforePress: true,
-                             pressAccepted: accepted, ownedWindow: true))
-        guard accepted else { throw NativeUIFailure.actionRejected(control.rawValue) }
+                             pressAccepted: dispatch.modernResult, ownedWindow: true, dispatchMethod: dispatch.method,
+                             modernSelectorSupported: dispatch.modernSupported, modernSelectorAllowed: dispatch.modernAllowed,
+                             modernMethodInvoked: dispatch.modernInvoked, legacyPressAdvertised: dispatch.legacyAdvertised,
+                             legacyVoidDispatched: dispatch.legacyDispatched, postconditionVerified: false))
+        guard dispatch.dispatchedSuccessfully else { throw NativeUIFailure.actionRejected(control.rawValue) }
         await Task.yield()
+    }
+
+    /// Called only after this action's existing business wait/record checks.
+    /// Returning from a legacy void method alone never establishes success.
+    private func verifyLastPress(_ control: NativeUIControl) throws {
+        try validateContext()
+        guard let last = actions.last, last.identifier == control.rawValue,
+              last.hasSingleSuccessfulDispatch, !last.postconditionVerified else {
+            throw NativeUIFailure.unexpectedState("one actual dispatch must precede its matching postcondition")
+        }
+        actions[actions.count - 1].postconditionVerified = true
+        activeControl = control
+        breadcrumb("press.postcondition.verified")
     }
 
     private func scopeWindow(for control: NativeUIControl) throws -> NSWindow {

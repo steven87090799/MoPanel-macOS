@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "summary_of": "Actual smoke-test.json from verified GitHub Actions artifact; this is a concise derived summary, not a full transcript.",
+  "workflow_run_url": "https://github.com/steven87090799/MoPanel-macOS/actions/runs/40081012904",
+  "source_revision": "f9bce8b583e520c5d5eb0200822280b4c243b105",
+  "artifact_id": 12555660803,
+  "artifact_sha256": "0d9fb700d1725fcbcddc49bb38959655ce63cafd839f0e2356e8c2baea11c991",
+  "original_smoke_report_sha256": "6bcf72a1e1904f2bc2d43c32ed06d8b47b366b9e7483fa6b2ed2c65abc91fe88",
+  "success": false,
+  "fixture_only": true,
+  "process_exit_code": 1,
+  "timed_out": false,
+  "elapsed_seconds": 8.322,
+  "checks": {
+    "analyze_preserves_partial": true,
+    "app_inventory_decoded": true,
+    "fixture_cli_detected": true,
+    "fixture_resource_inside_app": true,
+    "history_decoded": true,
+    "native_accessibility_button_flows": false,
+    "native_assertion_created_and_released": true,
+    "native_clean_screen_windows_constructed_and_closed": true,
+    "native_doctor_metadata_read": true,
+    "native_tools_no_input_interception_or_ejection": true,
+    "navigation_routes_selected_with_window_alive": true,
+    "no_real_engine_selected": true,
+    "public_contracts_compatible": true,
+    "startup_mock_cancel_and_unknown_format": true,
+    "startup_mock_enable_disable_readback": true,
+    "startup_no_real_mutation_or_persistent_job": true,
+    "status_decoded": true,
+    "watch_ndjson_received": true,
+    "watch_stopped_on_navigation": true,
+    "window_created": true
+  },
+  "errors": [
+    "accessibilityPerformPress returned false for mopanel.dashboard.snapshot."
+  ],
+  "navigation_sections_selected": [
+    "dashboard",
+    "clean",
+    "uninstall",
+    "appUpdates",
+    "startup",
+    "optimize",
+    "analyze",
+    "purge",
+    "worktrees",
+    "installer",
+    "slim",
+    "history",
+    "tools",
+    "settings"
+  ],
+  "native_ui": {
+    "passed": false,
+    "publicAccessibilityEnvironmentEnabled": true,
+    "checks": {
+      "exact_bundled_fixture_guard": true,
+      "public_accessibility_environment_read_back": true
+    },
+    "actions": [
+      {
+        "enabledBeforePress": true,
+        "identifier": "mopanel.dashboard.snapshot",
+        "ownedWindow": true,
+        "pressAccepted": false,
+        "role": "AXButton"
+      }
+    ],
+    "observedControlIdentifiers": [
+      "mopanel.dashboard.snapshot"
+    ],
+    "maximumTreeNodesObserved": 324,
+    "maximumProtocolNodesObserved": 213,
+    "maximumSelectorOnlyNodesObserved": 111,
+    "maximumUnsupportedChildrenObserved": 0,
+    "directActionFallbackUsed": false,
+    "ownProcessOnly": true,
+    "accessibilityPermissionRequested": false,
+    "physicalInputInjected": false
+  },
+  "debug_copy_diagnostic": {
+    "attempted": false,
+    "status": "complete_app_failure_evidence_available",
+    "original_smoke_still_failed": true
+  },
+  "formal_stdout_stderr_publishing_warning_count": 0,
+  "observed_button_cell_trace": "node class=NSButtonCell protocol=true role=AXButton id=mopanel.dashboard.snapshot idABI=protocol element=true enabled=true window=owned frame=visible hiddenView=not-a-view children=0",
+  "press_evidence_limit": "The harness recorded one rejected press attempt. Current diagnostics do not distinguish a selector-allowed guard rejection from a false return by the cell implementation.",
+  "swift_passed_counts": {
+    "core": 144,
+    "process": 27,
+    "total": 171,
+    "git_integration_included": 21,
+    "git_parser_included": 7
+  }
+}
