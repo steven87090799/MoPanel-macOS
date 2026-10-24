@@ -31,6 +31,8 @@ Homebrew 的 upgrade 會載入 **安裝時的舊配方**，並呼叫該配方的
 
 每個配方／收據／設定檔至多 1 MiB，使用 `O_NOFOLLOW`、regular-file／owner 檢查及有界讀取；不 eval Ruby，不把預覽文字當選取計畫。確認頁保留這三份本機資料的精確快照，在官方 Dry Run 後及使用者確認後重新讀取比對。這不會建立 Homebrew 的原子交易，也不保證中途取消能完整回復。更新前仍應儲存工作，並保持必要備份。
 
+Darwin 的 Foundation URL 可能把 `/private/var` 表示為 `/var`，而 FileManager 的列舉 URL 使用另一種表示。列舉後先以 POSIX `realpath` 與 parent device／inode 驗證同一批准目錄，再從該目錄與經驗證的 basename 重建 child URL。這只統一路徑表示，沒有取消 symlink、owner、模式或逃出目錄的檢查；新增測試同時覆蓋 FileManager 回傳 URL 與有／無 directory hint 的等價根目錄。
+
 ## 同意與狀態一致性
 
 `BrewUpdatePlan` 保存原始 cask identity、版本、明確 target 與 payload checksum；確認頁有效期五分鐘。確認後重新取得同一安裝來源的 JSON，任何欄位改變、重複 token、未知 identity、版本不一致、被釘選／停用或 App 重新啟動，均中止並要求重新預覽。這份 identity 快照不是 Homebrew 的可鎖定交易；外部程序若在最後檢查後更改 Homebrew，仍存在同機競爭窗口。Homebrew 的鎖定與安全驗證保留。
@@ -77,7 +79,7 @@ App Store 收據檔案存在是本機來源線索，不代表 MoPanel 驗證了�
 
 本機執行結果保留在 `docs/APP_UPDATES_TEST_OUTPUT.txt`；這些是模型／安全政策與 process 環境測試。沒有在開發者或使用者 Mac 上真的升級任何 App。完整 macOS 編譯、啟動與本機 API 結果以該次發行的 `TEST_REPORT.md` 及 CI artifacts 為準；不能用 Linux 的 Swift parse 代替 Apple SDK typecheck。
 
-2026-10-24 本機實際執行：App Updates 18 個 XCTest、舊收據安全 11 個 XCTest 與 Homebrew 環境 2 個 XCTest，共 **31/31 通過、0 skip、0 failures（1.203 秒）**；另外 **15/15 稽核腳本測試通過（0.309 秒）**，原始輸出為 `docs/HOMEBREW_AUDIT_TEST_OUTPUT.txt`。稽核腳本本身在 Linux 執行時如預期回報 `unsupported_environment`、exit 1，完全不啟動 Homebrew。這些新增修復須由後續 macOS CI 重驗；先前真 Mac audit 曾暴露 Darwin zombie group 的暫時 EPERM，不能把該次 harness 視為通過。修正已加入有界 reap／重試與真正 permission failure 的 fail-closed 回歸。
+2026-10-24 本機實際執行：App Updates 18 個 XCTest、舊收據安全 12 個 XCTest 與 Homebrew 環境 2 個 XCTest，共 **32/32 通過、0 skip、0 failures（0.952 秒）**；另外 **15/15 稽核腳本測試通過（0.309 秒）**，原始輸出為 `docs/HOMEBREW_AUDIT_TEST_OUTPUT.txt`。稽核腳本本身在 Linux 執行時如預期回報 `unsupported_environment`、exit 1，完全不啟動 Homebrew。macOS run `40074350936` 的 Python 15 項已通過（0.476 秒），但該次 receipt XCTest 暴露 `/private/var` URL 表示問題；不可將整次 Core suite 視為通過。本次路徑修復的 macOS 結果以後續 CI／發行報告為準。先前真 Mac audit 另曾暴露 Darwin zombie group 的暫時 EPERM，已加入有界 reap／重試與真正 permission failure 的 fail-closed 回歸。
 
 CI 可執行 `python3 scripts/audit_homebrew.py --output build/reports/homebrew-readonly.json`。腳本只允許 `/opt/homebrew/bin/brew` 的版本、Caskroom 路徑、四個 help、installed info JSON 與 outdated JSON，沒有執行真正的 update／install／upgrade，連 dry-run upgrade 也未執行。它要求非 root 的 ARM64 macOS GitHub Actions 環境、過濾憑證與 shell hooks，並限制輸出總量與時間；報告只保留計數、旗標、版本及結果，不保留 App 名稱、路徑、URLs 或原始 stderr。`caskroom_contract` 僅證明單一絕對路徑介面；舊收據驗證用隔離 fixture 測試，不冒充已在 runner 真的更新 App。
 
@@ -95,5 +97,6 @@ CI 可執行 `python3 scripts/audit_homebrew.py --output build/reports/homebrew-
 - [Sparkle customization](https://sparkle-project.org/documentation/customization/)：`SUFeedURL`、動態覆寫與簽章選項。
 - [Apple：使用 App Store 更新 App](https://support.apple.com/guide/app-store/update-purchased-apps-fir9b01adda3/mac)：官方 Updates 操作。
 - [Apple NSWorkspace.openApplication](https://developer.apple.com/documentation/appkit/nsworkspace/openapplication(at:configuration:completionhandler:))：原生開啟 App。
+- [Apple NSURL.resolvingSymlinksInPath](https://developer.apple.com/documentation/foundation/nsurl/resolvingsymlinksinpath)、[realpath(3)](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/realpath.3.html)：Darwin 的 `/private` 表示簡化與 filesystem canonical path。
 
 本模組未加入 Sparkle SDK、Homebrew 原始碼或新的第三方常駐服務。它使用現有原生 terminal dependency 及 Apple 系統 frameworks；原始碼沿用 MoPanel 的 GPL-3.0-or-later 授權。

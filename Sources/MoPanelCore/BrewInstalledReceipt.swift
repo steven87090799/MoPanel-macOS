@@ -42,7 +42,9 @@ public enum BrewInstalledReceipt {
               safeComponent(plan.installedVersion) else { throw unsupported("Invalid installed receipt identity.") }
         let base = caskDirectory.standardizedFileURL
         try requireOwnedDirectory(base)
-        let canonical = base.resolvingSymlinksInPath()
+        // The directory was verified above; normalize its URL directory hint
+        // so equivalent file URLs produce the same confirmation proof.
+        let canonical = URL(fileURLWithPath: base.resolvingSymlinksInPath().path, isDirectory: true)
         let metadata = canonical.appendingPathComponent(".metadata", isDirectory: true)
         try requireOwnedDirectory(metadata)
 
@@ -77,7 +79,7 @@ public enum BrewInstalledReceipt {
         try validate(definition: definition, receipt: receipt, configuration: configuration, item: item)
         // Detect an ancestor replacement while the bounded files were read.
         try requireOwnedDirectory(base)
-        guard base.resolvingSymlinksInPath() == canonical else { throw unsupported("Installed metadata moved while it was read.") }
+        guard base.resolvingSymlinksInPath().path == canonical.path else { throw unsupported("Installed metadata moved while it was read.") }
         return BrewInstalledReceiptProof(caskDirectory: canonical, definitionURL: definitions[0],
                                          definition: definition, receipt: receipt, configuration: configuration)
     }
@@ -174,9 +176,36 @@ public enum BrewInstalledReceipt {
             && !value.unicodeScalars.contains(where: { $0.value < 32 || (127...159).contains($0.value) })
     }
     private static func children(_ url: URL) throws -> [URL] {
+        var approvedIdentity = stat()
+        guard lstat(url.path, &approvedIdentity) == 0 else { throw unsupported("Installed metadata directory cannot be inspected.") }
         let values = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
         guard values.count <= 128 else { throw unsupported("Installed metadata directory exceeds the bound.") }
-        return values
+        let approvedParent = try filesystemCanonicalPath(url)
+        return try values.map { listed in
+            // Foundation may enumerate /private/var while its URL resolvers
+            // display the same directory as /var. Verify filesystem ancestry,
+            // then keep the approved parent's representation for all children.
+            // Do not resolve the final item: later lstat/O_NOFOLLOW checks must
+            // still reject an actual linked receipt or metadata directory.
+            let name = listed.lastPathComponent
+            var listedParentIdentity = stat()
+            guard listed.isFileURL, safeComponent(name),
+                  lstat(listed.deletingLastPathComponent().path, &listedParentIdentity) == 0,
+                  listedParentIdentity.st_dev == approvedIdentity.st_dev, listedParentIdentity.st_ino == approvedIdentity.st_ino,
+                  try filesystemCanonicalPath(listed.deletingLastPathComponent()) == approvedParent else {
+                throw unsupported("Enumerated installed metadata escaped its approved directory.")
+            }
+            return url.appendingPathComponent(name)
+        }
+    }
+    private static func filesystemCanonicalPath(_ url: URL) throws -> String {
+        let pointer = url.withUnsafeFileSystemRepresentation { path -> UnsafeMutablePointer<CChar>? in
+            guard let path else { return nil }
+            return realpath(path, nil)
+        }
+        guard let pointer else { throw unsupported("Installed metadata ancestry cannot be resolved safely.") }
+        defer { free(pointer) }
+        return String(cString: pointer)
     }
     private static func requireOwnedDirectory(_ url: URL) throws {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)

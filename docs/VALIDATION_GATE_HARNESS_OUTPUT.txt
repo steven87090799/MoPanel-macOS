@@ -1,0 +1,22 @@
+Executed on Linux with real /bin/bash -e -o pipefail, isolated temporary commands,
+and a tee wrapper that preserves the stream while injecting a controlled exit.
+No Mole CLI, macOS App, or user data operation was invoked.
+
+Command: python3 scripts/test_validation_gates.py
+
+test_both_pass_allows_later_phase (__main__.ValidationGateTests.test_both_pass_allows_later_phase) ... ok
+test_failure_summary_with_zero_exit_still_blocks_later_phase (__main__.ValidationGateTests.test_failure_summary_with_zero_exit_still_blocks_later_phase) ... ok
+test_skipped_xctest_with_zero_exit_still_blocks_later_phase (__main__.ValidationGateTests.test_skipped_xctest_with_zero_exit_still_blocks_later_phase) ... ok
+test_smoke_failure_blocks_later_phase (__main__.ValidationGateTests.test_smoke_failure_blocks_later_phase) ... ok
+test_swift_failure_preserves_smoke_evidence_and_blocks_later_phase (__main__.ValidationGateTests.test_swift_failure_preserves_smoke_evidence_and_blocks_later_phase) ... ok
+test_tee_failure_is_preserved_separately_and_blocks_later_phase (__main__.ValidationGateTests.test_tee_failure_is_preserved_separately_and_blocks_later_phase) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.384s
+
+OK
+
+Actual captured exit checks: Swift=13, smoke=17, tee=23 are independently
+preserved in JSON and each prevents the later-phase marker. The Swift-failure
+case still retains the separate successful smoke outcome. Zero-exit XCTest
+failure/skip summaries also stop the later phase. Only the all-pass case proceeds.

@@ -44,6 +44,21 @@ final class BrewInstalledReceiptTests: XCTestCase {
         XCTAssertEqual(try BrewInstalledReceipt.inspect(caskDirectory: base, item: item()), proof)
     }
 
+    func testFileManagerAndLogicalRootRepresentationsInspectIdentically() throws {
+        let base = try makeTree()
+        let enumerated = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: base.deletingLastPathComponent(), includingPropertiesForKeys: nil)
+            .first { $0.lastPathComponent == "example-editor" })
+        // On Darwin, FileManager can return /private/var while URL resolving
+        // returns /var. Both refer to the same owned, non-symlink cask root.
+        let variants = [base, enumerated, URL(fileURLWithPath: base.path, isDirectory: false),
+                        URL(fileURLWithPath: base.path, isDirectory: true), base.resolvingSymlinksInPath()]
+        let expected = try BrewInstalledReceipt.inspect(caskDirectory: base, item: item())
+        for variant in variants {
+            let actual = try BrewInstalledReceipt.inspect(caskDirectory: variant, item: item())
+            XCTAssertEqual(actual, expected, "root=\(variant.absoluteString), resolved=\(variant.resolvingSymlinksInPath().path)")
+        }
+    }
+
     func testOldUninstallHooksCannotHideBehindSafeNewRecipe() throws {
         for hook in ["uninstall", "uninstall_preflight", "uninstall_postflight", "preflight", "postflight", "installer", "pkg", "future_executor"] {
             var old = tab; old["uninstall_artifacts"] = [app, [hook: ["script": "/tmp/must-not-run"]]]

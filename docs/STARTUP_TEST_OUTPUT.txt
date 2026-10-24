@@ -1,59 +1,63 @@
 [0/1] Planning build
 Building for debugging...
-[0/5] Write sources
-[2/5] Copying Fixtures
-[3/5] Write swift-version--692D7D6F1AAC6E0F.txt
-[5/7] Compiling MoPanelCore StartupModels.swift
-[6/7] Emitting module MoPanelCore
-[8/10] Emitting module MoPanelCoreTests
-[9/10] Compiling MoPanelCoreTests StartupModelsTests.swift
-[10/17] /tmp/mopanel-startup-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
-[11/18] Write sources
-[12/18] Wrapping AST for MoPanelCoreTests for debugging
-[14/22] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
-[15/22] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
-[16/22] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
-[17/22] Emitting module MoPanelPackageDiscoveredTests
-[18/23] /tmp/mopanel-startup-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
-[19/24] Write sources
-[20/24] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
-[22/26] Compiling MoPanelPackageTests runner.swift
-[23/26] Emitting module MoPanelPackageTests
-[24/26] Write Objects.LinkFileList
-[25/26] Linking MoPanelPackageTests.xctest
-Build complete! (3.47s)
+[0/4] Write sources
+[2/4] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/7] Emitting module MoPanelCore
+[5/7] Compiling MoPanelCore BrewInstalledReceipt.swift
+[6/7] Compiling MoPanelCore StartupModels.swift
+[7/15] Wrapping AST for MoPanelCore for debugging
+[9/18] Compiling MoPanelCoreTests BrewInstalledReceiptTests.swift
+[10/18] Compiling MoPanelCoreTests StartupModelsTests.swift
+[11/18] Emitting module MoPanelCoreTests
+[12/19] /tmp/mopanel-startup-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[13/20] Write sources
+[14/20] Wrapping AST for MoPanelCoreTests for debugging
+[16/24] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[17/24] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[18/24] Emitting module MoPanelPackageDiscoveredTests
+[19/24] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[20/25] /tmp/mopanel-startup-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[21/26] Write sources
+[22/26] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[24/28] Emitting module MoPanelPackageTests
+[25/28] Compiling MoPanelPackageTests runner.swift
+[26/28] Write Objects.LinkFileList
+[27/28] Linking MoPanelPackageTests.xctest
+Build complete! (3.78s)
 warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
-Test Suite 'Selected tests' started at 2026-10-24 15:27:51.257
-Test Suite 'StartupModelsTests' started at 2026-10-24 15:27:51.259
-Test Case 'StartupModelsTests.testAppleBuhoSharedScopeAndWritableFilesAreProtected' started at 2026-10-24 15:27:51.259
-Test Case 'StartupModelsTests.testAppleBuhoSharedScopeAndWritableFilesAreProtected' passed (0.011 seconds)
-Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' started at 2026-10-24 15:27:51.270
-Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' passed (0.103 seconds)
-Test Case 'StartupModelsTests.testDisablePlanOnlyTargetsVerifiedOwnService' started at 2026-10-24 15:27:51.373
-Test Case 'StartupModelsTests.testDisablePlanOnlyTargetsVerifiedOwnService' passed (0.004 seconds)
-Test Case 'StartupModelsTests.testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent' started at 2026-10-24 15:27:51.377
-Test Case 'StartupModelsTests.testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent' passed (0.004 seconds)
-Test Case 'StartupModelsTests.testEnablePlanPreservesUnicodePlistPathAsSingleArgument' started at 2026-10-24 15:27:51.381
-Test Case 'StartupModelsTests.testEnablePlanPreservesUnicodePlistPathAsSingleArgument' passed (0.003 seconds)
-Test Case 'StartupModelsTests.testInventoryReportsErrorsAndNeverTraversesSubdirectories' started at 2026-10-24 15:27:51.383
-Test Case 'StartupModelsTests.testInventoryReportsErrorsAndNeverTraversesSubdirectories' passed (0.005 seconds)
-Test Case 'StartupModelsTests.testInventoryStillRejectsSymbolicDirectoryAndTraversal' started at 2026-10-24 15:27:51.389
-Test Case 'StartupModelsTests.testInventoryStillRejectsSymbolicDirectoryAndTraversal' passed (0.003 seconds)
-Test Case 'StartupModelsTests.testLabelValidationCannotEscapeServiceTarget' started at 2026-10-24 15:27:51.391
-Test Case 'StartupModelsTests.testLabelValidationCannotEscapeServiceTarget' passed (0.001 seconds)
-Test Case 'StartupModelsTests.testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity' started at 2026-10-24 15:27:51.393
-Test Case 'StartupModelsTests.testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity' passed (0.002 seconds)
-Test Case 'StartupModelsTests.testMalformedFilesStillConsumeAggregateReadBudget' started at 2026-10-24 15:27:51.395
-Test Case 'StartupModelsTests.testMalformedFilesStillConsumeAggregateReadBudget' passed (0.181 seconds)
-Test Case 'StartupModelsTests.testMalformedSchemaAndOversizedMetadataFailClosed' started at 2026-10-24 15:27:51.576
-Test Case 'StartupModelsTests.testMalformedSchemaAndOversizedMetadataFailClosed' passed (0.007 seconds)
-Test Case 'StartupModelsTests.testMissingServiceIsDifferentFromPermissionFailure' started at 2026-10-24 15:27:51.583
-Test Case 'StartupModelsTests.testMissingServiceIsDifferentFromPermissionFailure' passed (0.002 seconds)
-Test Case 'StartupModelsTests.testRecordedMacOS2701LaunchctlContracts' started at 2026-10-24 15:27:51.584
-Test Case 'StartupModelsTests.testRecordedMacOS2701LaunchctlContracts' passed (0.002 seconds)
-Test Case 'StartupModelsTests.testSymlinksAndChangedSnapshotsAreRejected' started at 2026-10-24 15:27:51.587
-Test Case 'StartupModelsTests.testSymlinksAndChangedSnapshotsAreRejected' passed (0.004 seconds)
-Test Suite 'StartupModelsTests' passed at 2026-10-24 15:27:51.590
-	 Executed 14 tests, with 0 failures (0 unexpected) in 0.331 (0.331) seconds
-Test Suite 'Selected tests' passed at 2026-10-24 15:27:51.590
-	 Executed 14 tests, with 0 failures (0 unexpected) in 0.331 (0.331) seconds
+Test Suite 'Selected tests' started at 2026-10-24 15:36:00.949
+Test Suite 'StartupModelsTests' started at 2026-10-24 15:36:00.950
+Test Case 'StartupModelsTests.testAppleBuhoSharedScopeAndWritableFilesAreProtected' started at 2026-10-24 15:36:00.950
+Test Case 'StartupModelsTests.testAppleBuhoSharedScopeAndWritableFilesAreProtected' passed (0.013 seconds)
+Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' started at 2026-10-24 15:36:00.964
+Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' passed (0.008 seconds)
+Test Case 'StartupModelsTests.testDisablePlanOnlyTargetsVerifiedOwnService' started at 2026-10-24 15:36:00.972
+Test Case 'StartupModelsTests.testDisablePlanOnlyTargetsVerifiedOwnService' passed (0.006 seconds)
+Test Case 'StartupModelsTests.testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent' started at 2026-10-24 15:36:00.978
+Test Case 'StartupModelsTests.testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent' passed (0.008 seconds)
+Test Case 'StartupModelsTests.testEnablePlanPreservesUnicodePlistPathAsSingleArgument' started at 2026-10-24 15:36:00.985
+Test Case 'StartupModelsTests.testEnablePlanPreservesUnicodePlistPathAsSingleArgument' passed (0.005 seconds)
+Test Case 'StartupModelsTests.testEnumeratedChildReferenceIsRebasedToApprovedRoot' started at 2026-10-24 15:36:00.990
+Test Case 'StartupModelsTests.testEnumeratedChildReferenceIsRebasedToApprovedRoot' passed (0.004 seconds)
+Test Case 'StartupModelsTests.testInventoryReportsErrorsAndNeverTraversesSubdirectories' started at 2026-10-24 15:36:00.995
+Test Case 'StartupModelsTests.testInventoryReportsErrorsAndNeverTraversesSubdirectories' passed (0.009 seconds)
+Test Case 'StartupModelsTests.testInventoryStillRejectsSymbolicDirectoryAndTraversal' started at 2026-10-24 15:36:01.004
+Test Case 'StartupModelsTests.testInventoryStillRejectsSymbolicDirectoryAndTraversal' passed (0.004 seconds)
+Test Case 'StartupModelsTests.testLabelValidationCannotEscapeServiceTarget' started at 2026-10-24 15:36:01.008
+Test Case 'StartupModelsTests.testLabelValidationCannotEscapeServiceTarget' passed (0.003 seconds)
+Test Case 'StartupModelsTests.testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity' started at 2026-10-24 15:36:01.011
+Test Case 'StartupModelsTests.testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity' passed (0.005 seconds)
+Test Case 'StartupModelsTests.testMalformedFilesStillConsumeAggregateReadBudget' started at 2026-10-24 15:36:01.016
+Test Case 'StartupModelsTests.testMalformedFilesStillConsumeAggregateReadBudget' passed (0.365 seconds)
+Test Case 'StartupModelsTests.testMalformedSchemaAndOversizedMetadataFailClosed' started at 2026-10-24 15:36:01.381
+Test Case 'StartupModelsTests.testMalformedSchemaAndOversizedMetadataFailClosed' passed (0.016 seconds)
+Test Case 'StartupModelsTests.testMissingServiceIsDifferentFromPermissionFailure' started at 2026-10-24 15:36:01.397
+Test Case 'StartupModelsTests.testMissingServiceIsDifferentFromPermissionFailure' passed (0.004 seconds)
+Test Case 'StartupModelsTests.testRecordedMacOS2701LaunchctlContracts' started at 2026-10-24 15:36:01.401
+Test Case 'StartupModelsTests.testRecordedMacOS2701LaunchctlContracts' passed (0.005 seconds)
+Test Case 'StartupModelsTests.testSymlinksAndChangedSnapshotsAreRejected' started at 2026-10-24 15:36:01.406
+Test Case 'StartupModelsTests.testSymlinksAndChangedSnapshotsAreRejected' passed (0.008 seconds)
+Test Suite 'StartupModelsTests' passed at 2026-10-24 15:36:01.415
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.463 (0.463) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 15:36:01.415
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.463 (0.463) seconds

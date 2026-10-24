@@ -15,6 +15,9 @@ if [[ "${sdk_version%%.*}" -lt 27 ]]; then
 fi
 export MACOSX_DEPLOYMENT_TARGET=27.0
 mkdir -p build/reports build/releases
+source scripts/validation-gates.sh
+python3 scripts/test_validation_gates.py 2>&1 | tee build/reports/validation-gate-harness.log
+mopanel_initialize_validation_gates build/reports/validation-gates.json
 build_staging="$(mktemp -d "$project_root/build/staging.XXXXXX")"
 trap 'rm -rf "$build_staging"' EXIT
 xcodebuild -version > build/reports/xcode-version.txt
@@ -33,7 +36,8 @@ pathlib.Path('build/reports/dependencies.json').write_text(json.dumps(resolved, 
 PY
 xcrun swift build --configuration release --arch arm64 --product MoPanelGuardian 2>&1 | tee build/reports/build-guardian.log
 binary_dir="$(xcrun swift build --configuration release --arch arm64 --show-bin-path)"
-MOPANEL_GUARDIAN="$binary_dir/MoPanelGuardian" xcrun swift test --arch arm64 2>&1 | tee build/reports/swift-test.log
+mopanel_capture_validation_gate build/reports/validation-gates.json swift-test build/reports/swift-test.log \
+    env MOPANEL_GUARDIAN="$binary_dir/MoPanelGuardian" xcrun swift test --arch arm64
 xcrun swift build --configuration release --arch arm64 --product MoPanel 2>&1 | tee build/reports/build-app.log
 xcrun swift build --configuration release --arch arm64 --product MoPanelEditor 2>&1 | tee build/reports/build-editor.log
 app_path="$build_staging/MoPanel.app"
@@ -66,7 +70,11 @@ codesign --force --sign - --options runtime --identifier org.mopanel.guardian "$
 codesign --force --sign - --options runtime --identifier org.mopanel.editor "$app_path/Contents/Helpers/MoPanelEditor"
 codesign --force --sign - --options runtime --identifier org.mopanel.app "$app_path"
 bash scripts/verify-package.sh "$app_path" > build/reports/bundle-verification.txt 2>&1
-python3 scripts/smoke_test.py "$app_path" --output build/reports/smoke-test.json
+mopanel_capture_validation_gate build/reports/validation-gates.json fixture-smoke build/reports/smoke-run.log \
+    python3 scripts/smoke_test.py "$app_path" --output build/reports/smoke-test.json
+# Both independently collected outcomes must pass, including tee and skip checks.
+# A failed gate can never proceed to benchmarks, official CLI probes or packaging.
+mopanel_require_validation_gates build/reports/validation-gates.json
 python3 scripts/test_profile.py 2>&1 | tee build/reports/profile-harness-tests.log
 python3 scripts/profile.py "$app_path" --output build/reports/performance.json
 python3 scripts/test_guardian.py "$app_path/Contents/Helpers/MoPanelGuardian" 2>&1 | tee build/reports/guardian-test.log

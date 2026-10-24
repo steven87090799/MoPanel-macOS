@@ -50,7 +50,7 @@ SwiftTerm 的 package manifest 包含 Metal shader resource，即使 App 選用 
 
 CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 allowlist 執行真正的閒置、單一 status watch、analyze 掃描，另寫入 `performance-real-cli.json`。每個模式建立獨立 RUNNER_TEMP session；掃描 corpus 為 5,000 個各 4,096 bytes 的新平面檔案，沒有子目錄或 symlink。GUI 的 HOME 不變，只有唯讀 CLI 子程序取得專用 HOME／TMPDIR。scan 取樣還必須落在 App 回報的真實掃描區間，且全部掃描都要完整完成。
 
-重複掃描會使用溫熱的 OS 檔案系統快取；這不代表完整磁碟、外接磁碟、權限受限資料或破壞性清理工作的成本。`ps` CPU 值是程序平均值，峰值是觀察樣本最大值，並非 Instruments 的瞬時追蹤。測量數據僅能在實際執行後記入 TEST_REPORT；GitHub CI 發行流程要求兩組效能證據都成功才可封裝。
+重複掃描會使用溫熱的 OS 檔案系統快取；這不代表完整磁碟、外接磁碟、權限受限資料或破壞性清理工作的成本。`ps` CPU 值是程序存活期平均值，峰值是觀察樣本最大值，並非 Instruments 的瞬時追蹤。GUI 與子程序 RSS 相加可能重複計算共用頁面，不是唯一實體記憶體占用或活動監視器的記憶體壓力。測量數據僅能在實際執行後記入 TEST_REPORT；GitHub CI 發行流程要求兩組效能證據都成功才可封裝。
 
 ## 本次本地環境
 
@@ -60,9 +60,11 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-[Run 40073252380](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40073252380) 的原生擴充已通過 Debug 編譯，實際執行 124 個 Mac XCTest。24 個 Process／Editor／Streaming 全部通過；100 個 Core 中兩個 Startup inventory 案例出現4個失敗斷言，流程未繼續發行。後續已修復URL物件與canonical path比較差異，加入真Mac launchctl樣本，14項Startup Linux回歸通過；尚待Mac再次驗證。
+[Run 40074350936](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40074350936) 已通過最新整合版 Debug 編譯，實際執行 138 個 Mac XCTest：24 個 Process／Editor／Streaming 全部通過，114 個 Core 出現 7 個失敗斷言（Startup 5、installed receipt 2）。後續依實際 Mac 路徑表示差異補強父目錄 realpath／device／inode 校驗及子 URL 重建；Startup 15 項與 App Updates／receipt／環境 32 項 filtered Linux 回歸通過，尚待 Mac 重跑。
 
-Homebrew 7.0.10 的七個固定唯讀命令通過，JSON有5個 installed casks、0個 outdated casks；沒有執行更新。9項 Python audit harness 有一項 Darwin timeout cleanup 的 EPERM 錯誤；後續採有界 poll/reap/probe 修正，擴充為15項且Linux通過，尚待真Mac重跑。工作流程已依 [GitHub shell 說明](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell) 改用明確 bash shell，確保 `-e -o pipefail` 讓經過 tee 保存的測試錯誤也會阻擋；發行報告另檢查 harness 結果必須為無略過的 OK。
+Homebrew 7.0.10 的固定唯讀命令（包含 caskroom）通過，JSON 有 5 個 installed cask、0 個 outdated cask，沒有執行更新或讀取 runner 舊 receipt。15 個 Python audit harness 案例也已在本輪 Mac 全部通過，修復了先前 EPERM cleanup。工作流程依 [GitHub shell 說明](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell) 使用明確 bash，確保 tee 不遮蔽測試錯誤；發行報告另要求 harness 無失敗／略過。
+
+下一輪 `build.sh` 將獨立收集 XCTest 與 fixture-only UI smoke 的實際 command／tee／pipeline 退出碼，寫入 `validation-gates.json`。只有編譯與 bundle 驗證通過才有 App 可啟動；兩個 gate 都成功、XCTest 無略過，才可進後續 profile／guardian／官方 baseline probe／ZIP。任一失敗仍使腳本明確非零退出。`test_validation_gates.py` 的 6 個隔離 Bash 案例已在 Linux 通過；這個變更增加失敗診斷，不放寬發行門檻。
 
 較早的 [run40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 已通過77個 Mac XCTest、基礎App ARM64 release與ad-hoc驗證，但UI smoke僅11/12通過。失敗的watch小量輸出問題已透過增量POSIX read修正，且新增兩個Mac串流回歸通過；尚待本輪其他失敗修正後重新執行UI與三態測量。
 

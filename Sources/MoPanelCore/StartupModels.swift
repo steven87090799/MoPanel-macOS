@@ -127,11 +127,17 @@ public enum StartupInventoryReader {
                 warnings.append("Cannot enumerate \(folder.url.path)"); continue
             }
             var entries = 0
-            for case let url as URL in enumerator {
+            for case let listedURL as URL in enumerator {
                 if Task.isCancelled { truncated = true; break }
                 entries += 1
                 if entries > maximumEntriesPerFolder { truncated = true; break }
-                guard url.pathExtension.lowercased() == "plist" else { continue }
+                guard listedURL.pathExtension.lowercased() == "plist" else { continue }
+                let url: URL
+                do { url = try inventoryChildURL(listedURL, within: folder.url) }
+                catch {
+                    rows.append(.init(url: listedURL, scope: folder.scope, snapshot: nil, error: error.localizedDescription))
+                    continue
+                }
                 // Reserve the bytes before parsing, including malformed files.
                 // Otherwise repeated invalid plists could bypass the aggregate
                 // read budget. inspect() rejects a file that grows past this
@@ -224,6 +230,41 @@ public enum StartupInventoryReader {
         let current = try inspect(url: expected.url, folder: .init(url: expected.folder, scope: expected.scope), userID: userID)
         guard current == expected else { throw StartupInspectionError.changed }
         return current
+    }
+
+    /// FileManager may return an equivalent filesystem URL using /private/var
+    /// while Foundation standardizes the approved root as /var. Treat that URL
+    /// only as a directory-entry reference. Verify its physical parent, then
+    /// rebuild the child under the original approved root. The rebuilt URL still
+    /// goes through inspect()'s unchanged symlink/owner/O_NOFOLLOW protections.
+    static func inventoryChildURL(_ listed: URL, within approvedRoot: URL) throws -> URL {
+        let name = listed.lastPathComponent
+        guard listed.isFileURL, approvedRoot.isFileURL,
+              !name.isEmpty, name != ".", name != "..", !name.contains("/"),
+              !name.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else {
+            throw StartupInspectionError.invalidPath
+        }
+        let listedParent = listed.deletingLastPathComponent().path
+        guard try physicalPath(listedParent) == physicalPath(approvedRoot.path) else {
+            throw StartupInspectionError.invalidPath
+        }
+        var actualParent = stat(), approved = stat()
+        guard lstat(listedParent, &actualParent) == 0, lstat(approvedRoot.path, &approved) == 0,
+              isDirectory(actualParent), isDirectory(approved), actualParent.st_dev == approved.st_dev,
+              actualParent.st_ino == approved.st_ino else { throw StartupInspectionError.changed }
+        return URL(fileURLWithPath: approvedRoot.path, isDirectory: true).appendingPathComponent(name, isDirectory: false)
+    }
+
+    private static func physicalPath(_ path: String) throws -> String {
+        guard path.hasPrefix("/"), !path.contains("\0") else { throw StartupInspectionError.invalidPath }
+        #if canImport(Darwin)
+        guard let value = Darwin.realpath(path, nil) else { throw StartupInspectionError.permission }
+        defer { Darwin.free(value) }
+        #else
+        guard let value = Glibc.realpath(path, nil) else { throw StartupInspectionError.permission }
+        defer { Glibc.free(value) }
+        #endif
+        return String(cString: value)
     }
 
     #if canImport(Darwin)

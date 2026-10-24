@@ -10,6 +10,20 @@ import sys
 
 package = pathlib.Path(sys.argv[1]).resolve()
 reports = package / "Reports"
+validation_gates = json.loads((reports / "validation-gates.json").read_text())
+if (validation_gates.get("schema_version") != 1
+        or set(validation_gates.get("required_gates", [])) != {"swift-test", "fixture-smoke"}
+        or set(validation_gates.get("gates", {})) != {"swift-test", "fixture-smoke"}
+        or validation_gates.get("all_required_passed") is not True
+        or any(gate.get("passed") is not True or gate.get("pipeline_exit_code") != 0
+               or gate.get("command_exit_code") != 0 or gate.get("tee_exit_code") != 0
+               for gate in validation_gates["gates"].values())):
+    raise RuntimeError("Both independent XCTest/fixture-UI gates must have complete successful evidence")
+gate_harness_log = (reports / "validation-gate-harness.log").read_text()
+gate_harness_count = re.search(r"Ran (\d+) tests? in", gate_harness_log)
+if (not gate_harness_count or not re.search(r"^OK\s*$", gate_harness_log, re.MULTILINE)
+        or re.search(r"^(FAILED|ERROR:)", gate_harness_log, re.MULTILINE)):
+    raise RuntimeError("Independent validation gate harness did not finish without failures/skips")
 smoke = json.loads((reports / "smoke-test.json").read_text())
 performance = json.loads((reports / "performance.json").read_text())
 if (not smoke.get("success") or not smoke.get("window_created") or not smoke.get("fixture_only")
@@ -63,6 +77,8 @@ lines = ["# 實際建置與驗證報告", "", f"產生時間：{date}", "",
          f"建置平台：{platform.platform()}；架構：{platform.machine()}。", "",
          "此報告由成功建置後的實際紀錄產生；原始紀錄位於 `Reports/`。", "",
          "| 驗證 | 結果與範圍 |", "|---|---|",
+         f"| 獨立驗收 gate harness | {gate_harness_count.group(1)} 個隔離Bash管線案例通過；Swift／smoke／tee非零與skip皆不能進後續phase。見 validation-gate-harness.log |",
+         "| XCTest／fixture UI gate | 兩者分別保存command、tee與pipeline退出碼，全部為0且無略過；見 validation-gates.json |",
          f"| Swift 編譯與單元測試 | 合計 {total_swift_tests} 個 XCTest，{skips} skipped，0 failures；多個 .xctest bundle 分別加總。見 swift-test.log |",
          f"| Guardian 程序整合測試 | {guardian_count.group(1)} 個案例通過，0 failures／skipped。見 guardian-test.log |",
          "| ARM64 | 主程式、guardian 與原生 paths 編輯器均通過 lipo 檢查，只有 arm64 |",

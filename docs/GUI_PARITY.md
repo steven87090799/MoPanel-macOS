@@ -37,8 +37,8 @@
 | A02 | AI sessions、worktrees、閒置 AI CLI 的專用審查 [S1][S3] | CLI worktrees 是報告用途；Codex session/state 預設受保護 [C5][C6] | **未實作** | 需要新增工具整合、可恢復副本、索引一致性及 Git 唯一內容保護；不得直接刪目錄替代 |
 | S01 | App 清單、圖示、大小、搜尋、多選卸載 [S4] | `uninstall --list`、名稱參數及官方選取器 | **原生＋PTY／待驗收**；`UninstallView.swift` | 重名 App、cask 名稱歧義、特殊檔名與實際確認範圍的端到端測試 |
 | S02 | App 殘留、共享資料、個人資料與系統擴充的審查 [S4] | 官方卸載分析及確認；CLI 殘留計畫並非完整公開 JSON | **部分**；個人資料預選預設關閉，最終審查在 PTY | 原生逐項審查、共享資料安全、特殊卸載器 handoff；不能猜測所有權 |
-| S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／最新修復待 macOS CI**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle／App Store 只有來源辨識與原 App handoff。29個Core與2個環境測試在 Linux 通過；未升級真實 App，非所有來源完整對等 |
-| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／最新修復待 macOS CI**；`StartupController.swift`、`StartupView.swift` | 已有有限中繼資料清單、可驗證 user LaunchAgent 啟用／停用與確認；未知身分禁止變更，其他項目使用正式系統設定入口。14個Core測試在 Linux 通過，涵蓋目錄URL回歸與真Mac唯讀launchctl樣本；CI用私有mock，不修改真launchd工作 |
+| S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／最新修復待 macOS CI**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle／App Store 只有來源辨識與原 App handoff。30個Core與2個環境測試在 Linux 通過；未升級真實 App，非所有來源完整對等 |
+| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／最新修復待 macOS CI**；`StartupController.swift`、`StartupView.swift` | 已有有限中繼資料清單、可驗證 user LaunchAgent 啟用／停用與確認；未知身分禁止變更，其他項目使用正式系統設定入口。15個Core測試在 Linux 通過，涵蓋目錄URL回歸與真Mac唯讀launchctl樣本；CI用私有mock，不修改真launchd工作 |
 | O01 | macOS 維護、任務結果與略過原因 [S5] | `optimize`、Dry Run、Whitelist；官方承認任務集合可能不同 [S2] | **PTY／待驗收**；`MaintenanceView.swift` | 逐項核對 1.17 GUI 任務；不能宣稱兩套預設維護流程完全相同 |
 | O02 | 管理員授權重用及工作結束後停止 [S5] | 官方 CLI sudo／Touch ID 流程 | **PTY／待驗收**；`ManagedProcess.swift`、`TerminalPanel.swift` | 真 Mac sudo、Touch ID、取消及授權過期；不保存密碼 |
 | D01 | 階層磁碟圖、搜尋、大小、Finder、重新掃描 [S6] | `analyze --json` | **原生／待驗收**；`AnalyzeView.swift` | 圖僅畫篩選後最大 30 個可測項目並明示；不等同官方全部細節、快取與視覺排列 |

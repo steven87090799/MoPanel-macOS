@@ -47,7 +47,7 @@ final class StartupModelsTests: XCTestCase {
         "URL=\(url.absoluteString); standardized=\(url.standardizedFileURL.absoluteString); " +
         "objectEquality=\(url.standardizedFileURL == url); " +
         "resolvedPath=\(url.resolvingSymlinksInPath().path); warnings=\(result.warnings); " +
-        "errors=\(result.items.compactMap(\.error))"
+        "items=\(result.items.map { item in "\(item.url.absoluteString); parent=\(item.url.deletingLastPathComponent().path); standardized=\(item.url.standardizedFileURL.path); error=\(item.error ?? "none")" })"
     }
 
     func testEnablePlanPreservesUnicodePlistPathAsSingleArgument() throws {
@@ -162,6 +162,35 @@ final class StartupModelsTests: XCTestCase {
             XCTAssertTrue(result.items.isEmpty, inventoryDiagnostic(result, url: root))
             XCTAssertFalse(result.warnings.isEmpty, inventoryDiagnostic(result, url: root))
         }
+    }
+
+    func testEnumeratedChildReferenceIsRebasedToApprovedRoot() throws {
+        let expected = try write()
+        let listed = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .first { $0.lastPathComponent == expected.lastPathComponent })
+        let child = try StartupInventoryReader.inventoryChildURL(listed, within: folder)
+        XCTAssertEqual(child.path, expected.path)
+        XCTAssertEqual(try inspect(child).url.path, expected.path)
+
+        // A presentation reference through a controlled ancestor alias must be
+        // converted back to the approved root before a file is opened. This is
+        // not permission to read or act through the alias itself.
+        let container = folder.appendingPathComponent("container", isDirectory: true)
+        try FileManager.default.createDirectory(at: container, withIntermediateDirectories: false)
+        let physical = container.appendingPathComponent("approved", isDirectory: true)
+        try FileManager.default.createDirectory(at: physical, withIntermediateDirectories: false)
+        let alias = folder.appendingPathComponent("presentation-alias", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: container)
+        let alternate = alias.appendingPathComponent("approved", isDirectory: true).appendingPathComponent("file.plist")
+        let rebased = try StartupInventoryReader.inventoryChildURL(alternate, within: physical)
+        XCTAssertEqual(rebased.path, physical.appendingPathComponent("file.plist").path)
+        XCTAssertFalse(rebased.path.contains("presentation-alias"))
+        XCTAssertThrowsError(try StartupInventoryReader.inventoryChildURL(expected, within: physical))
+
+        let leafAlias = folder.appendingPathComponent("leaf-link.plist")
+        try FileManager.default.createSymbolicLink(at: leafAlias, withDestinationURL: expected)
+        let rebuiltLink = try StartupInventoryReader.inventoryChildURL(leafAlias, within: folder)
+        XCTAssertThrowsError(try inspect(rebuiltLink), "Rebasing must not make a symbolic plist acceptable.")
     }
 
     func testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent() throws {
