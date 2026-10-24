@@ -49,10 +49,21 @@ struct UninstallView: View {
                                 Text(app.size).font(.callout.monospacedDigit())
                                 Text(app.source).font(.caption).foregroundStyle(.secondary)
                             }
-                        }.padding(.vertical, 4).tag(app.id)
+                        }.padding(.vertical, 7).tag(app.id)
                             .contextMenu { Button(model.t("在 Finder 顯示", "Show in Finder")) { model.reveal(app.path) } }
                     }
-                }.listStyle(.inset).clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .listStyle(.inset)
+                .scrollContentBackground(.hidden)
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+                        }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 Text("\(rows.count) " + model.t("個 App；選取 ", "apps; selected ") + "\(selected.count)").font(.caption).foregroundStyle(.secondary)
             }
             GroupBox {

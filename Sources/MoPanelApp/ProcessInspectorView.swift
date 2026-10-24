@@ -35,9 +35,10 @@ struct ProcessInspectorView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                TextField(model.t("搜尋行程名稱或 PID", "Search process name or PID"), text: $search).textFieldStyle(.roundedBorder)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                TextField(model.t("搜尋行程名稱或 PID", "Search process name or PID"), text: $search)
+                    .textFieldStyle(.roundedBorder)
                 Picker(model.t("排序", "Sort"), selection: $sort) {
                     Text("CPU").tag("cpu"); Text(model.t("記憶體", "Memory")).tag("memory"); Text(model.t("名稱", "Name")).tag("name")
                 }.frame(width: 175)
@@ -48,37 +49,35 @@ struct ProcessInspectorView: View {
             if snapshot.processCollectedAt == nil {
                 Text(model.unavailable).foregroundStyle(.secondary)
             } else if rows.isEmpty {
-                Text(model.t("沒有符合條件的行程。", "No matching process rows.")).foregroundStyle(.secondary)
+                ContentUnavailableView(model.t("沒有符合條件的行程", "No Matching Processes"),
+                                       systemImage: "magnifyingglass",
+                                       description: Text(model.t("調整搜尋文字或重新取得快照。", "Adjust the search or refresh the snapshot.")))
             } else {
-                ForEach(rows) { process in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 12) {
-                            Button {
-                                if pinnedNames.contains(process.name) { pinnedNames.remove(process.name) } else { pinnedNames.insert(process.name) }
-                            } label: { Image(systemName: pinnedNames.contains(process.name) ? "pin.fill" : "pin") }
-                                .buttonStyle(.plain).accessibilityLabel(model.t("置頂／取消置頂 ", "Pin or unpin ") + process.name)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(process.name).font(.callout.weight(.medium)).lineLimit(1)
-                                Text("PID \(process.pid)").font(.caption.monospaced()).foregroundStyle(.secondary)
-                            }.frame(maxWidth: .infinity, alignment: .leading)
-                            Text(DisplayFormat.percent(process.cpu)).monospacedDigit().frame(width: 85, alignment: .trailing)
-                            Text(process.memoryBytes.map { DisplayFormat.bytes($0) } ?? DisplayFormat.percent(process.memory))
-                                .monospacedDigit().frame(width: 100, alignment: .trailing)
-                            Button(model.t("檢視", "Inspect")) { inspect(process) }.disabled(model.hasRunningOperation)
-                        }
-                        if let command = process.command, !command.isEmpty {
-                            Text(command).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2).textSelection(.enabled)
-                        }
-                    }.padding(.vertical, 6)
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        Color.clear.frame(width: 24)
+                        Text(model.t("行程", "Process")).frame(maxWidth: .infinity, alignment: .leading)
+                        Text("CPU").frame(width: 82, alignment: .trailing)
+                        Text(model.t("記憶體", "Memory")).frame(width: 110, alignment: .trailing)
+                        Text(model.t("操作", "Action")).frame(width: 70, alignment: .trailing)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 8)
                     Divider()
+
+                    ForEach(Array(rows.enumerated()), id: \.offset) { index, process in
+                        processRow(process)
+                        if index < rows.count - 1 { Divider().padding(.leading, 42) }
+                    }
                 }
             }
             let missingPins = pinnedNames.subtracting(Set(snapshot.topProcesses.map(\.name)))
             if !missingPins.isEmpty {
                 Text(model.t("置頂但未出現在此次官方樣本：", "Pinned, but absent from this Mole sample: ") + missingPins.sorted().joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
             }
-            Text(model.t("MoPanel 新實作：搜尋、排序、置頂與受保護的 App 結束要求。數值仍取自 Mole 的高用量行程清單；置頂不會額外掃描，也不會補造未回傳的讀值。", "Added by MoPanel: search, sort, pin and protected app quit requests. Metrics remain Mole's top-process sample. Pinning adds no collector and does not invent missing readings."))
-                .font(.caption).foregroundStyle(.secondary)
+            Notice(text: model.t("數值仍取自 Mole 的高用量行程清單。置頂只調整排序，不會額外掃描；結束 App 前會重新驗證 App 身分。", "Metrics come from Mole's top-process sample. Pinning only changes sorting and adds no scan; app identity is checked again before a quit request."))
             if let outcome { Notice(text: outcome) }
             HStack {
                 if let zombies = snapshot.zombieCount { Text(model.t("殭屍行程：", "Zombie processes: ") + String(zombies)).font(.caption) }
@@ -97,6 +96,41 @@ struct ProcessInspectorView: View {
             }
         }
         .sheet(item: $pending) { item in quitSheet(item) }
+    }
+
+    private func processRow(_ process: MoleProcessInfo) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                if pinnedNames.contains(process.name) { pinnedNames.remove(process.name) }
+                else { pinnedNames.insert(process.name) }
+            } label: {
+                Image(systemName: pinnedNames.contains(process.name) ? "pin.fill" : "pin")
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(model.t("置頂／取消置頂 ", "Pin or unpin ") + process.name)
+            .help(model.t("置頂／取消置頂 ", "Pin or unpin ") + process.name)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(process.name).font(.callout.weight(.medium)).lineLimit(1).truncationMode(.middle)
+                Text("PID \(process.pid)").font(.caption.monospaced()).foregroundStyle(.secondary)
+                if let command = process.command, !command.isEmpty, command != process.name {
+                    Text(command).font(.caption2.monospaced()).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(DisplayFormat.percent(process.cpu))
+                .font(.callout.weight(.medium)).monospacedDigit().frame(width: 82, alignment: .trailing)
+            Text(process.memoryBytes.map { DisplayFormat.bytes($0) } ?? DisplayFormat.percent(process.memory))
+                .font(.callout.weight(.medium)).monospacedDigit().frame(width: 110, alignment: .trailing)
+            Button(model.t("檢視", "Inspect")) { inspect(process) }
+                .controlSize(.small).frame(width: 70, alignment: .trailing)
+                .disabled(model.hasRunningOperation)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
     }
 
     @MainActor private func identity(_ application: NSRunningApplication) -> RunningApplicationIdentity? {

@@ -128,11 +128,31 @@ enum DisplayFormat {
 }
 
 struct GlassCard<Content: View>: View {
-    @ViewBuilder let content: Content
+    private let minHeight: CGFloat?
+    private let content: Content
+
+    init(minHeight: CGFloat? = nil, @ViewBuilder content: () -> Content) {
+        self.minHeight = minHeight
+        self.content = content()
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) { content }
-            .padding(18).frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+        VStack(alignment: .leading, spacing: 8) { content }
+            .padding(18)
+            .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+}
+
+struct MoPanelGroupBoxStyle: GroupBoxStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            configuration.label.font(.headline)
+            configuration.content
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -143,10 +163,10 @@ struct PageHeading: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(.teal)
-                .frame(width: 48, height: 48).glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14))
+                .frame(width: 48, height: 48).glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.largeTitle.bold())
-                Text(subtitle).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(title).font(.system(.largeTitle, design: .rounded).weight(.bold))
+                Text(subtitle).font(.callout).foregroundStyle(.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
         }.padding(.bottom, 8)
@@ -161,6 +181,12 @@ struct Notice: View {
             icon: { Image(systemName: warning ? "exclamationmark.shield" : "info.circle") }
             .font(.callout).foregroundStyle(warning ? Color.orange : Color.secondary)
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(warning ? Color.orange.opacity(0.08) : Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+            .background(warning ? Color.orange.opacity(0.08) : Color.teal.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(warning ? Color.orange.opacity(0.65) : Color.teal.opacity(0.45))
+                    .frame(width: 3)
+                    .padding(.vertical, 8)
+            }
     }
 }

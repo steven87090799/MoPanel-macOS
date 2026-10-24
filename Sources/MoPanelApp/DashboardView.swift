@@ -11,7 +11,10 @@ struct DashboardView: View {
                 HStack {
                     Label(model.monitoring ? model.t("即時監控中", "Live") : model.t("監控已暫停", "Paused"), systemImage: model.monitoring ? "record.circle" : "pause.circle")
                         .foregroundStyle(model.monitoring ? Color.teal : Color.secondary)
-                    if let collected = model.status?.collectedAt { Text(collected).font(.caption).foregroundStyle(.secondary) }
+                    if let collected = model.status?.collectedAt {
+                        Text(model.t("更新於 ", "Updated ") + readableTimestamp(collected))
+                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    }
                     Spacer()
                     NativeActionButton(model.t("單次快照", "Snapshot"), identifier: "mopanel.dashboard.snapshot") {
                         Task { await model.takeSnapshot() }
@@ -41,33 +44,40 @@ struct DashboardView: View {
     }
 
     private func summary(_ s: StatusSnapshot) -> some View {
-        GlassEffectContainer(spacing: 18) {
-            HStack(alignment: .top, spacing: 18) {
-                GlassCard {
+        GlassEffectContainer(spacing: 16) {
+            HStack(alignment: .top, spacing: 16) {
+                GlassCard(minHeight: 208) {
                     Text(model.t("系統健康", "System Health")).font(.headline)
                     HStack(alignment: .firstTextBaseline) {
-                        Text(s.healthScore.map(String.init) ?? "—").font(.system(size: 54, weight: .light, design: .rounded))
+                        Text(s.healthScore.map(String.init) ?? "—").font(.system(size: 42, weight: .light, design: .rounded))
                         Text("/ 100").foregroundStyle(.secondary)
                     }
-                    Text(s.healthScoreMsg ?? model.unavailable).font(.caption).foregroundStyle(.secondary)
-                    Text(s.hardware?.model ?? s.host ?? model.unavailable).font(.callout)
-                    Text(s.hardware?.cpuModel ?? "").font(.caption).foregroundStyle(.secondary)
+                    Text(s.healthScoreMsg ?? model.unavailable).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(s.hardware?.model ?? s.host ?? model.unavailable).font(.callout).lineLimit(1).truncationMode(.middle)
+                    Text(s.hardware?.cpuModel ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
-                GlassCard {
+                GlassCard(minHeight: 208) {
                     Text("CPU").font(.headline)
                     Text(s.cpu.logicalCPU > 0 ? DisplayFormat.percent(s.cpu.usage) : "—").font(.system(size: 42, weight: .light, design: .rounded))
                     Text("\(s.cpu.logicalCPU) " + model.t("邏輯核心", "logical cores")).font(.callout).foregroundStyle(.secondary)
-                    Text(model.t("開機時間：", "Uptime: ") + (s.uptime ?? model.unavailable)).font(.caption)
+                    Text(model.t("開機時間：", "Uptime: ") + (s.uptime ?? model.unavailable)).font(.caption).lineLimit(1)
                 }
-                GlassCard {
+                GlassCard(minHeight: 208) {
                     Text(model.t("記憶體", "Memory")).font(.headline)
-                    Text(s.memory.total > 0 ? DisplayFormat.bytes(s.memory.used) : "—").font(.system(size: 36, weight: .light, design: .rounded))
-                    Text(model.t("可用：", "Available: ") + (s.memory.total > 0 ? DisplayFormat.bytes(s.memory.available) : model.unavailable)).foregroundStyle(.secondary)
-                    Text(model.t("壓力：", "Pressure: ") + (s.memory.pressure?.isEmpty == false ? s.memory.pressure! : model.unavailable)).font(.caption)
-                    Text("Swap " + DisplayFormat.bytes(s.memory.swapUsed) + " / " + DisplayFormat.bytes(s.memory.swapTotal)).font(.caption)
+                    Text(s.memory.total > 0 ? DisplayFormat.bytes(s.memory.used) : "—").font(.system(size: 42, weight: .light, design: .rounded))
+                    Text(model.t("可用：", "Available: ") + (s.memory.total > 0 ? DisplayFormat.bytes(s.memory.available) : model.unavailable)).foregroundStyle(.secondary).lineLimit(1)
+                    Text(model.t("壓力：", "Pressure: ") + (s.memory.pressure?.isEmpty == false ? s.memory.pressure! : model.unavailable)).font(.caption).lineLimit(1)
+                    Text("Swap " + DisplayFormat.bytes(s.memory.swapUsed) + " / " + DisplayFormat.bytes(s.memory.swapTotal)).font(.caption).lineLimit(1)
                 }
             }
         }
+    }
+
+    private func readableTimestamp(_ value: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: value) ?? ISO8601DateFormatter().date(from: value) else { return value }
+        return date.formatted(date: .abbreviated, time: .shortened)
     }
 
     @ViewBuilder private func detail(_ s: StatusSnapshot) -> some View {

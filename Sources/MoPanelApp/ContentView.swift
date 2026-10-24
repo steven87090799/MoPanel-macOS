@@ -12,28 +12,62 @@ struct ContentView: View {
     @EnvironmentObject private var worktrees: GitWorktreeController
     @Environment(\.scenePhase) private var scenePhase
     @State private var started = false
+    @State private var isSidebarCollapsed = false
     var body: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
-                HStack(spacing: 10) {
-                    Image(systemName: "square.stack.3d.up.fill").font(.title2).foregroundStyle(.teal)
-                    VStack(alignment: .leading) {
-                        Text("MoPanel").font(.title2.bold())
-                        Text(model.t("非官方原生介面", "Unofficial native interface")).font(.caption).foregroundStyle(.secondary)
+                Group {
+                    if isSidebarCollapsed {
+                        Image(systemName: "square.stack.3d.up.fill")
+                            .font(.title2)
+                            .foregroundStyle(.teal)
+                            .frame(maxWidth: .infinity)
+                            .help("MoPanel")
+                    } else {
+                        HStack(spacing: 10) {
+                            Image(systemName: "square.stack.3d.up.fill").font(.title2).foregroundStyle(.teal)
+                            VStack(alignment: .leading) {
+                                Text("MoPanel").font(.title2.bold())
+                                Text(model.t("非官方原生介面", "Unofficial native interface")).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
                     }
-                    Spacer()
-                }.padding(20)
+                }
+                .padding(.vertical, 20)
+                .padding(.horizontal, isSidebarCollapsed ? 8 : 20)
                 List(AppSection.allCases, selection: Binding<AppSection?>(get: { model.section }, set: { if let value = $0 { model.section = value } })) { section in
-                    Label(model.t(section.zh, section.en), systemImage: section.symbol)
+                    Group {
+                        if isSidebarCollapsed {
+                            Label(model.t(section.zh, section.en), systemImage: section.symbol)
+                                .labelStyle(.iconOnly)
+                        } else {
+                            Label(model.t(section.zh, section.en), systemImage: section.symbol)
+                        }
+                    }
                         .foregroundStyle(model.section == section ? Color.white : Color.primary)
+                        .frame(maxWidth: .infinity, alignment: isSidebarCollapsed ? .center : .leading)
+                        .help(model.t(section.zh, section.en))
                         .tag(section).padding(.vertical, 5)
                 }.listStyle(.sidebar)
-                VStack(alignment: .leading, spacing: 5) {
-                    Label(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"), systemImage: model.installation == nil ? "circle.dashed" : "checkmark.circle")
-                        .font(.caption.weight(.medium))
-                    Text(model.t("清理由官方 CLI 執行", "Powered by the official CLI")).font(.caption2).foregroundStyle(.secondary)
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
-            }.navigationSplitViewColumnWidth(min: 210, ideal: 230, max: 270)
+                if isSidebarCollapsed {
+                    Label(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"),
+                          systemImage: model.installation == nil ? "circle.dashed" : "checkmark.circle")
+                        .labelStyle(.iconOnly)
+                        .frame(maxWidth: .infinity)
+                        .help(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"))
+                        .padding(.vertical, 20)
+                } else {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Label(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"), systemImage: model.installation == nil ? "circle.dashed" : "checkmark.circle")
+                            .font(.caption.weight(.medium))
+                        Text(model.t("清理由官方 CLI 執行", "Powered by the official CLI")).font(.caption2).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
+                }
+            }
+            .navigationSplitViewColumnWidth(min: isSidebarCollapsed ? 58 : 210,
+                                            ideal: isSidebarCollapsed ? 66 : 230,
+                                            max: isSidebarCollapsed ? 74 : 270)
         } detail: {
             VStack(spacing: 0) {
                 if model.fixtureMode {
@@ -88,17 +122,33 @@ struct ContentView: View {
                     }
                 }
             }
-            .background {
-                LinearGradient(colors: [Color.teal.opacity(0.06), Color(nsColor: .windowBackgroundColor), Color.blue.opacity(0.04)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
+            .background(Color(nsColor: .windowBackgroundColor))
             .navigationTitle(model.t(model.section.zh, model.section.en))
             .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isSidebarCollapsed.toggle()
+                        }
+                    } label: {
+                        Label(model.t(isSidebarCollapsed ? "展開側邊欄" : "收合側邊欄",
+                                      isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"),
+                              systemImage: "sidebar.left")
+                    }
+                    .help(model.t(isSidebarCollapsed ? "展開側邊欄" : "收合側邊欄",
+                                  isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"))
+                    .buttonStyle(.glass)
+                    .accessibilityIdentifier("mopanel.sidebar.toggle")
+                }
                 ToolbarItem {
                     if model.isDetecting { ProgressView().controlSize(.small) }
                     else { Button { Task { await model.detect() } } label: { Label(model.t("重新偵測", "Re-detect"), systemImage: "arrow.clockwise") }.disabled(model.hasRunningOperation) }
                 }
             }
         }
+        .toolbar(removing: .sidebarToggle)
+        .groupBoxStyle(MoPanelGroupBoxStyle())
+        .animation(.easeInOut(duration: 0.2), value: isSidebarCollapsed)
         .tint(.teal)
         .sheet(item: $model.pending) { pending in ConfirmationSheet(pending: pending) }
         .sheet(isPresented: $model.showOperation) { OperationSheet(session: model.operationSession) }
