@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: mopanel-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -42,6 +42,7 @@ jobs:
           MOPANEL_GITHUB_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/prepare_mole_fixture.py --latest --directory "$RUNNER_TEMP/mole-current"
+          unset MOPANEL_GITHUB_TOKEN
           python3 scripts/audit_cli.py "$RUNNER_TEMP/mole-current/mo" --output build/reports/latest-cli-contract.json
       - name: Compile, test, sign, launch, measure, and package
         run: MOPANEL_AUDIT_CLI="$RUNNER_TEMP/mole-baseline/mo" bash scripts/build.sh

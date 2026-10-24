@@ -6,6 +6,22 @@ import MoPanelCore
 @MainActor enum SmokeHarness {
     static func run(_ model: AppModel) async {
         let arguments = ProcessInfo.processInfo.arguments
+        if let error = model.testLaunchError {
+            // An invalid manifest has no trusted report destination. Log failure
+            // and stop without probing a CLI or writing an arbitrary file.
+            await model.finishTesting()
+            fputs("Invalid test launch: \(error)\n", stderr)
+            exit(2)
+        }
+        if model.readOnlyBenchmarkRequested {
+            guard let configuration = model.benchmarkConfiguration else {
+                await model.finishTesting()
+                fputs("Missing explicit read-only benchmark configuration\n", stderr)
+                exit(2)
+            }
+            await realBenchmark(model, configuration: configuration)
+            return
+        }
         if let index = arguments.firstIndex(of: "--benchmark"), arguments.indices.contains(index + 1) {
             await benchmark(model, mode: arguments[index + 1]); return
         }
@@ -89,16 +105,98 @@ import MoPanelCore
         ], success: success)
     }
 
+    private static func realBenchmark(_ model: AppModel, configuration: ReadOnlyBenchmark) async {
+        model.section = .settings
+        await model.detect()
+        guard let cli = model.installation, cli.source != .fixture,
+              cli.executable.path == configuration.cli.path, model.error == nil else {
+            await finish(model, environmentKey: "MOPANEL_BENCHMARK_REPORT", report: [
+                "mode": configuration.mode.rawValue, "fixture_only": false, "read_only_enforced": true,
+                "completed": false, "error": model.error ?? "Prepared official benchmark CLI is unavailable."
+            ], success: false)
+            return
+        }
+        let started = Date()
+        var scans = 0
+        var scanIntervals: [[String: Any]] = []
+        if configuration.mode == .monitor {
+            model.section = .dashboard
+            model.windowActive = true
+            model.startMonitoring()
+        }
+        if configuration.mode == .scan {
+            model.section = .analyze
+            while Date().timeIntervalSince(started) < 12, !Task.isCancelled {
+                let began = Date()
+                await model.analyze(path: configuration.corpus.path)
+                let ended = Date()
+                guard model.error == nil, let scan = model.analysis else { break }
+                guard !scan.overview, URL(fileURLWithPath: scan.path).resolvingSymlinksInPath().path == configuration.corpus.path,
+                      scan.scanStatus == .complete, scan.totalFiles == Int64(configuration.corpusFileCount) else {
+                    model.error = "Prepared flat corpus was not completely measured; partial or unrelated results are not accepted as benchmark success."
+                    break
+                }
+                scans += 1
+                scanIntervals.append([
+                    "start_epoch": began.timeIntervalSince1970, "end_epoch": ended.timeIntervalSince1970,
+                    "scan_status": scan.scanStatus.rawValue, "total_files": scan.totalFiles ?? 0,
+                    "entry_count": scan.entries.count
+                ])
+                if scanIntervals.count >= 1024 { model.error = "Unexpected benchmark scan rate exceeded the bounded evidence limit."; break }
+                await Task.yield()
+            }
+        } else { try? await Task.sleep(for: .seconds(12)) }
+        let ended = Date()
+        if Task.isCancelled, model.error == nil { model.error = "Benchmark was cancelled." }
+        if configuration.mode == .monitor, model.trends.count < 2, model.error == nil { model.error = "Official status watch did not provide enough decoded samples." }
+        if configuration.mode == .scan, scans == 0, model.error == nil { model.error = "No official scan completed." }
+        let success = model.error == nil
+        await finish(model, environmentKey: "MOPANEL_BENCHMARK_REPORT", report: [
+            "mode": configuration.mode.rawValue, "fixture_only": false, "read_only_enforced": true, "completed": success,
+            "started_at_epoch": started.timeIntervalSince1970, "ended_at_epoch": ended.timeIntervalSince1970,
+            "duration_seconds": ended.timeIntervalSince(started), "scans": scans, "scan_intervals": scanIntervals,
+            "watch_samples": model.trends.count, "process_alerts": false,
+            "cli_path": cli.executable.path, "cli_version": cli.version, "cli_fingerprint": cli.fingerprint,
+            "cli_source_tag": configuration.sourceTag, "cli_source_commit": configuration.sourceCommit,
+            "corpus_path": configuration.corpus.path, "corpus_file_count": configuration.corpusFileCount,
+            "corpus_logical_bytes": configuration.corpusLogicalBytes,
+            "error": model.error ?? "",
+            "scope": "Official read-only CLI plus native GUI; flat corpus with warm filesystem cache. This is not cleanup, uninstall, or slimming performance."
+        ], success: success)
+    }
+
     private static func finish(_ model: AppModel, environmentKey: String, report: [String: Any], success: Bool) async {
-        model.shutdown()
-        try? await Task.sleep(for: .milliseconds(500))
+        if model.fixtureMode, ProcessInfo.processInfo.arguments == [ProcessInfo.processInfo.arguments[0], "--smoke-test"] {
+            model.section = .dashboard
+            try? await Task.sleep(for: .milliseconds(150))
+            saveOwnWindowScreenshot()
+        }
+        await model.finishTesting()
         guard let path = ProcessInfo.processInfo.environment[environmentKey], path.hasPrefix("/") else {
             fputs("Missing test report destination\n", stderr); exit(2)
+        }
+        if model.readOnlyBenchmarkRequested {
+            guard let configuration = model.benchmarkConfiguration,
+                  URL(fileURLWithPath: path).resolvingSymlinksInPath().path == configuration.report.path,
+                  configuration.report.deletingLastPathComponent().resolvingSymlinksInPath().path == configuration.sessionRoot.path else {
+                fputs("Benchmark report destination changed; refusing to write\n", stderr); exit(2)
+            }
         }
         do {
             let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
             try data.write(to: URL(fileURLWithPath: path), options: .atomic)
         } catch { fputs("Cannot write test report: \(error)\n", stderr); exit(2) }
         exit(success ? 0 : 1)
+    }
+
+    /// Captures only our rendered content view. No desktop capture or Screen Recording permission.
+    private static func saveOwnWindowScreenshot() {
+        guard let path = ProcessInfo.processInfo.environment["MOPANEL_SMOKE_SCREENSHOT"], path.hasPrefix("/"),
+              let view = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil })?.contentView,
+              let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else { return }
+        do { try png.write(to: URL(fileURLWithPath: path), options: .atomic) }
+        catch { fputs("Cannot save own-window smoke screenshot: \(error)\n", stderr) }
     }
 }

@@ -4,18 +4,20 @@
 
 ## 交付狀態
 
-**本次尚未取得 macOS 27 ARM64 的實際編譯、簽章與啟動結果。因此目前不能提供或宣稱已完成 `MoPanel.app` 與 `MoPanel-macOS27-arm64.zip`。**
+**已在 macOS 27 ARM64 完成基礎版本編譯、67 個 Mac XCTest 與 ad-hoc bundle 驗證，但 UI smoke test 未通過，尚未產生可交付的 `MoPanel-macOS27-arm64.zip`。新增唯讀效能模式的 Mac 驗證仍在接續進行。**
 
 已完成原始碼、正式 CLI 盤點、原生介面實作、CLI Adapter、PTY／生命週期管理、安全測試、建置與驗證流程。這些工作不能替代 App 的最終 macOS 驗收。
 
-來源與 `xcode-27` workflow 已準備完成。接續依使用者指示採用新的公開 repository，以及免費標準 GitHub-hosted runner 執行建置。目前公開建置仍待執行；macOS 編譯、簽章、啟動與 ZIP 驗證結果，須等待實際工作完成後記錄。
+公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 的 [run 40071932344](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40071932344)（commit `f9b6b4d473af1d7ac446aeea54f03e75030a82c1`）實際使用 macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。最新版 CLI 唯讀合約、SwiftTerm／主程式／兩個 helper 編譯、47 個 Core 加 20 個 Process／Editor XCTest、ARM64 與 ad-hoc bundle 驗證已通過。UI smoke process 隨後退出 1；當輪測試腳本未保留失敗 JSON，因此尚不能指認是哪個 UI check 失敗。後續腳本已修正為保存 JSON／stdout／stderr，並由 App 擷取自身視窗的測試畫面，驗收門檻保持不變。
+
+當輪尚未包含新增的 10 個唯讀 benchmark Core 測試。下表的 **57 Core／93 主要案例是最新來源的 Linux 結果**，與上述基礎版本的 67 個 Mac XCTest 分開列示；尚不能把新增功能視為已通過 Mac 驗收。
 
 ## 已實際執行
 
 | 測試 | 結果 | 證據與範圍 |
 |---|---|---|
 | Core Swift 編譯 | 通過 | Swift6.4.1 Linux；不含 SwiftUI/AppKit |
-| Core XCTest | **47 通過，0 略過，0 失敗** | `docs/DISCOVERY_CORE_TEST_OUTPUT.txt`；1.310 秒；36 個模型／adapter 測項與 11 個執行檔／資源探索測項 |
+| Core XCTest | **57 通過，0 略過，0 失敗** | `docs/READONLY_BENCHMARK_CORE_TEST_OUTPUT.txt`；1.998 秒；36 個模型／adapter、11 個探索、10 個唯讀 benchmark 測項 |
 | 程序與路徑編輯 Swift 編譯／XCTest | **20 通過，0 失敗** | `docs/PROCESS_TEST_OUTPUT.txt`；2.721 秒；14 個程序測項及6個原子儲存／路徑設定測項，使用真正編譯的 guardian 與隔離 fixture |
 | C guardian 編譯 | 通過 | Linux gcc，`-Wall -Wextra -Werror` |
 | C guardian 整合測試 | **16 通過，0 略過，0 失敗** | `docs/GUARDIAN_TEST_OUTPUT.txt`；4.946 秒；包含分離 session 子孫清理及合作式取消 |
@@ -31,12 +33,13 @@
 | GUI 父程序 lifeline 中斷 | 通過 Linux 基本測試 | 控制 pipe EOF 導致清理所屬程序；不是 macOS App 強制結束的實機驗收 |
 | 大量輸出／上限 | 通過 | 大量輸出正確接收、超過安全上限停止，watch 不持續累積 stdout |
 | 建置腳本語法 | 通過 | `bash -n`、Python `py_compile` |
-| CI read-only probe 輔助檢查 | 8 項通過 | `docs/BUILD_HELPER_CHECKS.json`；watch 分段／截斷／大小上限、程序群組逾時、macOS stable tag 篩選、官方 help 選項缺失偵測與修改後 Python 語法；不是 macOS CLI 實測 |
+| CI read-only probe 輔助檢查 | 10 項通過 | `docs/BUILD_HELPER_CHECKS.json`；watch 分段／截斷／大小上限、程序群組逾時、macOS stable tag 篩選、官方 help 選項缺失偵測、CI token host／redirect 範圍與修改後 Python 語法；不是 macOS CLI 實測 |
+| 效能測量 harness 單元測試 | **5 通過，0 失敗** | `docs/PROFILE_HARNESS_TEST_OUTPUT.txt`；驗證隔離 corpus、唯讀來源證據、fixture 區隔、暖機／停止／實際掃描區間、樣本不足拒絕；未產生真實效能數字 |
 | Swift 原始碼語法解析 | **28 個檔案通過** | `docs/SWIFT_SYNTAX_REPORT.json`；包含最終 22 個產品 Swift 檔、4 個測試檔、Package manifest 與圖示產生器；各檔 SHA-256 對應實際語法解析結果，沒有驗證 macOS import／型別／API |
 | Info.plist metadata | 通過 | plist parser 檢查 target27、arm64、bundle executable |
 | Linux 建置防誤交付 | 通過 | build.sh 明確拒絕在 Linux 輸出 App；沒有建立假 bundle |
 
-上述三組主要測試合計 **83 個案例實際通過**（Core 47、程序與路徑編輯 20、guardian 16）。這個數字不包含 8 項 CI 輔助檢查、語法解析、文件檢查或尚未執行的 macOS 驗收。
+上述三組 Linux 主要測試合計 **93 個案例實際通過**（Core 57、程序與路徑編輯 20、guardian 16）。這個數字不包含 10 項 CI 輔助檢查、5 個效能 harness 測試、語法解析、文件檢查或尚未執行的 macOS 驗收。
 
 較早的 CORE_TEST_OUTPUT 最後一個彙總曾包含其他 suite 的 12 個 helper 未指定略過；這些程序測試隨後已使用正確 helper 完整重跑，結果在獨立 PROCESS_TEST_OUTPUT。Core 增加探索測試後的最新證據位於 DISCOVERY_CORE_TEST_OUTPUT。不可把早期略過當成通過；上表依最後各 suite 的實際結果分列。
 
@@ -48,14 +51,14 @@
 
 | 項目 | 狀態 |
 |---|---|
-| macOS27 SwiftUI/AppKit/Charts 完整編譯 | 未執行；需 Xcode27 Mac |
-| SwiftTerm 與 MoPanelEditor macOS 編譯 | 未執行 |
-| 真正 ARM64 Mach-O 產物 | 尚無 |
-| ad-hoc Code Signing／codesign verify | 未執行 |
+| macOS27 SwiftUI/AppKit/Charts 基礎版本編譯 | run40071932344 通過；新增 benchmark 增量待下一輪驗證 |
+| SwiftTerm 與 MoPanelEditor macOS 編譯 | 基礎版本通過 |
+| 真正 ARM64 Mach-O 產物 | runner 已編譯並驗證；因 smoke 失敗未上傳發行 App |
+| ad-hoc Code Signing／codesign verify | 基礎版本通過 build.sh 的 bundle gate |
 | Apple Developer ID／公證 | 未進行，未宣稱 |
-| macOS 原生視窗 smoke test | 未執行 |
+| macOS 原生視窗 smoke test | 已執行但退出 1；當輪失敗細項未保存，後續已修復診斷保存 |
 | 十個頁面的全部按鈕與 VoiceOver | 未完整實機驗收 |
-| 官方 status/analyze/uninstall-list 的真實 Mac 整合 | 未執行；已有 read-only CI 驗證程式 |
+| 官方 status/analyze/uninstall-list 的真實 Mac 整合 | CLI 唯讀合約通過；原生 GUI 真實引擎 benchmark 待接續驗證 |
 | Full Disk Access／Touch ID／sudo | 尚未實機驗證 |
 | 真實清理、卸載、Purge、Installer、Slim | 未執行；刻意避免對個人資料測試 |
 | macOS GUI 意外終止後全部子孫清理 | 尚未實機驗證；Linux 基本案例通過 |

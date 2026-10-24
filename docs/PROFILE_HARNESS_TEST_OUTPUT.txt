@@ -1,0 +1,15 @@
+Platform: Linux x86_64. This tests the Python measurement harness only.
+Command: python3 scripts/test_profile.py
+
+test_fixture_evidence_does_not_accept_a_real_engine (__main__.ProfileHarnessTests.test_fixture_evidence_does_not_accept_a_real_engine) ... ok
+test_fresh_flat_corpus_and_no_process_home_change (__main__.ProfileHarnessTests.test_fresh_flat_corpus_and_no_process_home_change) ... ok
+test_missing_or_insufficient_activity_cannot_be_reported (__main__.ProfileHarnessTests.test_missing_or_insufficient_activity_cannot_be_reported) ... ok
+test_real_evidence_requires_readonly_mode_and_matching_provenance (__main__.ProfileHarnessTests.test_real_evidence_requires_readonly_mode_and_matching_provenance) ... ok
+test_samples_exclude_warmup_shutdown_and_inactive_scan_intervals (__main__.ProfileHarnessTests.test_samples_exclude_warmup_shutdown_and_inactive_scan_intervals) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.419s
+
+OK
+
+No macOS UI execution, official-engine performance measurement, or real performance numbers are claimed by these harness tests.

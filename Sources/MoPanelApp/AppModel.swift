@@ -50,13 +50,33 @@ import MoPanelProcess
     private var watchFramer = NDJSONFramer()
     private var invalidJSON = Set<MoleCommand>()
     let fixtureMode: Bool
+    let isTestLaunch: Bool
+    let readOnlyBenchmarkRequested: Bool
+    let benchmarkConfiguration: ReadOnlyBenchmark?
+    let testLaunchError: String?
     private let fixtureURL: URL?
 
     init() {
         language = UserDefaults.standard.string(forKey: "language") ?? "zh-Hant"
         appearance = UserDefaults.standard.string(forKey: "appearance") ?? "system"
         customPath = UserDefaults.standard.string(forKey: "cliPath") ?? ""
-        fixtureMode = ProcessInfo.processInfo.arguments.contains("--smoke-test") || ProcessInfo.processInfo.arguments.contains("--benchmark")
+        let arguments = ProcessInfo.processInfo.arguments
+        fixtureMode = arguments.contains("--smoke-test") || arguments.contains("--benchmark")
+        isTestLaunch = ReadOnlyBenchmark.isTestLaunch(arguments)
+        readOnlyBenchmarkRequested = ReadOnlyBenchmark.isRequested(arguments)
+        var benchmark: ReadOnlyBenchmark?
+        var launchError: String?
+        if readOnlyBenchmarkRequested {
+            do { benchmark = try ReadOnlyBenchmark.load(arguments: arguments, environment: ProcessInfo.processInfo.environment) }
+            catch { launchError = error.localizedDescription }
+        } else if isTestLaunch {
+            let flags = Array(arguments.dropFirst())
+            let validSmoke = flags == ["--smoke-test"]
+            let validFixtureBenchmark = flags.count == 2 && flags[0] == "--benchmark" && ["idle", "monitor", "scan"].contains(flags[1])
+            if !validSmoke && !validFixtureBenchmark { launchError = "Invalid or mixed test-launch flags; no real CLI will be selected." }
+        }
+        benchmarkConfiguration = benchmark
+        testLaunchError = launchError
         fixtureURL = fixtureMode ? AppResources.bundle?.url(forResource: "mock-mo", withExtension: "sh", subdirectory: "Fixtures") : nil
     }
 
@@ -65,6 +85,7 @@ import MoPanelProcess
     var unavailable: String { t("不支援或尚未提供", "Unsupported or unavailable") }
     var canStart: Bool { installation != nil && !isDetecting && !hasRunningOperation && !shuttingDown }
     var hasRunningOperation: Bool { busy != nil || scanSession?.running == true || operationSession.running }
+    private var processEnvironment: [String: String] { benchmarkConfiguration?.childEnvironment(from: CLIProbe.environment) ?? CLIProbe.environment }
     var canRecoverStable: Bool {
         installation?.source == .script && installation?.resourceLocation != nil &&
         installation?.incompatible[.update] == nil && installation?.compatibility.stableScriptRecoveryAvailable == true
@@ -76,15 +97,25 @@ import MoPanelProcess
         error = nil
         defer {
             isDetecting = false
-            if !fixtureMode, installation != nil, section == .dashboard, windowActive, !shuttingDown { startMonitoring() }
+            if !isTestLaunch, installation != nil, section == .dashboard, windowActive, !shuttingDown { startMonitoring() }
         }
         do {
             // A test launch must never fall through to a real installed engine.
+            if let testLaunchError { throw MoleError.incompatible(testLaunchError) }
             if fixtureMode, fixtureURL == nil { throw MoleError.incompatible("Bundled test fixture is missing; no real CLI will be probed.") }
             await stopMonitoringAndWait()
             try Task.checkCancellation()
             guard !shuttingDown else { throw CancellationError() }
-            let detected = try await CLIProbe.detect(custom: fixtureMode ? "" : customPath, fixture: fixtureURL)
+            let detected: CLIInstallation?
+            if readOnlyBenchmarkRequested {
+                guard let benchmark = benchmarkConfiguration else { throw MoleError.incompatible("Read-only benchmark configuration is missing; no fallback CLI is permitted.") }
+                try CLIProbe.verifyBenchmarkLauncher(benchmark)
+                let inspected = try await CLIProbe.inspect(benchmark.cli, fixture: false, childEnvironment: processEnvironment, workingDirectory: benchmark.home)
+                guard inspected.version == MoleVersion(string: benchmark.sourceTag)?.description else { throw MoleError.incompatible("Benchmark CLI version does not match its verified CI source record.") }
+                detected = inspected
+            } else {
+                detected = try await CLIProbe.detect(custom: fixtureMode ? "" : customPath, fixture: fixtureURL)
+            }
             try Task.checkCancellation()
             guard !shuttingDown else { throw CancellationError() }
             if detected?.fingerprint != validatedFingerprint {
@@ -95,16 +126,22 @@ import MoPanelProcess
             validatedFingerprint = detected?.fingerprint
             pending = nil
         } catch { installation = nil; self.error = error.localizedDescription }
-        if !fixtureMode, !shuttingDown, !Task.isCancelled { await checkRelease() }
+        if !isTestLaunch, !shuttingDown, !Task.isCancelled { await checkRelease() }
     }
 
     func checkRelease() async {
-        guard !fixtureMode else { return }
+        guard !isTestLaunch else { return }
         do { release = try await CLIProbe.latestRelease(); releaseError = nil }
         catch { releaseError = error.localizedDescription }
     }
 
     private func validatedInstallation(for invocation: MoleInvocation) throws -> CLIInstallation {
+        if let testLaunchError { throw MoleError.incompatible(testLaunchError) }
+        if readOnlyBenchmarkRequested {
+            guard let benchmark = benchmarkConfiguration else { throw MoleError.incompatible("Read-only benchmark configuration is missing.") }
+            try benchmark.validate(invocation)
+            guard installation?.executable.path == benchmark.cli.path else { throw MoleError.incompatible("Benchmark executable changed; no fallback is permitted.") }
+        }
         guard let cli = installation else { throw MoleError.incompatible(t("尚未找到 Mole CLI。", "Mole CLI is not installed.")) }
         guard try CLIProbe.fingerprint(cli.executable) == cli.fingerprint else {
             throw MoleError.incompatible(t("Mole 已更新或路徑已變更。請重新偵測後再操作。", "Mole has changed. Re-detect its version and capabilities before continuing."))
@@ -137,7 +174,7 @@ import MoPanelProcess
         guard !scanCancellationRequested, !shuttingDown else { throw MoleError.invalidOutput(t("作業已取消。", "Operation cancelled.")) }
         // The engine may have changed while the previous collector was exiting.
         let cli = try validatedInstallation(for: invocation)
-        try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: CLIProbe.environment, timeout: timeout, outputLimit: 32 * 1024 * 1024))
+        try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: processEnvironment, workingDirectory: benchmarkConfiguration?.home, timeout: readOnlyBenchmarkRequested ? min(timeout, 30) : timeout, outputLimit: 32 * 1024 * 1024))
         let result = await withTaskCancellationHandler(operation: { await session.wait() }, onCancel: { Task { @MainActor in session.cancel() } })
         rawResult = TerminalText.plain(result.stdoutText + "\n" + result.stderrText)
         if rawResult.utf8.count > 2 * 1024 * 1024 { rawResult = String(rawResult.suffix(500_000)) }
@@ -179,7 +216,10 @@ import MoPanelProcess
     func takeSnapshot() async {
         status = nil
         do {
-            let data = try await capture(MoleInvocation.make(command: .status, options: [.json]))
+            let invocation: MoleInvocation
+            if let benchmark = benchmarkConfiguration { invocation = try benchmark.snapshot }
+            else { invocation = try MoleInvocation.make(command: .status, options: [.json]) }
+            let data = try await capture(invocation)
             do { acceptStatus(try MoleJSON.decodeStatus(data)); invalidJSON.remove(.status) }
             catch { invalidJSON.insert(.status); throw error }
         } catch { self.error = error.localizedDescription }
@@ -194,7 +234,9 @@ import MoPanelProcess
             return
         }
         do {
-            let invocation = try MoleInvocation.make(command: .status, options: [.watch, .intervalSeconds(monitoringInterval), .procCPUAlerts(processAlertsEnabled), .procCPUThreshold(processCPUThreshold), .procCPUWindowSeconds(processCPUWindow)])
+            let invocation: MoleInvocation
+            if let benchmark = benchmarkConfiguration { invocation = try benchmark.watch }
+            else { invocation = try MoleInvocation.make(command: .status, options: [.watch, .intervalSeconds(monitoringInterval), .procCPUAlerts(processAlertsEnabled), .procCPUThreshold(processCPUThreshold), .procCPUWindowSeconds(processCPUWindow)]) }
             let cli = try validatedInstallation(for: invocation)
             let session = ManagedProcess()
             watchSession = session
@@ -229,7 +271,7 @@ import MoPanelProcess
                 self.monitorRestartRequested = false
                 if restart { self.startMonitoring() }
             }
-            try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: CLIProbe.environment, timeout: 0, retainsOutput: false))
+            try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: processEnvironment, workingDirectory: benchmarkConfiguration?.home, timeout: 0, retainsOutput: false))
             monitoring = true
         } catch { watchSession = nil; monitoring = false; self.error = error.localizedDescription }
     }
@@ -332,14 +374,14 @@ import MoPanelProcess
                 Task { await self.detect() }
             }
         }
-        var environment = CLIProbe.environment
+        var environment = processEnvironment
         if invocation.command == .purge && invocation.arguments.contains("--paths") {
             let editor = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/MoPanelEditor")
             guard FileManager.default.isExecutableFile(atPath: editor.path) else { throw MoleError.incompatible("MoPanelEditor is missing. Reinstall the complete app bundle.") }
             environment["EDITOR"] = editor.path
             environment["MOPANEL_LANGUAGE"] = language
         }
-        try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: environment, timeout: invocation.requiresPTY ? 7200 : 1800, cooperativeCancellation: invocation.command == .slim && !invocation.isPreview), interactive: invocation.requiresPTY)
+        try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: environment, workingDirectory: benchmarkConfiguration?.home, timeout: invocation.requiresPTY ? 7200 : 1800, cooperativeCancellation: invocation.command == .slim && !invocation.isPreview), interactive: invocation.requiresPTY)
         showOperation = true
     }
 
@@ -375,6 +417,15 @@ import MoPanelProcess
         cancelScan()
         stopMonitoring()
         operationSession.cancel()
+    }
+
+    func finishTesting() async {
+        guard isTestLaunch else { return }
+        let children = [scanSession, watchSession, operationSession].compactMap { $0 }
+        let preparing = operationTask
+        shutdown()
+        for child in children { _ = await child.wait() }
+        if let preparing { await preparing.value }
     }
 
     func riskDescription(_ invocation: MoleInvocation) -> String {
@@ -424,7 +475,7 @@ import MoPanelProcess
     var brewURL: URL? { ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"].first(where: { FileManager.default.isExecutableFile(atPath: $0) }).map { URL(fileURLWithPath: $0) } }
 
     func installWithHomebrew() {
-        guard !fixtureMode, !hasRunningOperation, !isDetecting, !shuttingDown, let brewURL else { return }
+        guard !isTestLaunch, !hasRunningOperation, !isDetecting, !shuttingDown, let brewURL else { return }
         prepareOperation(command: "brew install mole") { [weak self] in
             guard let self else { return }
             try self.startHomebrewInstall(brewURL)

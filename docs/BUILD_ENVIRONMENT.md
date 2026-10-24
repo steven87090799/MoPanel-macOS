@@ -46,7 +46,11 @@ SwiftTerm 的 package manifest 包含 Metal shader resource，即使 App 選用 
 
 ## 效能測量的範圍
 
-`scripts/profile.py` 每 0.5 秒取樣一次 GUI 及其可觀察子程序的 `ps` CPU/RSS，依 App 回報的 workload 開始時間排除啟動、CLI 偵測和前 2 秒暖機。三種狀態為閒置、監控、掃描，全部使用明確 fixture 模式。這能量測 GUI/Mock CLI 負擔，不能代表真實 Mole 對大型磁碟、慢速外接硬碟或需要權限的目錄之完整成本。`ps` CPU 值是程序平均值，並非 Instruments 的瞬時取樣。測量數據僅能在實際執行後記入 TEST_REPORT。
+`scripts/profile.py` 每 0.5 秒取樣一次 GUI 及其可觀察子程序的 `ps` CPU/RSS，依 App 回報的 workload 開始時間排除啟動、CLI 偵測、前 2 秒暖機及關閉時間。既有 fixture 模式會量測 GUI／Mock CLI 的閒置、監控、掃描負擔，寫入 `performance.json`。
+
+CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 allowlist 執行真正的閒置、單一 status watch、analyze 掃描，另寫入 `performance-real-cli.json`。每個模式建立獨立 RUNNER_TEMP session；掃描 corpus 為 5,000 個各 4,096 bytes 的新平面檔案，沒有子目錄或 symlink。GUI 的 HOME 不變，只有唯讀 CLI 子程序取得專用 HOME／TMPDIR。scan 取樣還必須落在 App 回報的真實掃描區間，且全部掃描都要完整完成。
+
+重複掃描會使用溫熱的 OS 檔案系統快取；這不代表完整磁碟、外接磁碟、權限受限資料或破壞性清理工作的成本。`ps` CPU 值是程序平均值，峰值是觀察樣本最大值，並非 Instruments 的瞬時追蹤。測量數據僅能在實際執行後記入 TEST_REPORT；GitHub CI 發行流程要求兩組效能證據都成功才可封裝。
 
 ## 本次本地環境
 
@@ -54,6 +58,8 @@ SwiftTerm 的 package manifest 包含 Metal shader resource，即使 App 選用 
 
 ## 公開 GitHub Actions 建置狀態
 
-來源與 workflow 已準備完成，接續依使用者指示採用新的公開 repository，以及免費標準 `xcode-27` runner 執行。目前公開建置仍待執行；尚無可供判定的 macOS 編譯、簽章、啟動、效能或 App ZIP 結果。
+公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-必須以實際 macOS 工作結果判定程式是否編譯與驗收成功。本地 83 項已通過測試仍獨立有效，不能替代 macOS 驗收。
+[Run 40071932344](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40071932344) 的基礎版本已通過最新版 CLI 唯讀合約、主程式／SwiftTerm／兩個 helper 編譯、47 個 Core 加 20 個 Process／Editor Mac XCTest，以及 ARM64／ad-hoc bundle gate。UI smoke 隨後退出 1，尚未通過啟動驗收，也未建立發行 ZIP。當輪錯誤的詳細 JSON 未保存；後續腳本已修正，無論成功或失敗都會先保存 smoke JSON、stdout／stderr，App 也會盡力輸出自己的視窗截圖。
+
+新增的真實唯讀效能模式正在接續 Mac 驗證。最新 Linux 來源的 Core 57 加 Process／Editor 20、Guardian 16，合計 93 個主要案例；這與上述基礎版本的 67 個 Mac XCTest 是不同範圍，不能相互替代。後續 run 會保留正在執行的驗證工作，避免新推送自動取消它。

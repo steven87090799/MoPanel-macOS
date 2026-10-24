@@ -87,12 +87,27 @@ enum CLIProbe {
         return nil
     }
 
-    @MainActor static func inspect(_ url: URL, fixture: Bool) async throws -> CLIInstallation {
+    static func verifyBenchmarkLauncher(_ benchmark: ReadOnlyBenchmark) throws {
+        let resolved = benchmark.cli.resolvingSymlinksInPath()
+        let attributes = try FileManager.default.attributesOfItem(atPath: resolved.path)
+        guard attributes[.type] as? FileAttributeType == .typeRegular,
+              let size = attributes[.size] as? NSNumber, size.intValue > 0, size.intValue <= 2 * 1024 * 1024 else {
+            throw MoleError.incompatible("Prepared benchmark launcher is missing or changed.")
+        }
+        let data = try Data(contentsOf: resolved, options: .mappedIfSafe)
+        guard data.count <= 2 * 1024 * 1024,
+              SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == benchmark.cliSHA256 else {
+            throw MoleError.incompatible("Prepared benchmark launcher checksum changed; no CLI probe was executed.")
+        }
+    }
+
+    @MainActor static func inspect(_ url: URL, fixture: Bool, childEnvironment: [String: String]? = nil, workingDirectory: URL? = nil) async throws -> CLIInstallation {
+        let processEnvironment = childEnvironment ?? environment
         let layout = try MoleExecutableLayout.inspect(url)
         let resolved = layout.resolved
         let signature = try fingerprint(url)
         // Never source a candidate or evaluate assignments from it.
-        let probe = try await ProcessRunner.capture(ProcessRequest(executable: url, arguments: ["--version"], environment: environment, timeout: 15))
+        let probe = try await ProcessRunner.capture(ProcessRequest(executable: url, arguments: ["--version"], environment: processEnvironment, workingDirectory: workingDirectory, timeout: 15))
         guard probe.succeeded else {
             throw MoleError.incompatible("--version failed. " + String(decoding: probe.stderr, as: UTF8.self))
         }
@@ -106,7 +121,7 @@ enum CLIProbe {
         for command in MoleCommand.allCases where command != .menu && command != .version {
             try Task.checkCancellation()
             let arguments = command == .help ? ["--help"] : [command.rawValue, "--help"]
-            let result = try await ProcessRunner.capture(ProcessRequest(executable: url, arguments: arguments, environment: environment, timeout: 15))
+            let result = try await ProcessRunner.capture(ProcessRequest(executable: url, arguments: arguments, environment: processEnvironment, workingDirectory: workingDirectory, timeout: 15))
             let text = String(decoding: result.stdout + result.stderr, as: UTF8.self)
             help[command] = text
             let missing = command.requiredHelpFlags.subtracting(TerminalText.optionNames(text))

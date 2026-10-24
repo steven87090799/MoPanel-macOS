@@ -30,6 +30,10 @@ struct ContentView: View {
             }.navigationSplitViewColumnWidth(min: 210, ideal: 230, max: 270)
         } detail: {
             VStack(spacing: 0) {
+                if model.fixtureMode {
+                    Text(model.t("自動化測試模式 · 以下為合成測試資料", "AUTOMATED TEST MODE · Synthetic fixture data"))
+                        .font(.caption.weight(.semibold)).frame(maxWidth: .infinity).padding(8).background(Color.yellow.opacity(0.22))
+                }
                 if let error = model.error {
                     HStack(alignment: .top) {
                         Label(error, systemImage: "exclamationmark.triangle").font(.callout).textSelection(.enabled)
@@ -80,15 +84,15 @@ struct ContentView: View {
         .task {
             guard !started else { return }
             started = true
-            if model.fixtureMode { await SmokeHarness.run(model) }
+            if model.isTestLaunch { await SmokeHarness.run(model) }
             else { await model.detect() }
         }
         .onChange(of: model.section) { _, section in
-            guard !model.fixtureMode else { return }
+            guard !model.isTestLaunch else { return }
             if section == .dashboard { model.startMonitoring() }
         }
         .onChange(of: scenePhase) { _, phase in
-            guard !model.fixtureMode else { return }
+            guard !model.isTestLaunch else { return }
             model.windowActive = phase == .active
             if phase == .active { model.startMonitoring() } else { model.stopMonitoring() }
         }

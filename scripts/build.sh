@@ -67,11 +67,18 @@ codesign --force --sign - --options runtime --identifier org.mopanel.editor "$ap
 codesign --force --sign - --options runtime --identifier org.mopanel.app "$app_path"
 bash scripts/verify-package.sh "$app_path" > build/reports/bundle-verification.txt 2>&1
 python3 scripts/smoke_test.py "$app_path" --output build/reports/smoke-test.json
+python3 scripts/test_profile.py 2>&1 | tee build/reports/profile-harness-tests.log
 python3 scripts/profile.py "$app_path" --output build/reports/performance.json
 python3 scripts/test_guardian.py "$app_path/Contents/Helpers/MoPanelGuardian" 2>&1 | tee build/reports/guardian-test.log
 # Safe read-only CLI compatibility probes are optional locally and mandatory in CI.
 if [[ -n "${MOPANEL_AUDIT_CLI:-}" ]]; then
     python3 scripts/audit_cli.py "$MOPANEL_AUDIT_CLI" --output build/reports/cli-contract.json
+    if [[ "${CI:-}" == true && "${GITHUB_ACTIONS:-}" == true ]]; then
+        python3 scripts/profile.py "$app_path" --real-cli "$MOPANEL_AUDIT_CLI" --output build/reports/performance-real-cli.json
+    fi
+elif [[ "${CI:-}" == true && "${GITHUB_ACTIONS:-}" == true ]]; then
+    echo "CI release requires the verified official baseline for read-only acceptance and real-engine measurements." >&2
+    exit 1
 fi
 package_path="$build_staging/distribution"
 mkdir -p "$package_path/Source" "$package_path/Reports"
