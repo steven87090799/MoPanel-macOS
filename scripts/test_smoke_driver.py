@@ -3,6 +3,7 @@
 """Real isolated children plus mocked Mac sampler; no macOS UI or Mole runs."""
 import os
 import pathlib
+import signal
 import subprocess
 import sys
 import tempfile
@@ -58,6 +59,17 @@ class SmokeDriverTests(unittest.TestCase):
                 result = smoke_test.sample_owned_app(process, pathlib.Path(temporary))
             self.assertFalse(result["attempted"])
             run.assert_not_called()
+
+    def test_crash_diagnostic_failure_preserves_original_signal(self):
+        with tempfile.TemporaryDirectory(prefix="mopanel-smoke-driver-") as temporary:
+            root = pathlib.Path(temporary)
+            with mock.patch.object(smoke_test, "collect_owned_crash", side_effect=PermissionError("Synthetic permission failure")) as collect:
+                result = smoke_test.launch_smoke([sys.executable, "-c", "import os,signal;os.kill(os.getpid(),signal.SIGTERM)"],
+                    dict(os.environ), root / "stdout.log", root / "stderr.log", deadline=2)
+            self.assertEqual(result["process_exit_code"], -signal.SIGTERM)
+            self.assertFalse(result["timed_out"])
+            self.assertEqual(result["crash_report"]["status"], "diagnostic_exception")
+            self.assertEqual(collect.call_args.args[0], result["child_pid"])
 
 
 if __name__ == "__main__":

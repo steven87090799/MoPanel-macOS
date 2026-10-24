@@ -38,9 +38,14 @@ import Darwin
                     NSApplication.shared.setActivationPolicy(.regular)
                     NSApplication.shared.activate()
                 }
-                .onReceive(systemTools.$ejectingVolumeID) { _ in nativeOperationChanged() }
-                .onReceive(appUpdates.$isBusy) { _ in nativeOperationChanged() }
-                .onReceive(startup.$isBusy) { _ in nativeOperationChanged() }
+                // A @Published publisher emits immediately on subscription.
+                // Forwarding that initial emission back to this App's model
+                // can invalidate the view while SwiftUI is installing it.
+                // Notify dependent views only for actual state transitions;
+                // action guards still query the synchronous callbacks above.
+                .onChange(of: systemTools.ejectingVolumeID) { _, _ in nativeOperationChanged() }
+                .onChange(of: appUpdates.isBusy) { _, _ in nativeOperationChanged() }
+                .onChange(of: startup.isBusy) { _, _ in nativeOperationChanged() }
                 .onChange(of: model.installation?.fingerprint) { _, _ in
                     systemTools.additionalProtectedPaths = [model.installation?.executable.path, model.installation?.resourceLocation].compactMap { $0 }
                 }

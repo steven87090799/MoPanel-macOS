@@ -9,6 +9,7 @@ import platform
 import subprocess
 import tempfile
 import time
+from crash_evidence import collect_owned_crash
 
 SMOKE_DEADLINE_SECONDS = 45
 
@@ -55,6 +56,7 @@ def launch_smoke(arguments, environment, stdout_path, stderr_path,
     """Persist progress while running; diagnostics never extend a failed deadline."""
     result = {"process_exit_code": None, "timed_out": False,
               "sample_diagnostic": {"attempted": False, "reason": "not_needed"}}
+    started_at_epoch = time.time()
     with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
         try:
             process = subprocess.Popen(arguments, env=environment, stdin=subprocess.DEVNULL,
@@ -81,6 +83,12 @@ def launch_smoke(arguments, environment, stdout_path, stderr_path,
             except subprocess.TimeoutExpired:
                 result["child_reaped_after_timeout"] = False
         result["process_exit_code"] = process.poll()
+        result["child_pid"] = process.pid
+    if result["process_exit_code"] is not None and result["process_exit_code"] < 0 and not result["timed_out"]:
+        try:
+            result["crash_report"] = collect_owned_crash(process.pid, started_at_epoch, arguments[0], stdout_path.parent)
+        except Exception as error:
+            result["crash_report"] = {"attempted": True, "status": "diagnostic_exception", "error_type": type(error).__name__}
     return result
 
 

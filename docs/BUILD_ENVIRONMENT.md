@@ -60,11 +60,13 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-[Run 40074913811](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40074913811) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit與6個獨立gate harness案例也在真Mac全過。
+[Run 40075604900](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40075604900) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit、6個獨立gate harness與當輪4個smoke driver案例也在真Mac全過。
 
-本輪UI smoke在45秒期限後逾時，沒有最終App JSON、stderr進度或截圖；不能據此推定卡在哪個模組。`validation-gates.json`分別保留XCTest成功與smoke失敗，最後明確非零退出，未進效能／後續guardian／baseline probe／ZIP。
+本輪UI smoke在3.678秒以SIGSEGV（-11）退出，僅有`[MoPanel smoke] entered`，尚未到`detect begin`；不是逾時。沒有最終App JSON或截圖。這是初始介面生命週期失敗，IOPM、Startup、AX流程尚未開始。`validation-gates.json`分別保留XCTest成功與smoke失敗，最後明確非零退出，未進效能／後續guardian／baseline probe／ZIP。
 
-下一輪以Popen將stdout/stderr直接寫檔，並加入App階段與AX breadcrumb。到45秒時仍立即判定測試失敗；隨後對同一存活子App嘗試固定2秒`/usr/bin/sample`（command上限8秒），再只停止並回收該App。診斷不更改安全設定、不提升權限，失敗也不覆蓋原timeout；診斷期間晚完成不會成為pass。4個隔離Python driver案例已在Linux通過，Mac sampler權限情境使用mock。
+下一輪包含三處初值通知重入路徑的窄修，尚不宣稱已證明崩潰根因；另增加自身crash收集，僅本次MoPanel PID、名稱、mtime、報告時間與可用路徑吻合才保存，最多等待4秒，不讀其他App檔名的報告。5個合成辨識案例與5個driver回歸已在Linux通過，未知格式、舊報告、symlink及身分不符皆拒絕。
+
+Popen直接保存stdout/stderr。45秒仍是測試成功期限；逾時後僅對同一存活子App嘗試固定2秒`/usr/bin/sample`（command上限8秒）再回收。已退出的App不取樣；crash收集與stack診斷不延長成功期限、不更改安全設定，也不會覆蓋原失敗。run40074913811的45秒逾時為先前另一次執行。
 
 XCTest與fixture-only UI仍獨立收集，只有編譯／bundle成功才能啟動App，兩個gate都成功且無略過，才可進後續驗收。發行報告另強制完整成功的gate JSON及harness logs，任何失敗均阻擋ZIP。
 

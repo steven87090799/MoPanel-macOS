@@ -1,0 +1,13 @@
+{
+  "fixture_only": true,
+  "checks": [
+    {
+      "test": "explicit_ci_source_and_run_preserves_file_hashes",
+      "passed": true
+    },
+    {
+      "test": "local_git_source_fallback",
+      "passed": true
+    }
+  ]
+}

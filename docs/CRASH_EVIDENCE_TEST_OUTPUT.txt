@@ -1,0 +1,10 @@
+test_collector_reads_only_recent_mopanel_candidates_and_copies_verified_bytes (__main__.CrashEvidenceTests.test_collector_reads_only_recent_mopanel_candidates_and_copies_verified_bytes) ... ok
+test_legacy_crash_identity (__main__.CrashEvidenceTests.test_legacy_crash_identity) ... ok
+test_stale_unrecognized_or_malformed_reports_are_not_attached (__main__.CrashEvidenceTests.test_stale_unrecognized_or_malformed_reports_are_not_attached) ... ok
+test_two_json_ips_identity (__main__.CrashEvidenceTests.test_two_json_ips_identity) ... ok
+test_wrong_pid_app_or_path_are_not_attached (__main__.CrashEvidenceTests.test_wrong_pid_app_or_path_are_not_attached) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
+
+OK
