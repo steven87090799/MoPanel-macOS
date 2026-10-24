@@ -23,13 +23,13 @@
 | 官方入口 | GUI 入口／操作 | 介面型態 | Adapter 與限制 |
 | --- | --- | --- | --- |
 | `mo` | 設定中的官方主選單 | 內嵌 PTY | `.menu`。可進入破壞性操作，會先顯示風險確認；不自動傳送選項或同意 |
-| `mo status` | 總覽的官方互動監控 | PTY 備援 | `.status`；保留官方 TUI 的核心顯示切換與快捷鍵 |
+| `mo status` | 設定 → 低負載監控 → 開啟官方 TUI 儀表板 | PTY 備援 | `.status`；保留官方 TUI 的核心顯示切換與快捷鍵 |
 | `mo status --json` | 總覽單次更新 | 原生 JSON | `.json`、`MoleJSON.decodeStatus`；沒有資料的感測器顯示不可用 |
 | `mo status --watch` | 總覽即時監控開關 | 原生 NDJSON | `.watch`、`NDJSONFramer`；總覽與選單列共用一個子程序。預設離開頁面／視窗不活躍時停止；使用者另行啟用選單列監控時保留同一串流，暫停或退出 App 後停止 |
-| `mo status --interval DURATION` | 監控更新間隔 | 原生控制項 | `.intervalSeconds`；GUI 限制 1–3600 秒，送出正式 Go duration，例如 `2s` |
+| `mo status --interval DURATION` | 監控更新間隔 | 原生控制項 | `.intervalSeconds`；GUI 提供 1／2／5／10 秒，Adapter 驗證範圍為 1–3600 秒；送出正式 Go duration，例如 `2s` |
 | `--proc-cpu-alerts[=false]` | 高 CPU 程序提醒開關 | 原生控制項 | `.procCPUAlerts`；傳入 `--proc-cpu-alerts=true/false` |
 | `--proc-cpu-threshold PERCENT` | CPU 提醒門檻 | 原生控制項 | `.procCPUThreshold`；非負有限值，程序多核心 CPU 可超過 100% |
-| `--proc-cpu-window DURATION` | CPU 提醒持續時間 | 原生控制項 | `.procCPUWindowSeconds`；大於零 |
+| `--proc-cpu-window DURATION` | CPU 提醒持續時間 | 原生控制項 | `.procCPUWindowSeconds`；GUI 提供 60／120／300／600 秒，Adapter 要求大於零 |
 | `mo clean` | 系統清理：執行 | 原生啟動＋官方輸出／PTY | `.clean`。必須確認永久刪除風險；可能包含清空家目錄垃圾桶 |
 | `mo clean --dry-run` / `-n` | 系統清理：掃描預覽 | 原生啟動＋官方文字結果 | `.dryRun`。沒有官方結構化刪除計畫，不能把文字轉成可承諾的項目勾選 |
 | `mo clean --external PATH` | 選擇外接磁碟後預覽／清理 | 原生資料夾選擇＋官方驗證 | `.externalVolume`；只接受 `/Volumes/` 下的絕對路徑；實際磁碟資格與保護交由 Mole |
@@ -43,7 +43,7 @@
 | `mo optimize` | 系統最佳化：執行 | 原生啟動＋官方 PTY 結果 | `.optimize`；不加入官方未提供的調校；各工作狀態以官方輸出為準 |
 | `mo optimize --dry-run` | 最佳化預覽 | 官方文字結果 | `.dryRun`。沒有公開的結構化工作結果 API，MoPanel 不假造每項狀態 |
 | `mo optimize --whitelist` | 最佳化／設定：保護項目 | 官方 PTY 編輯器 | `.whitelist` |
-| `mo analyze [PATH] --json` | 磁碟分析：總覽、選擇資料夾、逐層進入 | 原生 JSON | `.json`、`.analyzePath`、`MoleJSON.decodeAnalyze`。所有 flags 排在 PATH 之前以符合 Go flag parser |
+| `mo analyze --json [PATH]` | 磁碟分析：總覽、選擇資料夾、逐層進入 | 原生 JSON | `.json`、`.analyzePath`、`MoleJSON.decodeAnalyze`。所有 flags 排在 PATH 之前以符合 Go flag parser |
 | `mo analyze [PATH]` | 在官方分析器檢查／移至垃圾桶 | 官方 PTY | `.analyze`。這個 TUI 有檔案操作能力，按破壞性入口處理；不繞過官方刪除保護 |
 | `mo purge` | 專案清理：掃描／選擇／執行 | 官方 PTY | `.purge`；由原版判定可重建資料、近期活動、Git 與敏感資料保護 |
 | `mo purge --dry-run` / `-n` | 專案清理預覽 | 官方 PTY | `.dryRun`；不另行遞迴掃描整台電腦 |
@@ -56,7 +56,7 @@
 | `mo slim --dry-run` / `-n` | 瘦身候選與節省空間預覽 | 官方 PTY／文字 | `.dryRun`；略過原因可搭配 `--debug`，不自行修改 App bundle |
 | `mo history` | 歷史：原始輸出 | 官方文字 | `.history` |
 | `mo history --json` | 原生歷史清單與搜尋 | 原生 JSON | `.json`、`MoleJSON.decodeHistory`；保留 `run`／`command`／`ambiguous` 歸屬和未結束作業 |
-| `mo history --limit N` | 歷史筆數 | 原生控制項 | `.historyLimit`，1–200 |
+| `mo history --limit N` | 歷史筆數 | 原生控制項 | `.historyLimit`；GUI 提供 20／50／100／200 筆，Adapter 驗證範圍為 1–200 |
 | `mo --version` / `-V` / `version` | 設定：CLI 版本與來源 | 原生顯示＋完整原始輸出 | `.version`、Probe；取得整份輸出以辨認 Nightly 與 Homebrew HEAD |
 | `mo --help` / `-h` / `help` | 設定：官方說明 | 原生文字 | `.help`；其他命令的 `--help` 也有操作入口 |
 | `mo update` | 設定：更新官方穩定版 | 官方 PTY | `.update`；完成後重做版本與 help 檢查；GUI 與引擎分開更新 |

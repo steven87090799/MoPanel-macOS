@@ -113,6 +113,7 @@ struct ContentView: View {
             guard model.windowActive != active else { return }
             model.windowActive = active
         }
+        .modifier(NativeUISmokeAccessibilityEnvironment())
         // A SwiftUI root-host replacement can make this view disappear while
         // its NSWindow is still open. Scene phase owns activity; the application
         // delegate owns last-window/quit cleanup. Publishing here would reenter

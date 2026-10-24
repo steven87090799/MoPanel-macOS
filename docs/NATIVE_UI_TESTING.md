@@ -14,6 +14,14 @@ Apple documents the press result as indicating that an action was triggered, **n
 
 The harness does not use `AXUIElement`, `CGEvent`, desktop screenshots, global event injection, permission requests, private selectors, Objective-C method swizzling or undocumented accessibility switches. Its tree traversal has depth, node and queue limits. Bounded diagnostics expose only known control identifiers, class/type names, fixed role/ownership/frame/ABI flags and counts; they do not dump labels, values, paths, terminal text or arbitrary accessibility identifiers. Children that are not supported object types are counted and reported by type, not silently treated as controls.
 
+### Public SwiftUI accessibility environment
+
+For the exact `--smoke-test` launch only, the real `ContentView` uses the public `.environment(\.accessibilityEnabled, true)` value. Apple documents this as a writable SwiftUI environment property, available on macOS 10.15 and later, that indicates an assistive technology is enabled. Normal launches receive their inherited system environment without an override. This does not turn on VoiceOver, change system preferences, grant permissions or set a private accessibility attribute.
+
+A noninteractive, zero-size `NSViewRepresentable` reader records **`context.environment.accessibilityEnabled` as actually delivered by SwiftUI**. It has no action and is hidden from accessibility; it is only an environment probe, never an alternative button. Before any action, the runner must find exactly one such reader in its supplied content window and read `true`. Every subsequent fixture-context check revalidates that observation. `publicAccessibilityEnvironmentEnabled` and the `public_accessibility_environment_read_back` check report this actual observed value, not a static requested flag. The reader changes no observable model or published state during a view update.
+
+These checks exercise an assistive-technology-enabled SwiftUI environment. They do not establish complete VoiceOver compatibility, and Apple's property documentation does not promise that setting it materializes every own-process accessibility node. The next Mac run must demonstrate the real identifiers, presses and outcomes; a successful environment read alone does not pass native action verification.
+
 ## Fixture enforcement
 
 Every lookup/press and postcondition wait revalidates:
@@ -22,7 +30,7 @@ Every lookup/press and postcondition wait revalidates:
 - `AppModel` fixture/test state and no read-only-real-benchmark configuration.
 - A packaged `.app`, with the `AppResources` mock script resolving beneath its `Contents/Resources`.
 - Exact canonical equality between that resource and both selected/resolved CLI paths, installation source `.fixture`, and the unchanged CLI fingerprint.
-- Continued membership of the explicit test window in the current app's windows.
+- Continued membership of the explicit test window in the current app's windows and read-back of its real root's public accessibility environment.
 
 Action-specific guards additionally require the expected page and safe fixture command. Only the allowlisted controls below can be pressed. Homebrew installation/upgrades, real app removal, Finder/System Settings, native hardware actions, eject, Startup and configuration editing are excluded from this action runner.
 
@@ -59,9 +67,13 @@ Call after the existing adapter/watch/route smoke checks and before the final ow
 let report = await NativeUITestHarness.run(model: model, window: mainWindow)
 ```
 
-The caller must pass the actual MoPanel content window, not select a different application by title. `NativeUIReport` is Codable and records overall `passed`, per-outcome `checks`, per-press `actions`, known identifiers observed, tree node count, safety/scope flags and errors. On failure, it requests cancellation of owned fixture work as teardown; that direct cancellation is explicitly recorded and never counted as a successful Stop-button test.
+The caller must pass the actual MoPanel content window, not select a different application by title. `NativeUIReport` is Codable and records overall `passed`, per-outcome `checks`, per-press `actions`, known identifiers observed, tree node count, the observed public accessibility environment, safety/scope flags and errors. On failure, it requests cancellation of owned fixture work as teardown; that direct cancellation is explicitly recorded and never counted as a successful Stop-button test.
 
-Run `40077546222` established that the real app launches and the other 19 smoke checks pass, including the live watch and safe native API probes. Its Screenshot shows the Snapshot button, but the original protocol-only traversal observed 169 nodes, no control identifiers and zero accepted actions. This is a failed native-button test, not a missing visible button and not a successful automation run. The public-selector/window-root changes described above address that traversal assumption and add diagnostics; their successful macOS compilation and actual press outcomes remain pending the next CI run. No control action, fixture guard, postcondition or watchdog has been weakened.
+Run `40077546222` established that the real app launches and the other 19 smoke checks pass, including the live watch and safe native API probes. Its screenshot shows the Snapshot button, but the original protocol-only traversal observed 169 nodes, no control identifiers and zero accepted actions.
+
+Run `40078440635` successfully compiled and signed the public-selector/window-root adapter on the real Mac runner. The formal app exited normally with the same 19/20 smoke result in 10.129 seconds. Traversal found 257 nodes (173 full-protocol and 84 selector-only), zero unsupported child types, no allowlisted control identifiers and zero actions. Selector-only AppKit rows and proxy cells returned valid roles and window/frame information, so the adapter was not simply returning nil for all getters. The visible SwiftUI controls still had no corresponding virtual button nodes in the collected hierarchy. This is evidence of a missing semantic tree in this test context, not proof that the on-screen buttons are absent.
+
+The public environment experiment described above addresses that remaining test context. Its macOS compilation, environment read-back and actual press outcomes remain pending the next CI run. No identifier, ownership/frame/role/enable check, real action, postcondition or watchdog has been weakened. If the public environment still leaves the virtual tree unavailable, the next option is a normal Xcode UI test runner or genuinely visible AppKit controls used by the product itself; no private accessibility activation switch or direct action fallback is acceptable.
 
 The runner has a 20-second whole-sequence deadline, two-second element lookup deadlines and three-second normal outcome deadlines (five seconds for the intentionally delayed overview). The usual successful path contains one completed three-second delay. These are failure bounds, not retries that re-execute an action. Keep the outer smoke watchdog; change it only based on measured CI timing.
 
@@ -83,3 +95,4 @@ Inspected 2026-10-24:
 - [accessibilityWindow()](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol/accessibilitywindow())
 - [accessibilityPerformPress()](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol/accessibilityperformpress())
 - [SwiftUI accessibility fundamentals](https://developer.apple.com/documentation/swiftui/accessibility-fundamentals)
+- [EnvironmentValues.accessibilityEnabled](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityenabled) — Apple's DocC declaration was read directly and confirms `var accessibilityEnabled: Bool { get set }`; the declaration does not guarantee own-process tree materialization.

@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "summary_of": "Actual smoke-test.json from verified GitHub Actions artifact; this is a concise derived summary, not a full transcript.",
+  "workflow_run_url": "https://github.com/steven87090799/MoPanel-macOS/actions/runs/40078440635",
+  "source_revision": "60e9baecedf8e92df31b7c488294279c42f71eec",
+  "artifact_id": 12554222411,
+  "artifact_sha256": "070ebf9a12f73c0cea8d64bacd32b4cdec683521ebbf584c7ec5ea8ded712d91",
+  "original_smoke_report_sha256": "63fc04e785f3c6da8126b73b4499b06229d39660c8713b805c6a94fb458fffca",
+  "success": false,
+  "fixture_only": true,
+  "process_exit_code": 1,
+  "timed_out": false,
+  "elapsed_seconds": 10.129,
+  "checks": {
+    "analyze_preserves_partial": true,
+    "app_inventory_decoded": true,
+    "fixture_cli_detected": true,
+    "fixture_resource_inside_app": true,
+    "history_decoded": true,
+    "native_accessibility_button_flows": false,
+    "native_assertion_created_and_released": true,
+    "native_clean_screen_windows_constructed_and_closed": true,
+    "native_doctor_metadata_read": true,
+    "native_tools_no_input_interception_or_ejection": true,
+    "navigation_routes_selected_with_window_alive": true,
+    "no_real_engine_selected": true,
+    "public_contracts_compatible": true,
+    "startup_mock_cancel_and_unknown_format": true,
+    "startup_mock_enable_disable_readback": true,
+    "startup_no_real_mutation_or_persistent_job": true,
+    "status_decoded": true,
+    "watch_ndjson_received": true,
+    "watch_stopped_on_navigation": true,
+    "window_created": true
+  },
+  "errors": [
+    "No unique enabled own-window accessibility control was exposed for mopanel.dashboard.snapshot."
+  ],
+  "native_ui": {
+    "passed": false,
+    "actions": [],
+    "observedControlIdentifiers": [],
+    "maximumTreeNodesObserved": 257,
+    "maximumProtocolNodesObserved": 173,
+    "maximumSelectorOnlyNodesObserved": 84,
+    "maximumUnsupportedChildrenObserved": 0,
+    "directActionFallbackUsed": false,
+    "ownProcessOnly": true,
+    "accessibilityPermissionRequested": false,
+    "physicalInputInjected": false
+  },
+  "debug_copy_diagnostic": {
+    "attempted": false,
+    "status": "complete_app_failure_evidence_available",
+    "original_smoke_still_failed": true
+  }
+}

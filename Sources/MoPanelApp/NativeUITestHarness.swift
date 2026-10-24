@@ -2,6 +2,7 @@
 import AppKit
 import Foundation
 import ObjectiveC
+import SwiftUI
 import MoPanelCore
 
 struct NativeUIActionEvidence: Codable {
@@ -22,6 +23,7 @@ struct NativeUIReport: Codable {
     let routeSetupUsesModelState: Bool
     let directActionFallbackUsed: Bool
     let cleanupRequestedAfterFailure: Bool
+    let publicAccessibilityEnvironmentEnabled: Bool?
     let checks: [String: Bool]
     let actions: [NativeUIActionEvidence]
     let maximumTreeNodesObserved: Int
@@ -42,6 +44,43 @@ struct NativeUIReport: Codable {
         let runner = OwnWindowRunner(model: model, window: window)
         return await runner.run()
     }
+}
+
+/// Enable SwiftUI's documented assistive-technology environment only for the
+/// exact fixture smoke launch. Normal launches inherit the system environment.
+/// The reader below observes the actual environment supplied to the real root;
+/// it is not an actionable accessibility element or a substitute control.
+struct NativeUISmokeAccessibilityEnvironment: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"] {
+            content
+                .background(alignment: .topLeading) {
+                    NativeUIAccessibilityEnvironmentReader()
+                        .frame(width: 0, height: 0)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                .environment(\.accessibilityEnabled, true)
+        } else {
+            content
+        }
+    }
+}
+
+@MainActor private struct NativeUIAccessibilityEnvironmentReader: NSViewRepresentable {
+    func makeNSView(context: Context) -> NativeUIAccessibilityEnvironmentView {
+        let view = NativeUIAccessibilityEnvironmentView(frame: .zero)
+        view.observedEnabled = context.environment.accessibilityEnabled
+        return view
+    }
+    func updateNSView(_ view: NativeUIAccessibilityEnvironmentView, context: Context) {
+        view.observedEnabled = context.environment.accessibilityEnabled
+    }
+}
+
+@MainActor private final class NativeUIAccessibilityEnvironmentView: NSView {
+    fileprivate var observedEnabled: Bool?
+    override func isAccessibilityElement() -> Bool { false }
 }
 
 private enum NativeUIControl: String, CaseIterable {
@@ -247,6 +286,8 @@ private enum NativeUIFailure: LocalizedError {
     private let window: NSWindow
     private let deadline = ContinuousClock.now.advanced(by: .seconds(20))
     private var contextWasValidated = false
+    private var publicAccessibilityEnvironmentEnabled: Bool?
+    private var environmentWasObserved = false
     private var checks: [String: Bool] = [:]
     private var actions: [NativeUIActionEvidence] = []
     private var errors: [String] = []
@@ -275,6 +316,12 @@ private enum NativeUIFailure: LocalizedError {
             guard !model.hasRunningOperation, model.pending == nil, !model.showOperation,
                   model.error == nil else { throw NativeUIFailure.unexpectedState("start with no active operation, modal or error") }
             checks["exact_bundled_fixture_guard"] = true
+            try await waitFor("public SwiftUI accessibility environment was read back") {
+                self.publicAccessibilityEnvironmentEnabled == true
+            }
+            environmentWasObserved = true
+            breadcrumb("environment.read.true")
+            checks["public_accessibility_environment_read_back"] = true
             // Route selection and monitor teardown are test setup, explicitly
             // distinguished from the user-facing actions asserted below.
             model.pauseMonitoring()
@@ -403,6 +450,7 @@ private enum NativeUIFailure: LocalizedError {
             mechanism: "AppKit own-window accessibility tree, protocol/public selector accessors and accessibilityPerformPress", fixtureOnly: contextWasValidated,
             ownProcessOnly: true, physicalInputInjected: false, accessibilityPermissionRequested: false,
             routeSetupUsesModelState: true, directActionFallbackUsed: false, cleanupRequestedAfterFailure: cleanupRequested,
+            publicAccessibilityEnvironmentEnabled: publicAccessibilityEnvironmentEnabled,
             checks: checks, actions: actions, maximumTreeNodesObserved: maximumTreeNodesObserved,
             maximumProtocolNodesObserved: maximumProtocolNodesObserved,
             maximumSelectorOnlyNodesObserved: maximumSelectorOnlyNodesObserved,
@@ -426,6 +474,28 @@ private enum NativeUIFailure: LocalizedError {
               installed.resolved.resolvingSymlinksInPath() == resource,
               try CLIProbe.fingerprint(installed.executable) == installed.fingerprint else { throw NativeUIFailure.unsafeContext }
         guard NSApp.windows.contains(where: { $0 === window }), window.contentView != nil, window.isVisible else { throw NativeUIFailure.missingWindow }
+        publicAccessibilityEnvironmentEnabled = readAccessibilityEnvironment()
+        if environmentWasObserved && publicAccessibilityEnvironmentEnabled != true {
+            throw NativeUIFailure.unexpectedState("public SwiftUI accessibility environment changed or detached")
+        }
+    }
+
+    private func readAccessibilityEnvironment() -> Bool? {
+        guard let content = window.contentView else { return nil }
+        var pending: [(NSView, Int)] = [(content, 0)]
+        var visited = Set<ObjectIdentifier>()
+        var observations: [Bool] = []
+        while let (view, depth) = pending.popLast() {
+            guard visited.insert(ObjectIdentifier(view)).inserted else { continue }
+            guard visited.count <= 4_096, depth <= 40, view.window === window else { return nil }
+            if let reader = view as? NativeUIAccessibilityEnvironmentView,
+               let enabled = reader.observedEnabled { observations.append(enabled) }
+            guard pending.count + view.subviews.count <= 4_096 else { return nil }
+            pending.append(contentsOf: view.subviews.map { ($0, depth + 1) })
+        }
+        // Require one actual reader attached to this supplied content window.
+        // A requested flag or a reader in a different window is not evidence.
+        return observations.count == 1 ? observations.first : nil
     }
 
     private func validateAction(_ control: NativeUIControl) throws {
