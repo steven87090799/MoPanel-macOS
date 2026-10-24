@@ -59,6 +59,39 @@ case "$command_name" in
     uninstall)
         if [[ "${2:-}" == "--list" ]]; then cat "$fixture_root/apps.json"; else printf '%s\n' 'TEST FIXTURE: no uninstallation performed'; fi
         ;;
+    installer)
+        # A disposable selector exercises the real PTY -> terminal screen ->
+        # native checkbox bridge. It never reads or changes installer files.
+        if [[ ! -t 0 ]]; then printf '%s\n' 'TEST FIXTURE: no system changes performed'; exit 0; fi
+        first_selected=1
+        second_selected=0
+        cursor=0
+        while true; do
+            chosen=$((first_selected + second_selected))
+            printf '\033[2J\033[HSelect Installers to Remove, %s selected\n\n' "$chosen"
+            if [[ "$cursor" -eq 0 ]]; then printf '➤ '; else printf '  '; fi
+            if [[ "$first_selected" -eq 1 ]]; then printf '● '; else printf '○ '; fi
+            printf 'Example One.dmg · 120 MB\n'
+            if [[ "$cursor" -eq 1 ]]; then printf '➤ '; else printf '  '; fi
+            if [[ "$second_selected" -eq 1 ]]; then printf '● '; else printf '○ '; fi
+            printf 'Example Two.pkg · 80 MB\n\n↑↓ | Space Select | Enter Confirm | A All | I Invert | Q Quit\n'
+            key=''; IFS= read -r -s -n 1 key || exit 0
+            case "$key" in
+                $'\033')
+                    more=''; IFS= read -r -s -n 2 more || exit 0
+                    [[ "$more" == '[B' ]] && cursor=1
+                    [[ "$more" == '[A' ]] && cursor=0
+                    ;;
+                ' ') if [[ "$cursor" -eq 1 ]]; then second_selected=$((1 - second_selected)); else first_selected=$((1 - first_selected)); fi ;;
+                q|Q) exit 0 ;;
+                '') break ;;
+            esac
+        done
+        printf '\033[2J\033[H➤ Delete %s installers, fixture only Enter confirm, ESC cancel: ' "$chosen"
+        key=''; IFS= read -r -s -n 1 key || exit 0
+        [[ -z "$key" ]] || exit 0
+        printf '\n✓ Preview complete: %s synthetic installers, no files changed\n' "$chosen"
+        ;;
     history) cat "$fixture_root/history.json" ;;
     *) printf '%s\n' 'TEST FIXTURE: no system changes performed' ;;
 esac

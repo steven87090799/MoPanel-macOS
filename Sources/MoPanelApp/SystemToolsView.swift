@@ -19,12 +19,12 @@ struct SystemToolsView: View {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(t("系統工具", "System Tools"), systemImage: "wrench.and.screwdriver").font(.largeTitle.bold())
-                    Text(t("MoPanel 新實作 · 透過 macOS 原生 API 執行，不是 Mole CLI 指令。", "MoPanel implementation · Uses native macOS APIs, separate from Mole CLI.")).foregroundStyle(.secondary)
+                    Text(t("保持喚醒、清潔螢幕與安全退出磁碟。", "Keep awake, clean the screen, and safely eject disks.")).foregroundStyle(.secondary)
                 }
                 keepAwake
                 cleanScreen
                 volumes
-                doctor
+                DisclosureGroup(t("診斷與更多資訊", "Diagnostics and More Information")) { doctor }
             }.padding(26)
         }
         .onAppear { controller.language = language }

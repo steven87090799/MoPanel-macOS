@@ -31,7 +31,7 @@
 | `--proc-cpu-threshold PERCENT` | CPU 提醒門檻 | 原生控制項 | `.procCPUThreshold`；非負有限值，程序多核心 CPU 可超過 100% |
 | `--proc-cpu-window DURATION` | CPU 提醒持續時間 | 原生控制項 | `.procCPUWindowSeconds`；GUI 提供 60／120／300／600 秒，Adapter 要求大於零 |
 | `mo clean` | 系統清理：執行 | 原生啟動＋官方輸出／PTY | `.clean`。必須確認永久刪除風險；可能包含清空家目錄垃圾桶 |
-| `mo clean --dry-run` / `-n` | 系統清理：掃描預覽 | 原生啟動＋官方文字結果 | `.dryRun`。沒有官方結構化刪除計畫，不能把文字轉成可承諾的項目勾選 |
+| `mo clean --dry-run` / `-n` | 系統清理：掃描預覽 | 原生啟動＋官方文字結果 | `.dryRun`。讀取官方 clean-list.txt 後提供受限原生垃圾桶清單；這是另一個 macOS 操作，不冒充 CLI 項目 API |
 | `mo clean --external PATH` | 選擇外接磁碟後預覽／清理 | 原生資料夾選擇＋官方驗證 | `.externalVolume`；只接受 `/Volumes/` 下的絕對路徑；實際磁碟資格與保護交由 Mole |
 | `mo clean --whitelist` | 系統清理／設定：白名單 | 官方 PTY 編輯器 | `.whitelist`；不改寫另一套保護設定；不可與 dry-run 混用冒充預覽 |
 | `mo uninstall --list` | 解除安裝：重新掃描 App | 原生清單／圖示／搜尋 | `.uninstallList`、`MoleJSON.decodeApps`。stdout 使用管線時官方自動輸出 JSON；**不傳不存在的 `--json` 參數** |
@@ -77,7 +77,7 @@
 
 ## 明確不提供的假介面
 
-- V1.62.0 的 `clean` 明確拒絕 `--select`、`--categories`、`--exclude`。MoPanel 不建立假的逐項刪除承諾，改用原版白名單及完整預覽。
+- V1.62.0 的 `clean` 明確拒絕 `--select`、`--categories`、`--exclude`。原生逐檔選擇使用受限的 macOS 垃圾桶操作；原版清理模式仍保留白名單與完整預覽，不傳送不存在的 CLI 參數。
 - `uninstall --whitelist` 官方明確不支援。保護清單只放在 Clean 與 Optimize。
 - Clean、Optimize、Purge、Installer、Slim 沒有可供 GUI 任意提交刪除計畫的公開 JSON API。MoPanel 保留原版 TUI／文字，沒有使用猜測的列號，也沒有對顯示的路徑直接呼叫 `rm`。
 - 在原生分析清單按「官方分析器」會打開指定範圍，檔案選取與刪除仍由官方介面完成；不聲稱原生清單勾選就是 Mole 已確認的計畫。

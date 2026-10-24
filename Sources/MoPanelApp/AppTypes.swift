@@ -100,6 +100,7 @@ struct TrendSample: Identifiable {
     let down: Double?
     let up: Double?
     var gpu: Double? = nil
+    var networkInterfaces: [String: NetworkStatus] = [:]
 }
 
 struct ActivityEntry: Identifiable {
@@ -110,6 +111,21 @@ struct ActivityEntry: Identifiable {
 }
 
 enum DisplayFormat {
+    static func healthMessage(_ value: String?, language: String) -> String {
+        guard let value else { return "—" }
+        guard language != "en" else { return value }
+        let meanings = ["Excellent": "狀態很好", "Good": "良好", "Fair": "需留意", "Needs Attention": "需要關注",
+                        "High CPU": "CPU 負載偏高", "High Memory": "記憶體用量偏高", "Memory Pressure": "記憶體壓力偏高",
+                        "Critical Memory": "記憶體壓力過高", "Disk Almost Full": "磁碟空間不足", "Disk SMART Failing": "磁碟健康出現異常",
+                        "Overheating": "溫度過高", "Heavy Disk IO": "磁碟讀寫繁忙", "Battery Service Soon": "電池需要留意", "Restart Recommended": "建議重新啟動"]
+        return value.components(separatedBy: ": ").map { part in
+            part.components(separatedBy: ", ").map { meanings[$0] ?? $0 }.joined(separator: "、")
+        }.joined(separator: "：")
+    }
+    static func storage(_ value: UInt64?) -> String {
+        guard let value else { return "—" }
+        return ByteCountFormatter.string(fromByteCount: Int64(clamping: value), countStyle: .decimal)
+    }
     static func bytes(_ value: UInt64?) -> String {
         guard let value else { return "—" }
         return ByteCountFormatter.string(fromByteCount: Int64(clamping: value), countStyle: .binary)
@@ -182,16 +198,20 @@ struct MoPanelGroupBoxStyle: GroupBoxStyle {
 }
 
 struct PageHeading: View {
+    @EnvironmentObject private var model: AppModel
     let title: String
     let subtitle: String
     let symbol: String
+    @State private var showingInfo = false
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(MoPanelTheme.accent)
                 .frame(width: 48, height: 48).moPanelGlass(cornerRadius: 14)
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(.system(.largeTitle, design: .rounded).weight(.bold))
-                Text(subtitle).font(.callout).foregroundStyle(.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                DisclosureGroup(isExpanded: $showingInfo) {
+                    Text(subtitle).font(.callout).foregroundStyle(.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                } label: { Text(model.t("更多資訊", "More info")).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer()
         }.padding(.bottom, 8)

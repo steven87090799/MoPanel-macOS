@@ -122,6 +122,35 @@ import MoPanelCore
         ], success: success, previewTools: systemTools)
     }
 
+    private static func seedReviewPreview(_ model: AppModel) {
+        // These data are reachable only from the explicitly bounded manual
+        // fixture preview. Both controllers remain unable to change files.
+        guard model.fixtureMode, model.isTestLaunch else { return }
+        model.nativeHardware.pressure = .normal
+        model.nativeHardware.cpuTemperature = 52
+        model.nativeHardware.gpuTemperature = 49
+        model.nativeHardware.gpuUsage = 18
+        model.nativeHardware.fans = [2300, 2500]
+        model.networkInterfaceNames = ["en0": "Wi-Fi"]
+        model.applicationUsage = [ApplicationUsage(id: "preview.editor", name: "範例編輯器", appPath: nil, pid: 1234,
+            memory: 1_200_000_000, cpu: 12.4, processCount: 6),
+            ApplicationUsage(id: "preview.browser", name: "範例瀏覽器", appPath: nil, pid: 2345,
+            memory: 820_000_000, cpu: 3.2, processCount: 4)]
+        let examples: [(String, String, String, String, Bool)] = [
+            ("App 快取與紀錄", "範例瀏覽器快取", "280 MB", "網頁暫存，下次開啟時會重新建立。", true),
+            ("App 快取與紀錄", "範例 App 診斷紀錄", "12 MB", "舊的問題紀錄；不包含個人文件。", true),
+            ("開發工具", "範例建置快取", "1.2 GB", "可重新產生的編譯快取，首次建置會較慢。", true),
+            ("需確認用途", "範例 App 個人資料", "65 MB", "可能包含設定與登入資料，建議先保留。", false)]
+        model.cleanupReview.files = examples.enumerated().map { index, item in
+            ReviewFile(url: URL(fileURLWithPath: "/MoPanel-synthetic-preview/\(index)/" + item.1), category: item.0,
+                       title: item.1, size: item.2, purpose: item.3, recommended: item.4, blockedReason: nil,
+                       device: 0, inode: 0, modified: timespec(), directory: true, identity: nil)
+        }
+        model.cleanupReview.sourceDate = Date()
+        model.cleanupReview.message = "合成掃描結果；此模式無法移除檔案。"
+        model.cleanupReview.recommend()
+    }
+
     /// Fixed stage names only. Diagnostic output is restricted to an explicit
     /// smoke launch, never terminal content, user paths or production actions.
     private static func checkpoint(_ stage: String) {
@@ -234,7 +263,7 @@ import MoPanelCore
             // drivers remove this flag so their deadline remains unchanged.
             if let value = ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_SECONDS"],
                let seconds = Int(value), (1...300).contains(seconds) {
-                model.apps = []
+                seedReviewPreview(model)
                 var previewWindow: NSWindow?
                 if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "menubar",
                    let previewTools {

@@ -72,11 +72,8 @@ struct GitWorktreeView: View {
     }
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Git Worktrees", systemImage: "arrow.triangle.branch").font(.largeTitle.bold())
-            Text(t("MoPanel 新實作 · 使用正式 Git 命令的原生介面；不是 Mole CLI 指令，也不判讀 AI session 或猜測閒置天數。",
-                   "MoPanel implementation · A native interface to official Git commands; not a Mole CLI command. It does not inspect AI sessions or guess inactivity thresholds.")).foregroundStyle(.secondary)
-            Text(t("只檢查你選擇的倉庫。保護主目錄、鎖定、變更、未追蹤／已忽略內容與無法驗證的狀態；移除前保留 HEAD 分支，且不使用 force。",
-                   "Only the selected repository is inspected. Main, locked, changed, untracked, ignored and unverifiable worktrees are protected. A branch retaining HEAD is created before removal, and force is never used.")).font(.callout)
+            PageHeading(title: t("Git 工作目錄", "Git Worktrees"),
+                        subtitle: t("只檢查你選擇的倉庫。保護主目錄、未提交內容與無法驗證的狀態；移除前保留復原分支，不使用 force。", "Inspects only your selected repository. Main, modified and unverifiable worktrees stay protected. A recovery branch is retained before removal; force is never used."), symbol: "arrow.triangle.branch")
             HStack {
                 Button(t("選擇倉庫…", "Choose Repository…")) { controller.chooseRepository() }.disabled(disabled)
                     .accessibilityIdentifier("mopanel.worktrees.choose")

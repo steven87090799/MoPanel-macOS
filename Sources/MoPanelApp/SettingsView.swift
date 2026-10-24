@@ -13,14 +13,11 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 20) {
                 PageHeading(title: model.t("設定與工具", "Settings and Tools"), subtitle: model.t("介面與 CLI 分別更新。系統變更仍交由官方 Mole 執行。", "The interface and CLI update independently. Mole remains responsible for system changes."), symbol: "gearshape")
                 appearance
-                engine
                 monitor
-                permissions
-                systemTools
-                diagnostics
-                advanced
-                activity
-                about
+                DisclosureGroup(model.t("Mole 引擎與更新", "Mole Engine and Updates")) { engine }
+                DisclosureGroup(model.t("權限與系統工具", "Permissions and System Tools")) { permissions; systemTools }
+                DisclosureGroup(model.t("進階指令與診斷", "Advanced Commands and Diagnostics")) { diagnostics; advanced; activity }
+                DisclosureGroup(model.t("關於", "About")) { about }
             }.padding(26)
         }
     }

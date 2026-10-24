@@ -33,7 +33,20 @@ import MoPanelProcess
     @Published var busy: String?
     @Published private(set) var activeScanCommand: MoleCommand?
     @Published var error: String?
+    let moleSelector = MoleSelectorController()
+    let cleanupReview = FileReviewController()
+    let uninstallReview = FileReviewController()
+    @Published var nativeRemovalRunning = false
     @Published var status: StatusSnapshot?
+    @Published var applicationUsage: [ApplicationUsage] = []
+    @Published var nativeCollectedAt: Date?
+    @Published var nativeHardware = NativeHardwareReadings()
+    @Published var networkInterfaceNames: [String: String] = [:]
+    @Published var automaticNetworkSelection = true
+    private let nativeReadings = NativeSystemReadings()
+    private var nativeSampleTask: Task<Void, Never>?
+    private var lastNativeRequest = Date.distantPast
+    private var nativePrimaryInterface: String?
     @Published var trends: [TrendSample] = []
     @Published var monitoring = false
     @Published var monitorWarnings = ""
@@ -41,6 +54,7 @@ import MoPanelProcess
         didSet { if !isTestLaunch, oldValue != selectedNetwork { UserDefaults.standard.set(selectedNetwork, forKey: "selectedNetwork") } }
     }
     @Published var apps: [InstalledApp] = []
+    @Published var uninstallSelected = Set<String>()
     @Published var analysis: AnalyzeSnapshot?
     @Published var history: HistorySnapshot?
     @Published var rawResult = ""
@@ -54,7 +68,11 @@ import MoPanelProcess
     @Published var operationSession = ManagedProcess()
     @Published var operationResult: ProcessResult?
     @Published var operationIsInteractive = true
+    @Published var operationProgressEntries: [OperationProgressEntry] = []
+    @Published var operationInputPrompt: String?
+    private var operationProgress = OperationProgressSummary()
     @Published var operationWasPreview = false
+    @Published private(set) var windowFocused = true
     @Published var windowActive = true { didSet { if !isTestLaunch { updateMonitoringDemand() } } }
     @Published var homebrewConfirmation = false
     /// Queried synchronously by action guards, so a native operation cannot race
@@ -102,6 +120,10 @@ import MoPanelProcess
         benchmarkConfiguration = benchmark
         testLaunchError = launchError
         fixtureURL = fixtureMode ? AppResources.bundle?.url(forResource: "mock-mo", withExtension: "sh", subdirectory: "Fixtures") : nil
+        cleanupReview.allowsChanges = !isTestLaunch
+        uninstallReview.allowsChanges = !isTestLaunch
+        cleanupReview.onBusyChanged = { [weak self] value in self?.nativeRemovalRunning = value; self?.updateMonitoringDemand() }
+        uninstallReview.onBusyChanged = { [weak self] value in self?.nativeRemovalRunning = value; self?.updateMonitoringDemand() }
         menuBarEnabled = !isTestLaunch && UserDefaults.standard.bool(forKey: "menuBarEnabled")
         if !isTestLaunch {
             let saved = MonitoringPreferences(defaults: .standard)
@@ -111,6 +133,7 @@ import MoPanelProcess
             processCPUThreshold = saved.processCPUThreshold
             processCPUWindow = saved.processCPUWindow
             selectedNetwork = UserDefaults.standard.string(forKey: "selectedNetwork") ?? ""
+            automaticNetworkSelection = (UserDefaults.standard.object(forKey: "automaticNetworkSelection") as? Bool) ?? true
             lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
             installMonitoringObservers()
         }
@@ -128,7 +151,7 @@ import MoPanelProcess
     }
 
     private var requestedWatchOptions: MonitoringWatchOptions {
-        monitoringPreferences.watchOptions(dashboardVisible: section == .dashboard && windowActive, lowPowerMode: lowPowerMode)
+        monitoringPreferences.watchOptions(dashboardVisible: section == .dashboard && windowActive && windowFocused, lowPowerMode: lowPowerMode)
     }
 
     private func monitoringPreferencesChanged() {
@@ -172,7 +195,13 @@ import MoPanelProcess
         }
     }
     var canStart: Bool { installation != nil && !isDetecting && !hasRunningOperation && !shuttingDown }
-    var moleOperationInProgress: Bool { busy != nil || scanSession?.running == true || operationSession.running || operationTask != nil }
+    var nativeReviewSection: AppSection? {
+        cleanupReview.busy ? .clean : uninstallReview.busy ? .uninstall : nil
+    }
+    func cancelCurrentOperation() {
+        cancelScan(); cleanupReview.cancel(); uninstallReview.cancel(); operationSession.cancel()
+    }
+    var moleOperationInProgress: Bool { nativeRemovalRunning || busy != nil || scanSession?.running == true || operationSession.running || operationTask != nil }
     var hasRunningOperation: Bool { moleOperationInProgress || nativeOperationInProgress?() == true }
     var monitoringNeeded: Bool {
         MonitoringDemand.isNeeded(dashboardSelected: section == .dashboard, windowActive: windowActive,
@@ -383,9 +412,20 @@ import MoPanelProcess
     }
 
     func stopMonitoring() {
+        if monitoring { nativeReadings.close(); lastNativeRequest = .distantPast }
         monitorRestartRequested = false
         monitoring = false
         watchSession?.cancel()
+    }
+
+    func updateWindowState(visible: Bool, focused: Bool) {
+        guard !isTestLaunch else { return }
+        // Publish focus first so the visibility observer requests only the final cadence.
+        let changed = windowActive != visible || windowFocused != focused
+        guard changed else { return }
+        windowFocused = focused
+        if windowActive != visible { windowActive = visible }
+        else { updateMonitoringDemand() }
     }
 
     func pauseMonitoring() { monitoringPaused = true; stopMonitoring() }
@@ -402,18 +442,97 @@ import MoPanelProcess
     }
 
     private func acceptStatus(_ snapshot: StatusSnapshot) {
-        status = snapshot
-        if !snapshot.network.isEmpty, !snapshot.network.contains(where: { $0.name == selectedNetwork }) {
-            let fallback = snapshot.network.first?.name ?? ""
-            if selectedNetwork != fallback { selectedNetwork = fallback }
+        if !fixtureMode, nativeSampleTask == nil, !shuttingDown, Date().timeIntervalSince(lastNativeRequest) >= 5 {
+            lastNativeRequest = Date()
+            let apps = ApplicationUsageReader.applicationIdentities()
+            nativeSampleTask = Task { [weak self] in
+                guard let self else { return }
+                defer { self.nativeSampleTask = nil }
+                let sample = await self.nativeReadings.sample(apps: apps)
+                guard !Task.isCancelled, !self.shuttingDown else { return }
+                self.nativeCollectedAt = sample.collectedAt
+                self.nativeHardware = sample.hardware
+                self.applicationUsage = sample.applications
+                self.networkInterfaceNames = sample.names
+                self.nativePrimaryInterface = sample.primary
+                if self.automaticNetworkSelection, let current = self.status {
+                    self.selectedNetwork = MonitorNetworkSelection.resolve(current.network, manual: nil, primary: sample.primary)
+                }
+            }
         }
+        status = snapshot
+        selectedNetwork = MonitorNetworkSelection.resolve(snapshot.network,
+            manual: automaticNetworkSelection ? nil : selectedNetwork, primary: nativePrimaryInterface)
         let network = snapshot.network.first { $0.name == selectedNetwork }
         trends.append(TrendSample(date: Date(), cpu: snapshot.cpu.logicalCPU > 0 ? snapshot.cpu.usage : nil,
                                   memory: snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil,
                                   diskRead: snapshot.diskIO?.readRate, diskWrite: snapshot.diskIO?.writeRate,
                                   down: network?.rxRateMbs, up: network?.txRateMbs,
-                                  gpu: snapshot.gpu.compactMap(\.usage).first { $0.isFinite && (0...100).contains($0) }))
+                                  gpu: snapshot.gpu.compactMap(\.usage).first { $0.isFinite && (0...100).contains($0) } ?? nativeHardware.gpuUsage,
+                                  networkInterfaces: Dictionary(snapshot.network.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })))
         if trends.count > 120 { trends.removeFirst(trends.count - 120) }
+    }
+
+    var networkChartChoice: String { automaticNetworkSelection ? "auto" : selectedNetwork }
+    func selectNetwork(_ choice: String) {
+        automaticNetworkSelection = choice == "auto"
+        if let status {
+            selectedNetwork = MonitorNetworkSelection.resolve(status.network, manual: choice == "auto" ? nil : choice,
+                                                              primary: nativePrimaryInterface)
+        }
+        if !isTestLaunch { UserDefaults.standard.set(automaticNetworkSelection, forKey: "automaticNetworkSelection") }
+    }
+    func networkName(_ name: String) -> String {
+        guard let label = networkInterfaceNames[name], label != name else { return name }
+        return label + " · " + name
+    }
+    var memoryPressure: MemoryPressureLevel? {
+        nativeHardware.pressure ?? MemoryPressureLevel(reported: status?.memory.pressure)
+    }
+    var memoryPressureText: String {
+        switch memoryPressure {
+        case .normal: return t("正常", "Normal")
+        case .warning: return t("偏高", "Elevated")
+        case .critical: return t("過高", "High")
+        case nil: return t("暫無讀值", "No reading")
+        }
+    }
+    var cpuTemperature: Double? { ThermalStatus.availablePositive(status?.thermal?.cpuTemp) ?? nativeHardware.cpuTemperature }
+    var gpuTemperature: Double? { ThermalStatus.availablePositive(status?.thermal?.gpuTemp) ?? nativeHardware.gpuTemperature }
+    var fanSpeeds: [Double] {
+        if !nativeHardware.fans.isEmpty { return nativeHardware.fans }
+        guard let thermal = status?.thermal, (thermal.fanCount ?? 0) > 0, let speed = thermal.fanSpeed, speed >= 0 else { return [] }
+        return [Double(speed)]
+    }
+    func gpuUsage(_ gpu: GPUStatus) -> Double? {
+        if let value = gpu.usage, value.isFinite, (0...100).contains(value) { return value }
+        return status?.gpu.count == 1 ? nativeHardware.gpuUsage : nil
+    }
+
+    func updateSelectorScreen(_ lines: [String]) {
+        guard let command = operationKind else { return }
+        let supported = fixtureMode || MoleSelectionScreen.supports(command: command, version: installation?.version ?? "")
+        moleSelector.update(lines, command: command,
+            enabled: supported && operationSession.running && !operationDetailsExpanded,
+            send: { [weak self] data in self?.operationSession.send(data) })
+    }
+
+    func canOpenSelection(_ command: MoleCommand) -> Bool {
+        MoleSelectionScreen.supports(command: command, version: installation?.version ?? "")
+    }
+    func openSelection(_ command: MoleCommand, options: [MoleOption], title: String) {
+        do {
+            guard canStart, canOpenSelection(command), !options.contains(.yes) else {
+                throw MoleError.invalidArgument(t("目前無法開啟受驗證的選取流程，請使用預覽或官方完整模式。", "Use preview or full CLI mode; this selector flow is unavailable."))
+            }
+            let invocation = try MoleInvocation.make(command: command, options: options)
+            guard invocation.requiresPTY, !invocation.isPreview else { throw MoleError.invalidArgument("Expected an interactive selector.") }
+            _ = try validatedInstallation(for: invocation)
+            // Reviewed Mole 1.62 installer/purge/slim commands always stop at
+            // their TTY selection and final confirmation before changing targets.
+            // Open that flow once; the user confirms the scope in the same view.
+            launch(invocation, title: title)
+        } catch { self.error = error.localizedDescription }
     }
 
     func request(_ command: MoleCommand, options: [MoleOption] = [], title: String? = nil) {
@@ -478,6 +597,18 @@ import MoPanelProcess
         operationDetailsExpanded = false
         operationKind = invocation.command
         operationResult = nil
+        moleSelector.reset()
+        operationProgress = OperationProgressSummary()
+        operationProgressEntries = []; operationInputPrompt = nil
+        session.onActivity = { [weak self, weak session] bytes in
+            guard let self, let session, self.operationSession === session else { return }
+            self.operationProgress.append(bytes)
+            self.operationProgressEntries = self.operationProgress.entries
+            let pending = self.operationProgress.pendingText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if pending.lowercased().contains("password"), pending.hasSuffix(":") { self.operationInputPrompt = "password" }
+            else if pending.lowercased().contains("y/n") { self.operationInputPrompt = String(pending.suffix(300)) }
+            else { self.operationInputPrompt = nil }
+        }
         operationWasPreview = invocation.isPreview
         operationIsInteractive = invocation.requiresPTY
         rawResult = ""
@@ -490,6 +621,13 @@ import MoPanelProcess
         session.onExit = { [weak self, weak session] result in
             guard let self, let session, self.operationSession === session else { return }
             self.operationResult = result
+            self.moleSelector.suspend()
+            self.operationProgress.finish()
+            self.operationProgressEntries = self.operationProgress.entries
+            self.operationInputPrompt = nil
+            if !self.fixtureMode, invocation.command == .clean, invocation.isPreview, result.succeeded {
+                Task { await self.cleanupReview.loadCleanupPreview(); if !self.cleanupReview.files.isEmpty { self.showOperation = false } }
+            }
             self.record(invocation.displayCommand, result: result)
             if !invocation.requiresPTY { self.rawResult = String(TerminalText.plain(result.stdoutText + "\n" + result.stderrText).suffix(500_000)) }
             // Mole's own main menu can also update or remove the CLI. Never
@@ -541,6 +679,11 @@ import MoPanelProcess
         pending = nil
         cancelScan()
         stopMonitoring()
+        nativeSampleTask?.cancel()
+        nativeReadings.close()
+        cleanupReview.cancel()
+        uninstallReview.cancel()
+        moleSelector.suspend()
         operationSession.cancel()
     }
 

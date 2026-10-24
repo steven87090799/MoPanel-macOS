@@ -80,6 +80,8 @@ public enum ManagedProcessError: LocalizedError {
         }
     }
     public var onError: ((Data) -> Void)?
+    /// Optional bounded-summary observer. It never replaces the terminal consumer.
+    public var onActivity: ((Data) -> Void)?
     public var onExit: ((ProcessResult) -> Void)?
 
     private let helperURL: URL
@@ -196,6 +198,7 @@ public enum ManagedProcessError: LocalizedError {
 
     /// Pipe output is bounded. Stream consumers use retainsOutput=false.
     private func receive(_ data: Data, isError: Bool) {
+        onActivity?(data)
         if data.isEmpty {
             if isError { errorClosed = true } else { outputClosed = true }
             finishIfReady(); return

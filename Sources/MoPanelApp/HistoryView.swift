@@ -27,11 +27,13 @@ struct HistoryView: View {
                     Button(model.t("讀取歷史", "Load History")) { Task { await model.loadHistory(limit: limit) } }.buttonStyle(.borderedProminent).disabled(!model.canStart)
                 }
                 if let history = model.history {
+                    DisclosureGroup(model.t("更多紀錄與原始輸出", "More Records and Raw Output")) {
                     HStack {
                         Button(model.t("原始操作日誌", "Operation Log")) { model.reveal(history.logs.operations) }
                         Button(model.t("原始刪除日誌", "Deletion Log")) { model.reveal(history.logs.deletions) }
                         Button(model.t("官方文字報表", "Official Text Report")) { model.request(.history, options: [.historyLimit(limit)]) }.disabled(!model.canStart)
                         Button(model.t("官方 JSON", "Official JSON")) { model.request(.history, options: [.json, .historyLimit(limit)]) }.disabled(!model.canStart)
+                    }
                     }
                     LazyVStack(spacing: 12) {
                         ForEach(Array(sessions.enumerated()), id: \.offset) { _, item in
@@ -40,7 +42,7 @@ struct HistoryView: View {
                                     HStack {
                                         Label(item.command.capitalized, systemImage: item.isComplete && item.isUnambiguous ? "doc.text" : "exclamationmark.circle").font(.headline)
                                         Spacer()
-                                        Text(item.startedAt).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                                        Text(DisplayFormat.timestamp(item.startedAt, language: model.language)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                                         Text(item.size).font(.headline.monospacedDigit())
                                     }
                                     if !item.isComplete { Notice(text: model.t("沒有結束標記：可能中斷或尚未完成，不能認定全部成功。", "No end marker was recorded. This run may be interrupted or incomplete."), warning: true) }

@@ -84,8 +84,10 @@ struct AppUpdatesView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(t("App 更新", "App Updates"), systemImage: "arrow.triangle.2.circlepath.circle").font(.largeTitle.bold())
-            Text(t("MoPanel 新實作 · Homebrew 原生介接與 App 自有更新入口；不是 Mole CLI 指令。", "MoPanel implementation · Native Homebrew integration and app-owned updater handoffs; not a Mole CLI command.")).foregroundStyle(.secondary)
+            Text(t("先檢查可用更新，再選擇要更新的 App。", "Check available updates, then choose apps to update.")).foregroundStyle(.secondary)
+            DisclosureGroup(t("更多資訊", "More Information")) {
             Text(t("不自動檢查或更新。Homebrew 版本來自你目前的索引；其他 App 僅辨識本機更新來源，不會上傳 App 清單、讀取帳號憑證或抓取任意安裝檔。", "No automatic checks or updates. Homebrew versions come from your current metadata. Other apps are identified locally; MoPanel does not upload the app inventory, read account credentials or fetch arbitrary installers.")).font(.callout)
+            }
             if operationInProgress { Text(t("其他作業執行中，暫停 App 更新操作。", "App update actions are paused while another operation is running.")).foregroundStyle(.orange) }
             if !controller.actionsAllowed { Text(t("測試模式：真實更新與外部啟動已停用。", "Test mode: real updates and external launches are disabled.")).foregroundStyle(.orange) }
         }

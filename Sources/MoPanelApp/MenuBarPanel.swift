@@ -3,6 +3,7 @@ import AppKit
 import MoPanelCore
 
 struct MenuBarPanel: View {
+    @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var systemTools: SystemToolsController
 
@@ -17,7 +18,7 @@ struct MenuBarPanel: View {
                     health(snapshot)
                     resourceCards(snapshot)
                     battery(snapshot)
-                    processes(snapshot)
+                    if model.fixtureMode && model.applicationUsage.isEmpty { processes(snapshot) } else { ApplicationUsageList(compact: true).padding(12).moPanelGlass(cornerRadius: 16) }
                     Text(model.t("更新於 ", "Updated ") + DisplayFormat.timestamp(snapshot.collectedAt, language: model.language))
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
                 } else {
@@ -26,7 +27,7 @@ struct MenuBarPanel: View {
                                            description: Text(model.t("連接 Mole 後，這裡會顯示即時資源狀態。", "Connect Mole to see live system metrics.")))
                 }
                 controls
-                Text(model.t("資料來源：Mole Status · 與總覽同步", "Mole Status · Shared with Dashboard"))
+                Text(model.t("Mole Status + macOS 感測 · 與總覽同步", "Mole Status + macOS · Shared with Dashboard"))
                     .font(.system(size: 10)).foregroundStyle(.tertiary)
             }.padding(14)
         }
@@ -62,19 +63,19 @@ struct MenuBarPanel: View {
         let gpu = snapshot.gpu.first { value in value.usage.map { $0.isFinite && (0...100).contains($0) } == true } ?? snapshot.gpu.first
         return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
             MonitorTile(title: "CPU", symbol: "cpu", tint: MoPanelTheme.positive,
-                        badge: temperature(snapshot.thermal?.cpuTemp),
+                        badge: temperature(model.cpuTemperature),
                         value: percentage(snapshot.cpu.logicalCPU > 0 ? snapshot.cpu.usage : nil),
                         detail: model.t("平均負載 ", "Load ") + DisplayFormat.number(snapshot.cpu.load1, suffix: "")) {
                 CoreUsageBars(values: Array((snapshot.cpu.perCore ?? []).prefix(16)))
             }
             MonitorTile(title: "GPU", symbol: "cpu", tint: MoPanelTheme.accent,
-                        badge: temperature(snapshot.thermal?.gpuTemp),
-                        value: percentage(gpu?.usage),
+                        badge: temperature(model.gpuTemperature),
+                        value: percentage(gpu.flatMap { model.gpuUsage($0) }),
                         detail: gpu?.name ?? model.t("尚無 GPU 讀值", "GPU data unavailable")) {
                 MiniResourceTrend(values: model.trends.map(\.gpu), color: MoPanelTheme.accent, ceiling: 100)
             }
             MonitorTile(title: model.t("記憶體", "Memory"), symbol: "memorychip", tint: MoPanelTheme.accent,
-                        badge: memoryPressure(snapshot.memory.pressure),
+                        badge: model.memoryPressureText,
                         value: percentage(snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil),
                         detail: snapshot.memory.total > 0 ? DisplayFormat.bytes(snapshot.memory.used) + " / " + DisplayFormat.bytes(snapshot.memory.total) : model.unavailable) {
                 MiniResourceTrend(values: model.trends.map(\.memory), color: MoPanelTheme.accent, ceiling: 100)
@@ -83,9 +84,9 @@ struct MenuBarPanel: View {
             network(snapshot)
             MonitorTile(title: model.t("風扇", "Fans"), symbol: "fan", tint: MoPanelTheme.accent,
                         badge: model.t("讀值", "Readout"),
-                        value: fanSpeed(snapshot.thermal),
-                        detail: model.t("模式控制未提供", "Mode control unavailable")) {
-                Text(model.t("Mole 硬體讀值", "Mole hardware data"))
+                        value: model.fanSpeeds.isEmpty ? "—" : model.fanSpeeds.map { String(format: "%.0f", $0) }.joined(separator: " / ") + " RPM",
+                        detail: model.fanSpeeds.isEmpty ? model.t("等待風扇讀值", "Waiting for fan readings") : "\(model.fanSpeeds.count) " + model.t("個風扇 · 實際轉速", "fans · Actual RPM")) {
+                Text(model.t("唯讀硬體感測", "Read-only hardware sensors"))
                     .font(.caption2).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -95,9 +96,9 @@ struct MenuBarPanel: View {
         let disk = snapshot.disks.first(where: { $0.mount == "/" }) ?? snapshot.disks.first
         let available: UInt64? = disk.flatMap { $0.total > 0 && $0.used <= $0.total ? $0.total - $0.used : nil }
         return MonitorTile(title: model.t("可用空間", "Free Space"), symbol: "internaldrive", tint: MoPanelTheme.chartSecondary,
-                           badge: disk.map { DisplayFormat.bytes($0.total) } ?? "—",
-                           value: DisplayFormat.bytes(available),
-                           detail: disk.map { model.t("已用 ", "Used ") + DisplayFormat.bytes($0.used) + " · " + percentage($0.usedPercent) } ?? model.unavailable) {
+                           badge: disk.map { DisplayFormat.storage($0.total) } ?? "—",
+                           value: DisplayFormat.storage(available),
+                           detail: disk.map { model.t("已用 ", "Used ") + DisplayFormat.storage($0.used) + " · " + percentage($0.usedPercent) } ?? model.unavailable) {
             if let disk, disk.total > 0, disk.usedPercent.isFinite, (0...100).contains(disk.usedPercent) {
                 ProgressView(value: disk.usedPercent, total: 100).tint(MoPanelTheme.chartSecondary)
             } else {
@@ -109,9 +110,9 @@ struct MenuBarPanel: View {
     private func network(_ snapshot: StatusSnapshot) -> some View {
         let network = snapshot.network.first(where: { $0.name == model.selectedNetwork }) ?? snapshot.network.first
         return MonitorTile(title: model.t("網路", "Network"), symbol: "network", tint: MoPanelTheme.chartSecondary,
-                           badge: network?.name ?? "—", value: rate(network?.rxRateMbs),
-                           detail: "↑ " + rate(network?.txRateMbs)) {
-            MiniResourceTrend(values: model.trends.map(\.down), color: MoPanelTheme.chartSecondary)
+                           badge: network?.name ?? "—", value: MonitorFormat.rate(network?.rxRateMbs),
+                           detail: "↑ " + MonitorFormat.rate(network?.txRateMbs)) {
+            MiniResourceTrend(values: model.trends.map { $0.networkInterfaces[model.selectedNetwork]?.rxRateMbs }, color: MoPanelTheme.chartSecondary)
         }
     }
 
@@ -174,7 +175,11 @@ struct MenuBarPanel: View {
                     .buttonStyle(.plain).foregroundStyle(.secondary)
             }
             if model.hasRunningOperation {
-                Text(model.t("作業執行中，監控暫停。", "Monitoring pauses during an operation.")).font(.caption2).foregroundStyle(.secondary)
+                HStack {
+                    Text(model.t("作業執行中，監控暫停。", "Monitoring pauses during an operation.")).font(.caption2).foregroundStyle(.secondary)
+                    Spacer()
+                    Button(model.t("查看進度", "View Progress")) { show(model.nativeReviewSection ?? model.section) }
+                }
             }
         }.buttonStyle(.bordered).font(.caption)
     }
@@ -211,11 +216,11 @@ struct MenuBarPanel: View {
     }
     private func healthDescription(_ score: Int?, message: String?) -> String {
         guard let score, (0...100).contains(score) else { return model.t("未提供", "Unavailable") }
-        switch message?.lowercased() {
+        switch message?.components(separatedBy: ":").first?.trimmingCharacters(in: .whitespaces).lowercased() {
         case "good", "excellent", "healthy", "normal": return model.t("良好", "Good")
         case "fair", "warning", "moderate": return model.t("需留意", "Fair")
-        case "poor", "critical": return model.t("需關注", "Needs attention")
-        default: return model.t("健康分數", "Health Score")
+        case "poor", "critical", "needs attention": return model.t("需關注", "Needs attention")
+        default: return model.t("CLI 狀態分數", "CLI Score")
         }
     }
     private func uptime(_ snapshot: StatusSnapshot) -> String {
@@ -233,6 +238,7 @@ struct MenuBarPanel: View {
     }
     private func show(_ section: AppSection) {
         model.section = section
+        openWindow(id: "main")
         NSApp.activate()
         NSApp.windows.first(where: { $0.styleMask.contains(.titled) && !$0.isSheet })?.makeKeyAndOrderFront(nil)
     }

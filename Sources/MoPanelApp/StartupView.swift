@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import SwiftUI
+import AppKit
 import MoPanelCore
 
 struct StartupView: View {
@@ -9,6 +10,7 @@ struct StartupView: View {
     @State private var search = ""
     @State private var scope = "all"
     @State private var onlyManageable = false
+    @State private var expandedRows = Set<String>()
     private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     private var visible: [StartupRow] {
         controller.rows.filter { row in
@@ -22,7 +24,7 @@ struct StartupView: View {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 7) {
                     Label(t("啟動與背景項目", "Startup and Background Items"), systemImage: "power.circle").font(.largeTitle.bold())
-                    Text(t("MoPanel 新實作 · 只管理已驗證屬於目前使用者的第三方 LaunchAgent；其他項目交由系統設定。", "MoPanel implementation · Manages verified own-user third-party LaunchAgents; other items remain in System Settings.")).foregroundStyle(.secondary)
+                    Text(t("檢視登入時啟動與背景服務。點選項目可查看詳細資料。", "Review startup and background services. Select an item for details.")).foregroundStyle(.secondary)
                 }
                 HStack {
                     Button(t("讀取／重新整理", "Read / Refresh")) { Task { await controller.refresh() } }.buttonStyle(.borderedProminent)
@@ -34,6 +36,7 @@ struct StartupView: View {
                         Button(t("停止", "Stop")) { controller.cancel() }
                     }
                 }
+                DisclosureGroup(t("篩選與清單範圍", "Filters and Inventory Scope")) {
                 Text(t("這個清單只讀取 ~/Library/LaunchAgents、/Library/LaunchAgents 與 /Library/LaunchDaemons 的 plist 中繼資料，不包含私人背景項目資料庫。未列出的 Login Items 請在系統設定管理。", "Reads bounded plist metadata from ~/Library/LaunchAgents, /Library/LaunchAgents and /Library/LaunchDaemons. It does not read private background-item databases. Manage other Login Items in System Settings.")).font(.callout).foregroundStyle(.secondary)
                 HStack {
                     TextField(t("搜尋標籤、執行檔或路徑", "Search label, executable or path"), text: $search).textFieldStyle(.roundedBorder)
@@ -42,6 +45,7 @@ struct StartupView: View {
                         ForEach(StartupScope.allCases, id: \.rawValue) { value in Text(scopeTitle(value)).tag(value.rawValue) }
                     }.frame(width: 210)
                     Toggle(t("僅可管理", "Manageable only"), isOn: $onlyManageable).toggleStyle(.checkbox)
+                }
                 }
                 if !controller.statusMessage.isEmpty { Text(controller.statusMessage).font(.callout) }
                 ForEach(controller.warnings, id: \.self) { Text($0).font(.caption).foregroundStyle(.orange) }
@@ -53,10 +57,10 @@ struct StartupView: View {
                 LazyVStack(spacing: 12) { ForEach(visible) { row in rowView(row) } }
             }.padding(26)
         }
-        .onAppear { controller.language = language }
+        .task { controller.language = language; if !controller.hasLoaded { await controller.refresh() } }
         .onChange(of: language) { _, value in controller.language = value }
         .onDisappear { controller.cancel() }
-        .sheet(item: $controller.pendingPlan) { plan in confirmation(plan) }
+        .safeAreaInset(edge: .bottom) { if let plan = controller.pendingPlan { confirmation(plan).moPanelGlass(cornerRadius: 18).padding(12) } }
         .alert(t("啟動項目作業未完成", "Startup Operation Incomplete"), isPresented: Binding(get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } })) {
             Button(t("關閉", "Close")) { controller.errorMessage = nil }
         } message: { Text(controller.errorMessage ?? "") }
@@ -65,16 +69,34 @@ struct StartupView: View {
     private func rowView(_ row: StartupRow) -> some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top) {
-                    Image(systemName: row.item.scope == .systemDaemon ? "gearshape.2" : "app.badge").font(.title2).foregroundStyle(MoPanelTheme.accent)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(row.item.snapshot?.label ?? row.item.url.lastPathComponent).font(.headline).textSelection(.enabled)
-                        Text(row.item.url.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                        Text(scopeTitle(row.item.scope)).font(.caption)
+                HStack {
+                    Button {
+                        if expandedRows.contains(row.id) { expandedRows.remove(row.id) } else { expandedRows.insert(row.id) }
+                    } label: {
+                        HStack(spacing: 12) {
+                            AppIcon(path: appPath(row) ?? row.item.url.path)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(displayName(row)).font(.headline)
+                                Text(row.item.scope == .systemDaemon ? t("系統背景服務", "System service") : t("登入與背景服務", "Startup and background service")).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: expandedRows.contains(row.id) ? "chevron.up" : "chevron.down").font(.caption).foregroundStyle(.secondary)
+                        }.contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                    if controller.canReview(row), let enabled = enabled(row) {
+                        Toggle("", isOn: Binding(get: { enabled }, set: { value in Task { await controller.prepareChange(id: row.id, enable: value) } }))
+                            .toggleStyle(.switch).labelsHidden().disabled(controller.isBusy || operationInProgress)
+                            .help(t("啟用或停用", "Enable or disable"))
+                    } else {
+                        Button(enabled(row).map { $0 ? t("已啟用", "Enabled") : t("已停用", "Disabled") } ?? t("查看狀態", "View state")) {
+                            expandedRows.insert(row.id)
+                            Task { await controller.inspectState(id: row.id) }
+                        }.buttonStyle(.borderless).disabled(controller.isBusy)
                     }
-                    Spacer()
-                    Button(t("Finder", "Finder")) { controller.reveal(row) }
                 }
+                if expandedRows.contains(row.id) {
+                Text(row.item.url.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                Button(t("在 Finder 中顯示", "Show in Finder")) { controller.reveal(row) }
                 if let snapshot = row.item.snapshot {
                     LabeledContent(t("執行檔", "Executable"), value: snapshot.executable ?? t("未知", "Unknown")).font(.callout).textSelection(.enabled)
                     HStack {
@@ -109,7 +131,28 @@ struct StartupView: View {
                         }
                     }
                 } else { Text(row.item.error ?? t("無法安全解析此檔案。", "This file could not be safely parsed.")).font(.callout).foregroundStyle(.orange) }
+                }
             }.padding(10)
+        }
+    }
+
+    private func appPath(_ row: StartupRow) -> String? {
+        guard let path = row.item.snapshot?.executable, let range = path.range(of: ".app/") else { return nil }
+        return String(path[..<range.lowerBound]) + ".app"
+    }
+    private func displayName(_ row: StartupRow) -> String {
+        if let path = appPath(row), let bundle = Bundle(path: path) {
+            return (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+        }
+        return row.item.snapshot?.executable.map { URL(fileURLWithPath: $0).lastPathComponent } ?? row.item.snapshot?.label ?? row.item.url.deletingPathExtension().lastPathComponent
+    }
+    private func enabled(_ row: StartupRow) -> Bool? {
+        guard row.loadState.isVerified else { return nil }
+        switch row.override {
+        case .enabled: return true
+        case .disabled: return false
+        case .absent: return !(row.item.snapshot?.plistDisabled ?? false)
+        case nil: return nil
         }
     }
 
@@ -135,7 +178,7 @@ struct StartupView: View {
                     Task { await controller.applyPendingChange() }
                 }.buttonStyle(.borderedProminent).disabled(controller.isBusy || operationInProgress)
             }
-        }.padding(26).frame(width: 650)
+        }.padding(20).frame(maxWidth: .infinity)
     }
 
     private func scopeTitle(_ scope: StartupScope) -> String {

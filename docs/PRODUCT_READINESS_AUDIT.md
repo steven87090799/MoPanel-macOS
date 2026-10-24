@@ -1,5 +1,7 @@
 # 正式產品審查：第一批修復與接續點
 
+2026-10-25 後續實作見 [簡易操作與監測修正](USABILITY_REDESIGN_2026-10-25.md)。本頁的日期、測試數與限制描述屬於各自記載的歷史版本。
+
 日期：2026-10-24（Asia/Taipei）。工作分支：`codex/product-readiness-audit`；起點：`64b81eb`。本輪實作與有限驗證的程式提交：`9eb131721293cdf621161ef2052c3f8ca0c1e5cb`。
 
 後續原生介面與監控面板的程式提交為 `4ae06698aa4be0e433ad473a7071f464f705b97d`，已通過本機完整建置與有限測試。最新來源、測試數、產物雜湊及適用範圍見 [native-interface-validation.json](audit-2026-10-24/native-interface-validation.json)。

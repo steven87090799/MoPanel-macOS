@@ -10,7 +10,6 @@ struct ContentView: View {
     @EnvironmentObject private var appUpdates: AppUpdatesController
     @EnvironmentObject private var startup: StartupController
     @EnvironmentObject private var worktrees: GitWorktreeController
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var started = false
     @State private var isSidebarCollapsed = false
@@ -77,7 +76,10 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if let pending = model.pending {
+                    if let section = model.nativeReviewSection {
+                        NativeReviewProgressPanel(controller: section == .clean ? model.cleanupReview : model.uninstallReview,
+                                                  section: section).padding(.horizontal, 16).padding(.bottom, 12)
+                    } else if let pending = model.pending {
                         ConfirmationPanel(pending: pending).id(pending.id)
                             .padding(.horizontal, 16).padding(.bottom, 12)
                     } else if model.homebrewConfirmation {
@@ -110,13 +112,7 @@ struct ContentView: View {
             guard !started else { return }
             started = true
             if model.isTestLaunch { await SmokeHarness.run(model, systemTools: systemTools) }
-            else { await model.detect() }
-        }
-        .onChange(of: scenePhase) { _, phase in
-            guard !model.isTestLaunch else { return }
-            let active = phase == .active
-            guard model.windowActive != active else { return }
-            model.windowActive = active
+            else if model.installation == nil { await model.detect() }
         }
         .onChange(of: model.showOperation) { _, shown in
             if shown && !appUpdates.isBusy { appUpdates.showOperation = false }
@@ -126,8 +122,8 @@ struct ContentView: View {
         }
         .modifier(NativeUISmokeAccessibilityEnvironment())
         // A SwiftUI root-host replacement can make this view disappear while
-        // its NSWindow is still open. Scene phase owns activity; the application
-        // delegate owns last-window/quit cleanup. Publishing here would reenter
+        // its NSWindow is still open. The application delegate owns actual
+        // window visibility, focus and last-window/quit cleanup. Publishing here would reenter
         // AppGraph while it is updating that host.
     }
 }
@@ -228,16 +224,18 @@ struct OperationPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var session: ManagedProcess
     @State private var stopping = false
+    @State private var passwordInput = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Label(activityTitle, systemImage: statusSymbol).font(.headline)
-                    .foregroundStyle(model.operationResult?.succeeded == true ? Color.green : Color.primary)
+                    .foregroundStyle(completedWithWarnings ? Color.orange : model.operationResult?.succeeded == true ? Color.green : Color.primary)
                     .lineLimit(2).layoutPriority(1)
                 Spacer(minLength: 8)
                 NativeActionButton(model.t(detailsExpanded ? "收合詳細資訊" : "詳細資訊", detailsExpanded ? "Hide Details" : "Details"), identifier: "mopanel.operation.details.toggle",
                                    systemImage: detailsExpanded ? "chevron.down" : "chevron.right") {
                     model.operationDetailsExpanded.toggle()
+                    if model.operationDetailsExpanded { model.moleSelector.suspend() }
                 }
                 Button(model.t("儲存結果…", "Save Result…")) { model.exportOperationOutput() }.disabled(model.operationResult == nil)
                 NativeActionButton(model.t("停止", "Stop"), identifier: "mopanel.operation.stop", destructive: true) {
@@ -251,23 +249,59 @@ struct OperationPanel: View {
             if session.running {
                 ProgressView().progressViewStyle(.linear).accessibilityLabel(activityTitle)
             } else if model.operationResult?.succeeded == true {
-                ProgressView(value: 1).progressViewStyle(.linear).tint(.green)
+                ProgressView(value: 1).progressViewStyle(.linear).tint(completedWithWarnings ? .orange : .green)
             }
-            ExecutionCommandView(command: model.operationCommand)
-            if session.running && model.operationIsInteractive {
-                Text(model.t("需要選取、確認或輸入密碼時，請展開「詳細資訊」操作。", "Expand Details when Mole needs a selection, confirmation or password."))
-                    .font(.caption).foregroundStyle(.secondary)
+            if !model.operationProgressEntries.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(model.operationWasPreview ? model.t("掃描結果 · 尚未變更檔案", "Preview · No files changed") : model.t("執行進度", "Progress")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    ForEach(Array(model.operationProgressEntries.suffix(4))) { entry in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: entry.state == .failed ? "exclamationmark.circle" : entry.state == .skipped ? "minus.circle" : entry.state == .working ? "circle.dotted" : "checkmark.circle")
+                                .foregroundStyle(entry.state == .failed ? Color.red : entry.state == .skipped ? .orange : MoPanelTheme.positive)
+                            Text(entry.text).font(.callout).lineLimit(2).textSelection(.enabled)
+                        }
+                    }
+                }
+            }
+            MoleSelectorView(controller: model.moleSelector, language: model.language, running: session.running && !detailsExpanded, preview: model.operationWasPreview)
+            if session.running, let prompt = model.operationInputPrompt {
+                if prompt == "password" {
+                    HStack {
+                        SecureField(model.t("Mole 需要管理員密碼", "Mole needs an administrator password"), text: $passwordInput)
+                            .onSubmit { sendPassword() }
+                        Button(model.t("繼續", "Continue")) { sendPassword() }.disabled(passwordInput.isEmpty)
+                    }
+                    Text(model.t("密碼只交給本次 Mole 作業，不會儲存。", "Sent only to this Mole operation; never saved.")).font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text(prompt).font(.callout)
+                    HStack {
+                        Button(model.t("不要", "No")) { session.send(Data("n\n".utf8)); model.operationInputPrompt = nil }
+                        Button(model.t("確認繼續", "Confirm Continue")) { session.send(Data("y\n".utf8)); model.operationInputPrompt = nil }
+                    }
+                }
+            }
+            DisclosureGroup(model.t("執行指令與完整記錄", "Command and Full Record")) {
+                ExecutionCommandView(command: model.operationCommand)
+                ForEach(model.operationProgressEntries) { entry in Text(entry.text).font(.caption).textSelection(.enabled) }
             }
             operationDetails
             if let result = model.operationResult {
                 Text(result.cancelled ? model.t("作業已停止，已完成的變更不會自動還原。", "Stopped; completed changes are not automatically rolled back.")
-                     : result.succeeded ? model.t("已完成。可展開詳細資訊查看結果。", "Completed. Expand Details to review the result.")
+                     : completedWithWarnings ? model.t("部分項目未完成，請查看上方結果與原因。", "Some items remain unresolved; see the results above.")
+                     : result.succeeded ? model.t("已完成；結果顯示於本頁。", "Completed; results appear on this page.")
                      : model.t("作業未完整完成，請展開詳細資訊檢查原因。", "The operation did not complete. Expand Details to inspect the reason."))
                     .font(.caption).foregroundStyle(.secondary)
                 if result.outputTruncated { Notice(text: model.t("輸出超過安全上限，作業已停止，不能將這次結果視為完整。", "Output exceeded the safety limit. The operation was stopped; this result is incomplete."), warning: true) }
             }
             if stopping && session.running { Notice(text: model.t("正在要求官方程序停止。Slim 若正在替換 App，會先完成安全步驟；已完成的變更不會回復。", "Waiting for the official process to stop. Slim finishes an in-progress app replacement safely. Completed changes are not rolled back."), warning: true) }
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading).moPanelGlass(cornerRadius: 18)
+    }
+
+    private func sendPassword() {
+        guard session.running, model.operationInputPrompt == "password", !passwordInput.isEmpty else { return }
+        session.send(Data((passwordInput + "\n").utf8))
+        passwordInput = ""
+        model.operationInputPrompt = nil
     }
 
     private var detailsExpanded: Bool { model.operationDetailsExpanded }
@@ -281,7 +315,7 @@ struct OperationPanel: View {
                     Notice(text: model.t("這是預覽。實際執行前，Mole 會重新檢查項目與保護規則。", "This is a preview. Mole rechecks items and protection rules before an actual operation."))
                 }
                 if model.operationIsInteractive {
-                    TerminalPanel(session: session, english: model.language == "en", isVisible: detailsExpanded, minimumTerminalHeight: 200)
+                    TerminalPanel(session: session, english: model.language == "en", isVisible: detailsExpanded, minimumTerminalHeight: 200, onScreen: { model.updateSelectorScreen($0) })
                         .background(Color.black).clipShape(RoundedRectangle(cornerRadius: 10))
                     HStack {
                         terminalKey("←", "\u{1B}[D"); terminalKey("→", "\u{1B}[C"); terminalKey("Q", "q")
@@ -306,9 +340,12 @@ struct OperationPanel: View {
         .clipped().opacity(detailsExpanded ? 1 : 0).accessibilityHidden(!detailsExpanded)
     }
 
+    private var completedWithWarnings: Bool {
+        model.operationResult?.succeeded == true && model.operationProgressEntries.contains { $0.state == .failed }
+    }
     private var statusSymbol: String {
         if session.running { return stopping ? "stop.circle" : "gearshape.2" }
-        return model.operationResult?.succeeded == true ? "checkmark.circle.fill" : "exclamationmark.circle"
+        return model.operationResult?.succeeded == true && !completedWithWarnings ? "checkmark.circle.fill" : "exclamationmark.circle"
     }
 
     private var activityTitle: String {
@@ -316,6 +353,7 @@ struct OperationPanel: View {
         if let result = model.operationResult {
             if result.cancelled { return model.t("作業已停止", "Operation stopped") }
             if result.timedOut { return model.t("作業逾時", "Operation timed out") }
+            if result.succeeded && model.operationProgressEntries.contains(where: { $0.state == .failed }) { return model.t("已完成，部分項目未處理", "Completed with unresolved items") }
             return result.succeeded ? model.t("作業已完成", "Operation completed") : model.t("作業未完整完成", "Operation incomplete")
         }
         if model.operationWasPreview { return model.t("正在掃描與預覽", "Scanning and previewing") }
@@ -338,5 +376,24 @@ struct OperationPanel: View {
     }
     private func terminalKey(_ title: String, _ key: String) -> some View {
         Button(title) { session.send(Data(key.utf8)) }.disabled(!session.running)
+    }
+}
+
+private struct NativeReviewProgressPanel: View {
+    @EnvironmentObject private var model: AppModel
+    @ObservedObject var controller: FileReviewController
+    let section: AppSection
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label(controller.message, systemImage: "arrow.down.bin").lineLimit(2)
+                Spacer()
+                if model.section != section {
+                    Button(model.t("查看進度", "View Progress")) { model.section = section }
+                }
+                Button(model.t("停止", "Stop")) { controller.cancel() }
+            }.font(.callout)
+            ProgressView(value: controller.progress)
+        }.padding(14).moPanelGlass(cornerRadius: 16)
     }
 }

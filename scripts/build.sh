@@ -14,6 +14,15 @@ if [[ "${sdk_version%%.*}" -lt 27 ]]; then
     exit 1
 fi
 export MACOSX_DEPLOYMENT_TARGET=27.0
+# Keep a selectable build engine and scratch location. A stale local build
+# cache can stall the Xcode driver at XCTest linking; an explicit fresh scratch
+# path provides recovery without deleting sources or changing system tools.
+swift_build_system="${MOPANEL_SWIFT_BUILD_SYSTEM:-native}"
+case "$swift_build_system" in native|swiftbuild) ;; *) echo "Unsupported Swift build system" >&2; exit 1 ;; esac
+swift_build_args=(--build-system "$swift_build_system" --arch arm64)
+if [[ -n "${MOPANEL_SWIFT_SCRATCH_PATH:-}" ]]; then
+    swift_build_args+=(--scratch-path "$MOPANEL_SWIFT_SCRATCH_PATH")
+fi
 mkdir -p build/reports build/releases
 source scripts/validation-gates.sh
 python3 scripts/test_validation_gates.py 2>&1 | tee build/reports/validation-gate-harness.log
@@ -21,6 +30,7 @@ python3 scripts/test_smoke_driver.py 2>&1 | tee build/reports/smoke-driver-tests
 python3 scripts/test_crash_evidence.py 2>&1 | tee build/reports/crash-evidence-tests.log
 python3 scripts/test_debug_smoke_failure.py 2>&1 | tee build/reports/debug-diagnostic-tests.log
 python3 scripts/test_release_report.py 2>&1 | tee build/reports/release-report-tests.log
+python3 scripts/test_copy_release_reports.py
 python3 scripts/test_control_pipe_sigpipe.py --output build/reports/control-pipe-sigpipe.json 2>&1 | tee build/reports/control-pipe-sigpipe.log
 mopanel_initialize_validation_gates build/reports/validation-gates.json
 build_staging="$(mktemp -d "$project_root/build/staging.XXXXXX")"
@@ -39,12 +49,12 @@ assert pin['revision'] == '5d14406844143538cd8f8851d2d8a67c1fe443e5', 'SwiftTerm
 assert pin.get('version') == '1.20.0', 'Unexpected SwiftTerm version'
 pathlib.Path('build/reports/dependencies.json').write_text(json.dumps(resolved, indent=2) + '\n')
 PY
-xcrun swift build --configuration release --arch arm64 --product MoPanelGuardian 2>&1 | tee build/reports/build-guardian.log
-binary_dir="$(xcrun swift build --configuration release --arch arm64 --show-bin-path)"
+xcrun swift build "${swift_build_args[@]}" --configuration release --product MoPanelGuardian 2>&1 | tee build/reports/build-guardian.log
+binary_dir="$(xcrun swift build "${swift_build_args[@]}" --configuration release --show-bin-path)"
 mopanel_capture_validation_gate build/reports/validation-gates.json swift-test build/reports/swift-test.log \
-    env MOPANEL_GUARDIAN="$binary_dir/MoPanelGuardian" xcrun swift test --arch arm64
-xcrun swift build --configuration release --arch arm64 --product MoPanel 2>&1 | tee build/reports/build-app.log
-xcrun swift build --configuration release --arch arm64 --product MoPanelEditor 2>&1 | tee build/reports/build-editor.log
+    env MOPANEL_GUARDIAN="$binary_dir/MoPanelGuardian" xcrun swift test "${swift_build_args[@]}"
+xcrun swift build "${swift_build_args[@]}" --configuration release --product MoPanel 2>&1 | tee build/reports/build-app.log
+xcrun swift build "${swift_build_args[@]}" --configuration release --product MoPanelEditor 2>&1 | tee build/reports/build-editor.log
 app_path="$build_staging/MoPanel.app"
 mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources" "$app_path/Contents/Helpers"
 install -m 755 "$binary_dir/MoPanel" "$app_path/Contents/MacOS/MoPanel"
@@ -127,7 +137,7 @@ SwiftTerm is linked into MoPanel. Swift Argument Parser and documentation plugin
 may be resolved by SwiftTerm's package manifest without being linked into MoPanel.
 No official Mole cleanup engine is bundled here.
 EOF
-ditto build/reports "$package_path/Reports"
+python3 scripts/copy_release_reports.py build/reports "$package_path/Reports"
 python3 scripts/write_release_report.py "$package_path"
 python3 scripts/write_build_manifest.py "$package_path"
 archive="$project_root/build/releases/MoPanel-macOS27-arm64.zip"
