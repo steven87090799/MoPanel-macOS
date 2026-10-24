@@ -1,0 +1,14 @@
+test_fixture_evidence_does_not_accept_a_real_engine (__main__.ProfileHarnessTests) ... ok
+test_fresh_flat_corpus_and_no_process_home_change (__main__.ProfileHarnessTests) ... ok
+test_missing_or_insufficient_activity_cannot_be_reported (__main__.ProfileHarnessTests) ... ok
+test_passive_observation_rejects_other_process_and_existing_evidence (__main__.ProfileHarnessTests) ... ok
+test_passive_observation_stops_when_pid_identity_changes (__main__.ProfileHarnessTests) ... ok
+test_passive_observation_streams_samples_and_never_launches_or_kills_app (__main__.ProfileHarnessTests) ... ok
+test_process_identity_keeps_space_in_path_and_disallows_system_pid (__main__.ProfileHarnessTests) ... ok
+test_real_evidence_requires_readonly_mode_and_matching_provenance (__main__.ProfileHarnessTests) ... ok
+test_samples_exclude_warmup_shutdown_and_inactive_scan_intervals (__main__.ProfileHarnessTests) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.871s
+
+OK

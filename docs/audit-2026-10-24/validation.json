@@ -1,0 +1,58 @@
+{
+  "source_commit": "9eb131721293cdf621161ef2052c3f8ca0c1e5cb",
+  "baseline_commit": "64b81eb",
+  "host": {
+    "os": "macOS 27.0.1",
+    "build": "26A434",
+    "architecture": "arm64",
+    "swift": "6.4",
+    "developer_directory": "/Library/Developer/CommandLineTools"
+  },
+  "source_sha256": {
+    "Sources/MoPanelCore/MonitoringPreferences.swift": "be06a6ada89bc0b1076f08cc89df5426fa27e2ca6f3f3457a5c530f88d7d681d",
+    "Sources/MoPanelCore/StatusTimestampDisplay.swift": "333c5dfd4d3271c48f7aa530bda8147965a0154eee54a9af6429c640fde618bf",
+    "Sources/MoPanelCore/NativeControlPolicy.swift": "df9721979b4559f7ca8fffae0048617d6879fdba9e85ca24615fdd2deddfed08",
+    "Sources/MoPanelProcess/ManagedProcess.swift": "7a5b88bac551b12469a9256584069d9f05805112404195909645c1b740c98c77",
+    "Sources/MoPanelTerminal/TerminalPanel.swift": "69d60c153837d8f9fb70a72a03edb0ff670b71e60d5acfec7b5446c72b95e962",
+    "Sources/MoPanelApp/AppModel.swift": "5dc8af48c7d47f9f831fa4cd27145edfa2270f91f1958f3c5422b7d2c14c8cf4",
+    "Sources/MoPanelApp/AppUpdatesController.swift": "03b7c1e666017daa382c62e3b089752265c91dfd4d0b31f44f97ad2b1c7856b5",
+    "scripts/probe_monitoring.swift": "5a5eb1aec7e3759585ede7fc36b9d61013a97d4c37ea126ea56106ca63fc6cfc",
+    "scripts/probe-monitoring.sh": "453347559390f9a972ec8e3556d2b9fea44a9bcbb789f0e8b97dfe41bc0adc6d",
+    "scripts/profile.py": "36b8f43baba7ae7045886f16a1e1b6e1883abf1a1ec44f78691583e3e9b2f1f8",
+    "scripts/test_profile.py": "730e9a5de5bd4cf3d22e0d532a9164ddb1b65816d880701f4846ed713eea34c1"
+  },
+  "core_process_terminal_targets": "passed actual native SwiftPM target builds; not a full release build",
+  "model_typecheck": "passed AppModel, AppUpdatesController, CLIProbe and the unmodified shared data-type prefix of AppTypes; excludes SwiftUI views",
+  "first_party_swift_syntax": "passed parse only",
+  "monitoring_probe": {
+    "status": "passed",
+    "checks": 5,
+    "evidence": "monitoring-after.json"
+  },
+  "baseline_process_probe": {
+    "status": "failed as reproduced before fix",
+    "source_ref": "64b81eb",
+    "evidence": "stream-before.json"
+  },
+  "profile_python_tests": {
+    "status": "passed",
+    "count": 9,
+    "evidence": "profile-tests.log"
+  },
+  "xctest": {
+    "status": "not executed",
+    "reason": "XCTest module unavailable; new preflight exits 2"
+  },
+  "full_app": {
+    "status": "not validated",
+    "initial_attempts": [
+      "default Swift build failed: Metal compiler unavailable",
+      "native fallback failed: SwiftUI StateMacro plugin unavailable; additionally exposed the now-corrected Dashboard closure error"
+    ]
+  },
+  "ui_19_native_actions": "pending full Xcode/CI",
+  "release_signature_package": "pending",
+  "one_eight_twentyfour_hour_soak": "not started",
+  "instruments_leaks_energy": "not measured",
+  "cpu_rss_targets": "not established"
+}

@@ -1,3 +1,5 @@
+> 開發中審查：2026-10-24 的新工作分支、有限測試與未完成項目見 [PRODUCT_READINESS_AUDIT.md](docs/PRODUCT_READINESS_AUDIT.md)。下列歷史成功結果不適用於新分支，不能當成目前版本已驗收。
+>
 > 發行驗收版本：MoPanel 0.1.0 本機測試版。以下原始報告來自成功的 macOS 建置；文中的 `Reports/` 是發行 ZIP 內的原始證據目錄。
 > 建置提交：`5e3d84a13e4a01caa1576f0d8585d92e18138955`。
 > 實際 CI：[run 40082801624](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082801624)。

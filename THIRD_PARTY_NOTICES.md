@@ -54,6 +54,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 成功建置的發行包會在 `Source/Vendor` 放入實際 SwiftPM checkout 的完整來源與原始授權。SwiftTerm 的 manifest 還會解析 Swift Argument Parser、Swift DocC plugin 等建置／工具依賴；它們不因出現在 resolver 中就被宣稱連結進 MoPanel。確切來源以 Package.resolved 與各 checkout 授權檔為準。僅原始碼審閱包尚未在 macOS resolve 時，不會假造這些相依下載結果。
 
+## Stats 研究來源（尚未整合程式碼）
+
+已檢視 <https://github.com/exelban/stats> 的監控實作，研究版本為 `7d3f70dcd6a07177d0a529a1b907021eef740158`。上游為 MIT，著作權聲明為 `Copyright (c) 2019 Serhiy Mytrovtsiy`。
+
+目前 GPU／藍牙版面參考與這次 MonitoringPreferences、睡眠生命週期、格式化快取均為 MoPanel 自行撰寫，沒有將 Stats 程式碼加入 App，也沒有連結或啟動 Stats。此狀態不能標示為已完成 Stats 模組整合。後續若直接重用或改寫其程式碼，必須逐檔保留來源與所需 MIT 聲明，再更新本清單。
+
 ## Apple 系統元件
 
 SwiftUI、AppKit、Charts、SF Symbols 與 Liquid Glass API 為 macOS/Xcode 提供的系統能力，使用須遵循 Apple 的適用條款。MoPanel 沒有把 Apple SDK 或系統 framework 複製進交付內容。
