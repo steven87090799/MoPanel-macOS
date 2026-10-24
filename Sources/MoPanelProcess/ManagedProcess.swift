@@ -304,6 +304,13 @@ public enum ManagedProcessError: LocalizedError {
         for key in ["HOMEBREW_NO_AUTO_UPDATE", "HOMEBREW_NO_INSTALL_CLEANUP", "HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK"] {
             if overrides?[key] == "1" { result[key] = "1" }
         }
+        // Worktree operations isolate Git from global/system configuration and
+        // interactive credential prompts. Only these fixed protective values
+        // are accepted; repository/exec paths and arbitrary GIT_* hooks remain
+        // excluded. Per-invocation flags provide the other Git safeguards.
+        let gitProtections = ["GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null",
+                              "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0", "GIT_ATTR_NOSYSTEM": "1"]
+        for (key, value) in gitProtections where overrides?[key] == value { result[key] = value }
         let editorPath = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/MoPanelEditor").path
         if overrides?["EDITOR"] == editorPath, FileManager.default.isExecutableFile(atPath: editorPath) {
             result["EDITOR"] = editorPath

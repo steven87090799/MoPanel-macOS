@@ -19,15 +19,18 @@ struct AnalyzeView: View {
             VStack(alignment: .leading, spacing: 18) {
                 PageHeading(title: model.t("空間用在哪裡", "See where space goes"), subtitle: model.t("資料來自 mo analyze --json；未知容量與部分掃描會明確保留。", "Uses mo analyze --json. Unknown sizes and partial scans remain explicit."), symbol: "chart.pie")
                 HStack {
-                    Button(model.t("掃描總覽", "Scan Overview")) { Task { await model.analyze(path: nil) } }
-                        .accessibilityIdentifier("mopanel.analyze.overview")
+                    NativeActionButton(model.t("掃描總覽", "Scan Overview"), identifier: "mopanel.analyze.overview") {
+                        Task { await model.analyze(path: nil) }
+                    }
                     Button(model.t("選擇資料夾／外接磁碟…", "Choose Folder / External Drive…")) { model.chooseFolder { url in Task { await model.analyze(path: url.path) } } }.buttonStyle(.borderedProminent)
                     if let scan = model.analysis {
-                        Button(model.t("重新掃描", "Rescan")) { Task { await model.analyze(path: scan.overview ? nil : scan.path) } }
-                            .accessibilityIdentifier("mopanel.analyze.rescan")
+                        NativeActionButton(model.t("重新掃描", "Rescan"), identifier: "mopanel.analyze.rescan") {
+                            Task { await model.analyze(path: scan.overview ? nil : scan.path) }
+                        }
                         if !scan.overview, scan.path != "/" {
-                            Button { Task { await model.analyze(path: URL(fileURLWithPath: scan.path).deletingLastPathComponent().path) } } label: { Label(model.t("上一層", "Parent"), systemImage: "arrow.up") }
-                                .accessibilityIdentifier("mopanel.analyze.parent")
+                            NativeActionButton(model.t("上一層", "Parent"), identifier: "mopanel.analyze.parent", systemImage: "arrow.up") {
+                                Task { await model.analyze(path: URL(fileURLWithPath: scan.path).deletingLastPathComponent().path) }
+                            }
                         }
                     }
                     Spacer()

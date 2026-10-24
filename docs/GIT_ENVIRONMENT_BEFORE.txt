@@ -1,0 +1,51 @@
+[0/1] Planning build
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/16] Compiling MoPanelProcess PurgePathsDocument.swift
+[5/16] Emitting module MoPanelProcess
+[6/16] Compiling MoPanelProcess ManagedProcess.swift
+[7/19] Wrapping AST for MoPanelProcess for debugging
+[9/19] Emitting module MoPanelProcessTests
+[10/19] Compiling MoPanelProcessTests GitEnvironmentTests.swift
+[11/20] /workspace/scratch/295743c3c15b/git-environment-acceptance/.build/x86_64-unknown-linux-gnu/debug/MoPanelProcessGitVerificationPackageDiscoveredTests.derived/all-discovered-tests.swift
+[12/20] Write sources
+[13/20] Wrapping AST for MoPanelProcessTests for debugging
+[15/23] Compiling MoPanelProcessGitVerificationPackageDiscoveredTests all-discovered-tests.swift
+[16/23] Compiling MoPanelProcessGitVerificationPackageDiscoveredTests MoPanelProcessTests.swift
+[17/23] Emitting module MoPanelProcessGitVerificationPackageDiscoveredTests
+[18/24] /workspace/scratch/295743c3c15b/git-environment-acceptance/.build/x86_64-unknown-linux-gnu/debug/MoPanelProcessGitVerificationPackageTests.derived/runner.swift
+[19/24] Write sources
+[20/24] Wrapping AST for MoPanelProcessGitVerificationPackageDiscoveredTests for debugging
+[22/26] Compiling MoPanelProcessGitVerificationPackageTests runner.swift
+[23/26] Emitting module MoPanelProcessGitVerificationPackageTests
+[24/27] Wrapping AST for MoPanelProcessGitVerificationPackageTests for debugging
+[25/27] Write Objects.LinkFileList
+[26/27] Linking MoPanelProcessGitVerificationPackageTests.xctest
+Build complete! (12.53s)
+Test Suite 'Selected tests' started at 2026-10-24 16:56:38.774
+Test Suite 'GitEnvironmentTests' started at 2026-10-24 16:56:38.781
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' started at 2026-10-24 16:56:38.781
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:49: error: GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild : XCTAssertEqual failed: ("["unset", "unset", "unset", "unset", "unset", "unset", "unset", "unset"]") is not equal to ("["/dev/null", "/dev/null", "1", "0", "1", "unset", "unset", "unset"]") - 
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' failed (0.011 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' started at 2026-10-24 16:56:38.793
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:31: error: GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection : XCTAssertEqual failed: ("nil") is not equal to ("Optional("0")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:31: error: GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection : XCTAssertEqual failed: ("nil") is not equal to ("Optional("1")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:31: error: GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection : XCTAssertEqual failed: ("nil") is not equal to ("Optional("/dev/null")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:31: error: GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection : XCTAssertEqual failed: ("nil") is not equal to ("Optional("/dev/null")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:31: error: GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection : XCTAssertEqual failed: ("nil") is not equal to ("Optional("1")") - 
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' failed (0.001 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' started at 2026-10-24 16:56:38.794
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:14: error: GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues : XCTAssertEqual failed: ("nil") is not equal to ("Optional("/dev/null")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:14: error: GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues : XCTAssertEqual failed: ("nil") is not equal to ("Optional("/dev/null")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:14: error: GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues : XCTAssertEqual failed: ("nil") is not equal to ("Optional("1")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:14: error: GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues : XCTAssertEqual failed: ("nil") is not equal to ("Optional("1")") - 
+/workspace/scratch/295743c3c15b/git-environment-acceptance/Tests/MoPanelProcessTests/GitEnvironmentTests.swift:14: error: GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues : XCTAssertEqual failed: ("nil") is not equal to ("Optional("0")") - 
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' failed (0.004 seconds)
+Test Suite 'GitEnvironmentTests' failed at 2026-10-24 16:56:38.797
+	 Executed 3 tests, with 11 failures (0 unexpected) in 0.016 (0.016) seconds
+Test Suite 'Selectewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+d tests' failed at 2026-10-24 16:56:38.797
+	 Executed 3 tests, with 11 failures (0 unexpected) in 0.016 (0.016) seconds
+Note: Some test targets reported failures:
+  - MoPanelProcessGitVerificationPackageTests (XCTest)

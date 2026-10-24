@@ -26,14 +26,16 @@ struct MaintenanceView: View {
                         Text(model.t("預覽由官方 Mole 執行，介面保留它實際提供的項目、容量、保護狀態與原因。部分路徑或略過原因需開啟下方「詳細診斷（--debug）」；官方未提供的明細不會補造。", "Mole performs the preview. The interface preserves the items, sizes, protection status and reasons it actually reports. Some paths or skip reasons require Detailed Diagnostics (--debug) below; missing details are not invented."))
                             .foregroundStyle(.secondary)
                         HStack {
-                            Button { model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en)) }
-                                label: { Label(model.t("掃描並預覽", "Scan and Preview"), systemImage: "magnifyingglass") }
-                                .buttonStyle(.borderedProminent).controlSize(.large)
-                                .accessibilityIdentifier("mopanel.maintenance.\(command.rawValue).preview")
-                            Button { model.request(command, options: options + (section == .purge && unattended ? [.yes] : []), title: model.t(section.zh, section.en)) }
-                                label: { Label(model.t("檢查並開始操作", "Review and Start"), systemImage: "play.fill") }
-                                .controlSize(.large)
-                                .accessibilityIdentifier("mopanel.maintenance.\(command.rawValue).review")
+                            NativeActionButton(model.t("掃描並預覽", "Scan and Preview"),
+                                               identifier: "mopanel.maintenance.\(command.rawValue).preview",
+                                               systemImage: "magnifyingglass", appearance: .prominent) {
+                                model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en))
+                            }.controlSize(.large)
+                            NativeActionButton(model.t("檢查並開始操作", "Review and Start"),
+                                               identifier: "mopanel.maintenance.\(command.rawValue).review",
+                                               systemImage: "play.fill") {
+                                model.request(command, options: options + (section == .purge && unattended ? [.yes] : []), title: model.t(section.zh, section.en))
+                            }.controlSize(.large)
                             Spacer()
                             Button(model.t("官方說明", "CLI Help")) { model.request(command, options: [.help]) }
                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))

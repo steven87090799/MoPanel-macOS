@@ -43,9 +43,8 @@ struct ContentView: View {
                     HStack(alignment: .top) {
                         Label(error, systemImage: "exclamationmark.triangle").font(.callout).textSelection(.enabled)
                         Spacer(minLength: 12)
-                        Button { model.error = nil } label: { Image(systemName: "xmark") }
-                            .buttonStyle(.plain).accessibilityLabel(model.t("關閉錯誤訊息", "Dismiss error"))
-                            .accessibilityIdentifier("mopanel.error.dismiss")
+                        NativeActionButton(model.t("關閉錯誤訊息", "Dismiss error"), identifier: "mopanel.error.dismiss",
+                                           systemImage: "xmark", appearance: .icon) { model.error = nil }
                     }.padding(14).background(Color.orange.opacity(0.12))
                 }
                 if let busy = model.busy {
@@ -53,8 +52,9 @@ struct ContentView: View {
                         ProgressView().controlSize(.small)
                         Text(busy).font(.caption.monospaced()).lineLimit(1)
                         Spacer()
-                        Button(model.t("停止掃描", "Stop Scan")) { model.cancelScan() }
-                            .accessibilityIdentifier("mopanel.scan.stop")
+                        NativeActionButton(model.t("停止掃描", "Stop Scan"), identifier: "mopanel.scan.stop") {
+                            model.cancelScan()
+                        }
                     }.padding(12).background(.thinMaterial)
                 }
                 if model.section == .settings { SettingsView() }
@@ -157,17 +157,18 @@ struct ConfirmationSheet: View {
             Label(pending.title, systemImage: "exclamationmark.shield.fill").font(.title2.bold()).foregroundStyle(.orange)
             Text(pending.details).fixedSize(horizontal: false, vertical: true)
             Text(pending.invocation.displayCommand).font(.callout.monospaced()).textSelection(.enabled).padding(12).frame(maxWidth: .infinity, alignment: .leading).background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
-            Toggle(model.t("我已檢查預覽，了解操作影響並要繼續。", "I reviewed the preview and understand the effect of this operation."), isOn: $acknowledged)
-                .accessibilityIdentifier("mopanel.confirmation.acknowledge")
+            NativeAcknowledgementToggle(model.t("我已檢查預覽，了解操作影響並要繼續。", "I reviewed the preview and understand the effect of this operation."),
+                                        identifier: "mopanel.confirmation.acknowledge", isOn: $acknowledged)
             if pending.isRemoval { TextField("REMOVE", text: $removalText).textFieldStyle(.roundedBorder) }
             HStack {
-                Button(model.t("取消", "Cancel"), role: .cancel) { model.pending = nil }.keyboardShortcut(.cancelAction)
-                    .accessibilityIdentifier("mopanel.confirmation.cancel")
+                NativeActionButton(model.t("取消", "Cancel"), identifier: "mopanel.confirmation.cancel", shortcut: .cancel) {
+                    model.pending = nil
+                }
                 Spacer()
-                Button(model.t("繼續至官方操作", "Continue to Mole")) { model.confirmPending() }
-                    .buttonStyle(.borderedProminent).tint(.orange)
+                NativeActionButton(model.t("繼續至官方操作", "Continue to Mole"), identifier: "mopanel.confirmation.continue", appearance: .warning) {
+                    model.confirmPending()
+                }
                     .disabled(!acknowledged || (pending.isRemoval && removalText != "REMOVE"))
-                    .accessibilityIdentifier("mopanel.confirmation.continue")
             }
         }.padding(28).frame(width: 620)
     }
@@ -187,10 +188,12 @@ struct OperationSheet: View {
                 Spacer()
                 if session.running { ProgressView().controlSize(.small) }
                 Button(model.operationIsInteractive ? model.t("儲存執行摘要…", "Save Execution Summary…") : model.t("儲存此次輸出…", "Save Output…")) { model.exportOperationOutput() }.disabled(model.operationResult == nil)
-                Button(model.t("停止", "Stop"), role: .destructive) { stopping = true; session.cancel() }.disabled(!session.running || stopping)
-                    .accessibilityIdentifier("mopanel.operation.stop")
-                Button(model.t("關閉", "Close")) { model.showOperation = false; if model.section == .dashboard { model.startMonitoring() } }.disabled(session.running).keyboardShortcut(.cancelAction)
-                    .accessibilityIdentifier("mopanel.operation.close")
+                NativeActionButton(model.t("停止", "Stop"), identifier: "mopanel.operation.stop", destructive: true) {
+                    stopping = true; session.cancel()
+                }.disabled(!session.running || stopping)
+                NativeActionButton(model.t("關閉", "Close"), identifier: "mopanel.operation.close", shortcut: .cancel) {
+                    model.showOperation = false; if model.section == .dashboard { model.startMonitoring() }
+                }.disabled(session.running)
             }
             if model.operationWasPreview {
                 Notice(text: model.t("Dry Run 預覽：以官方畫面呈現項目、路徑、大小及略過原因。這不是已鎖定的刪除計畫，真正執行時 Mole 會重新檢查。", "Dry-run preview: Mole shows items, paths, sizes and skip reasons. This is not a locked deletion plan; Mole rechecks at execution."))

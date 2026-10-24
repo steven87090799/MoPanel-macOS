@@ -1,0 +1,5 @@
+{
+  "Sources/MoPanelProcess/ManagedProcess.swift": "e2efc80baf8611ff21989c605f390246c25027090194dc9380537ee71c4929c6",
+  "Tests/MoPanelProcessTests/GitEnvironmentTests.swift": "6955b340d40409ab35371a159fc73ce853207b8d80df1ee003a2490d810b19ec",
+  "Sources/MoPanelGuardian/main.c": "1a2f5425e3d42c2da132c875a98295e4bb1877e9a347fc79cc095c174a256f81"
+}

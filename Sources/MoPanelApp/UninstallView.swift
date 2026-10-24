@@ -28,8 +28,9 @@ struct UninstallView: View {
                     Text(model.t("容量（官方顯示值）", "Size (display estimate)")).tag("size")
                     Text(model.t("來源", "Source")).tag("source")
                 }.frame(width: 210)
-                Button(model.t("掃描／重新整理", "Scan / Refresh")) { Task { await model.loadApps() } }.disabled(!model.canStart)
-                    .accessibilityIdentifier("mopanel.uninstall.scan")
+                NativeActionButton(model.t("掃描／重新整理", "Scan / Refresh"), identifier: "mopanel.uninstall.scan") {
+                    Task { await model.loadApps() }
+                }.disabled(!model.canStart)
             }
             if model.apps.isEmpty {
                 ContentUnavailableView(model.t("尚無 App 清單", "No App Inventory"), systemImage: "app.dashed", description: Text(model.t("按「掃描」取得官方清單；無權限或掃描失敗會顯示錯誤。", "Scan to retrieve the official inventory. Permission or scan failures appear explicitly.")))

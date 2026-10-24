@@ -1,0 +1,22 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write sources
+[1/3] Write swift-version--692D7D6F1AAC6E0F.txt
+[3/5] Emitting module MoPanelProcess
+[4/5] Compiling MoPanelProcess ManagedProcess.swift
+[5/7] Write Objects.LinkFileList
+[6/7] Linking MoPanelProcessGitVerificationPackageTests.xctest
+Build complete! (1.18s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-24 16:57:05.619
+Test Suite 'GitEnvironmentTests' started at 2026-10-24 16:57:05.620
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' started at 2026-10-24 16:57:05.620
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' passed (0.009 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' started at 2026-10-24 16:57:05.629
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' passed (0.001 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' started at 2026-10-24 16:57:05.630
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' passed (0.004 seconds)
+Test Suite 'GitEnvironmentTests' passed at 2026-10-24 16:57:05.634
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.013 (0.013) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 16:57:05.634
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.013 (0.013) seconds
