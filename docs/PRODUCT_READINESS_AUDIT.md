@@ -131,15 +131,31 @@ Stats 的資訊覆蓋與成本不能只由 reader 函式判定。這輪只完成
 - 完整 App 的本機 ARM64 release 編譯通過，耗時 89.80 秒，產物經 `file`／`lipo` 確認為 arm64。環境 doctor 0 缺漏、Homebrew 工具清單檢查通過；精簡證據見 [local-environment.json](audit-2026-10-24/local-environment.json)。
 - 安裝前缺 XCTest、Metal compiler、SwiftUI macro plugin 的失敗原始 log 仍保留於本地 `build/reports/product-audit/`；`audit-2026-10-24/validation.json` 是安裝前紀錄，不代表目前工具狀態。
 - 本輪分支 CI [run 40090538651](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40090538651) 已完成且 conclusion 為 success，對應來源 `e01892325c06f132c63f15ebab4265f6fd4f7723`。
-- 本機 fixture UI／發行封裝、完整人工 UI、1/8/24 小時 soak、Instruments Allocations/Leaks/Energy：**本次環境安裝批次未執行**。編譯成功不等於這些驗收已完成。
+- 後續本機完整流程已通過：185 項 XCTest、20 項 fixture UI 檢查、19 次真正的 accessibility 按鈕操作與效果驗證、17 項 Guardian 整合測試、ad-hoc 簽章、ZIP 解壓及內容驗證。初始完整流程的精簡證據見 [local-full-build-baseline.json](audit-2026-10-24/local-full-build-baseline.json)。
+- 全控制項人工 UI、真實破壞性操作／權限、1/8/24 小時 soak、Instruments Allocations/Leaks/Energy：**尚未完成驗收**。20 項自動檢查與 19 次按鈕操作不涵蓋盤點中的全部控制項。
+
+### 實際視窗補查與修正
+
+後續介面調整已更新為固定圖示區與水平文字抽屜（230／72 pt）、側欄內的方形收合鍵、黑白 M 圖示、暖金／石墨光暈及 Mole 式監控卡片。新增導覽列真實按鈕測試後，最新有限介面測試為 20 項檢查、23 次按壓與效果驗證。完整設計、資料來源與適用限制見 [NATIVE_INTERFACE.md](NATIVE_INTERFACE.md)；下列列點保留最初發現問題的脈絡。
+
+依使用者最新介面方向，本輪採 Mole 式單一選單列面板，沿用既有 Mole Status；Stats 式多項獨立選單列指示先不新增，參考版面不算 Stats 引擎整合。
+
+以明確的合成資料模式操作本機 App，確認並修正以下問題：
+
+- 側邊欄同時出現系統隱藏按鈕與自訂收合按鈕。依 [Apple 的 toolbar 文件](https://developer.apple.com/documentation/SwiftUI/View/toolbar%28removing%3A%29)，在 sidebar column 移除系統項目，並將保留圖示的自訂按鈕放在導覽位置。
+- 卸載頁的清單與選項超出可用高度，會壓到標題列或遮住底部操作。將整頁改為可捲動、清單限制可見高度並保留原生多選，主內容固定填滿可用區域且靠上排列。
+- 淺色外觀的選取列強制使用白字，對比不足；改用系統選取色，並補上展開側邊欄的最小內容寬度與標題單行限制。
+- 測試模式的語言、外觀、自訂 CLI 路徑仍會寫回正式設定；加入測試模式寫入保護。透過實際設定介面改成英文、淺色及非執行的測試路徑後，三項持久設定比對皆未改變。
+
+手動補查目前涵蓋總覽、抽屜開合、卸載空白／清單、深淺色設定與監控卡片等代表流程；不是全頁面或全部按鈕的人工驗收。部分 Startup／Git／行程的原生確認仍為 sheet，尚未全部改成同頁。測試截圖的 AppKit bitmap 可能漏掉玻璃合成層，視覺判斷以實際視窗為準。開發用 fixture 預覽最多保留 300 秒；標準 smoke driver 會移除預覽參數，維持原本的有限時限。
 
 | 資源指標 | 修復前 | 修復後 | 解讀 |
 |---|---|---|---|
 | 有限串流 131,082 bytes 診斷 | 因 retention limit 取消 | 成功；本例保留 2,048 bytes；stdout 0 bytes | 測的是實際 ManagedProcess，不是 App RSS |
 | 時間格式化 2,000 次 | 約 1.509 s | 約 0.132 s | 單次 Mac 微型量測；不宣稱整個 App CPU 降低同倍數 |
-| 閒置／選單列／完整監控 CPU | 未測試 | 未測試 | 尚不能確認 0.5–1% 目標 |
-| RSS／8h、24h 漂移／Leaks | 未測試 | 未測試 | 尚不能確認 100 MB 或沒有 memory leak |
-| Energy Impact／掃描時間／全子程序峰值 | 未測試 | 未測試 | 需要新建置下的實測 |
+| 閒置／選單列／完整監控 CPU | 未測試 | `9b0c39c` fixture 短測：idle 平均 0.005%、monitor 4.737%、scan 33.18% | GUI 與可觀察子程序加總、ps 存活期平均；不是實際 Mole 穩態負載，尚未證明 0.5–1% 目標 |
+| RSS／8h、24h 漂移／Leaks | 未測試 | 同次 fixture 短測：idle 平均約 171.7 MiB、monitor 182.9 MiB；長時與 Leaks 未執行 | RSS 加總可能重複計算共用頁面，非唯一實體記憶體；不能宣稱達到 100 MB 或沒有 leak |
+| Energy Impact／真實掃描時間 | 未測試 | 未測試 | fixture 掃描不能取代真實引擎／檔案系統與 Instruments 驗收 |
 
 ## 接下來如何執行，避免一直等待
 
@@ -167,8 +183,8 @@ python3 scripts/profile.py --observe-pid YOUR_MOPANEL_PID \
 7. 是否修復 CPU／記憶體浪費：修了 formatter 重建與串流保留問題，證據範圍如上；整個 App 的實測目標尚未證明。
 8. 是否仍有未驗證 leak／瓶頸：**有**，特別是長時 SwiftUI/Charts/SwiftTerm、完整掃描與硬體來源成本。
 9. Mole 是否獨立且可更新：是，架構與本輪修改維持外部原版 CLI；未驗證所有未來版本。
-10. 是否所有實際執行測試都通過：修正及工具安裝後，本機 185 項 XCTest、56 項 Python 與完整 App release 編譯通過；安裝前失敗和舊版問題重現仍保留為歷史證據。完整人工 UI／長時效能仍待驗收。
+10. 是否所有實際執行測試都通過：修正及工具安裝後，本機 XCTest、工具測試、20 項 fixture UI／19 次按鈕、17 項 Guardian、release 編譯與本機簽章封裝流程通過；安裝前失敗和舊版問題重現仍保留為歷史證據。全控制項人工 UI／長時效能仍待驗收。
 11. 是否適合正式長時間常駐：**尚未驗收**。
-12. 尚未完成／未測項目：全檔人工逐行審查、逐控制項來源及測試、Stats provider、完整原生候選、選單列自訂／生命週期、官方功能差距、硬體／權限實機、本機完整 UI／發行封裝／長時性能驗收。
+12. 尚未完成／未測項目：全檔人工逐行審查、逐控制項來源及測試、Stats provider、完整原生候選、選單列自訂／生命週期、官方功能差距、硬體／權限實機、全控制項人工 UI／長時性能驗收。
 
-下一輪優先順序：完成本機 fixture UI／封裝與逐控制項人工來源追蹤、安全路徑審查 → 用同一硬體量測 Mole 與原生 provider 再決定 Stats 模組整合 → 補齊原生候選／選單列能力 → 1/8/24 小時及 Instruments 驗收。高權限寫入功能維持不支援，直到能提供窄授權及完整還原證據。
+下一輪優先順序：逐控制項實際操作、殘留 sheet 流程、來源追蹤與安全路徑審查 → 用同一硬體量測 Mole 與原生 provider 再決定 Stats 模組整合 → 補齊原生候選／選單列能力 → 1/8/24 小時及 Instruments 驗收。高權限寫入功能維持不支援，直到能提供窄授權及完整還原證據。

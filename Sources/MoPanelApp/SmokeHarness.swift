@@ -119,7 +119,7 @@ import MoPanelCore
             "native_ui": nativeUIObject,
             "navigation_sections_selected": AppSection.allCases.map(\.rawValue),
             "note": "Native window and route selection survival, adapter, safe system API probes, private Startup mock and explicitly identified own-process accessibility button actions. Route selection alone does not prove every page rendered correctly. This does not verify every physical interaction, TCC permission, real cleanup, app update or hardware control."
-        ], success: success)
+        ], success: success, previewTools: systemTools)
     }
 
     /// Fixed stage names only. Diagnostic output is restricted to an explicit
@@ -225,9 +225,35 @@ import MoPanelCore
         ], success: success)
     }
 
-    private static func finish(_ model: AppModel, environmentKey: String, report: [String: Any], success: Bool) async {
+    private static func finish(_ model: AppModel, environmentKey: String, report: [String: Any], success: Bool,
+                               previewTools: SystemToolsController? = nil) async {
         if model.fixtureMode, ProcessInfo.processInfo.arguments == [ProcessInfo.processInfo.arguments[0], "--smoke-test"] {
             model.section = .dashboard
+            // An explicit, bounded developer preview keeps this already-tested
+            // fixture window available for manual visual review. Normal smoke
+            // drivers remove this flag so their deadline remains unchanged.
+            if let value = ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_SECONDS"],
+               let seconds = Int(value), (1...300).contains(seconds) {
+                model.apps = []
+                var previewWindow: NSWindow?
+                if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "menubar",
+                   let previewTools {
+                    let panel = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 390, height: 790),
+                                         styleMask: [.titled, .closable], backing: .buffered, defer: false)
+                    panel.title = "MoPanel · Menu Bar Preview"
+                    panel.isReleasedWhenClosed = false
+                    panel.contentView = NSHostingView(rootView: MenuBarPanel()
+                        .environmentObject(model).environmentObject(previewTools)
+                        .preferredColorScheme(model.colorScheme))
+                    panel.center()
+                    panel.makeKeyAndOrderFront(nil)
+                    previewWindow = panel
+                }
+                checkpoint("manual_preview.ready")
+                try? await Task.sleep(for: .seconds(seconds))
+                previewWindow?.close()
+                model.section = .dashboard
+            }
             try? await Task.sleep(for: .milliseconds(150))
             checkpoint("own_window_capture.begin")
             saveOwnWindowScreenshot()

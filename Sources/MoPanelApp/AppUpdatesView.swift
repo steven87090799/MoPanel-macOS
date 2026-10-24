@@ -133,11 +133,11 @@ struct AppUpdatesView: View {
 
     private func caskRow(_ item: BrewUpdateItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "app.gift").font(.title2).foregroundStyle(.teal).frame(width: 30)
+            Image(systemName: "app.gift").font(.title2).foregroundStyle(MoPanelTheme.accent).frame(width: 30)
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
                     Text(item.installed.title).font(.headline)
-                    Text(stateTitle(item.state)).font(.caption).foregroundStyle(item.state == .available ? Color.teal : Color.secondary)
+                    Text(stateTitle(item.state)).font(.caption).foregroundStyle(item.state == .available ? MoPanelTheme.accent : Color.secondary)
                 }
                 Text(t("已安裝：", "Installed: ") + (item.installed.installed ?? t("未確認", "Unconfirmed")) + "  →  " + t("索引版本：", "Metadata version: ") + item.installed.version).font(.callout.monospaced())
                 Text((item.installed.tap ?? t("未知來源", "Unknown source")) + " · " + item.id).font(.caption).foregroundStyle(.secondary)

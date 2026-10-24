@@ -10,9 +10,9 @@ import MoPanelProcess
             else { updateMonitoringDemand() }
         }
     }
-    @Published var language: String { didSet { UserDefaults.standard.set(language, forKey: "language") } }
-    @Published var appearance: String { didSet { UserDefaults.standard.set(appearance, forKey: "appearance") } }
-    @Published var customPath: String { didSet { UserDefaults.standard.set(customPath, forKey: "cliPath") } }
+    @Published var language: String { didSet { if !isTestLaunch { UserDefaults.standard.set(language, forKey: "language") } } }
+    @Published var appearance: String { didSet { if !isTestLaunch { UserDefaults.standard.set(appearance, forKey: "appearance") } } }
+    @Published var customPath: String { didSet { if !isTestLaunch { UserDefaults.standard.set(customPath, forKey: "cliPath") } } }
     @Published var monitoringInterval = 2 { didSet { if oldValue != monitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarMonitoringInterval = 5 { didSet { if oldValue != menuBarMonitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarEnabled = false {
@@ -411,7 +411,8 @@ import MoPanelProcess
         trends.append(TrendSample(date: Date(), cpu: snapshot.cpu.logicalCPU > 0 ? snapshot.cpu.usage : nil,
                                   memory: snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil,
                                   diskRead: snapshot.diskIO?.readRate, diskWrite: snapshot.diskIO?.writeRate,
-                                  down: network?.rxRateMbs, up: network?.txRateMbs))
+                                  down: network?.rxRateMbs, up: network?.txRateMbs,
+                                  gpu: snapshot.gpu.compactMap(\.usage).first { $0.isFinite && (0...100).contains($0) }))
         if trends.count > 120 { trends.removeFirst(trends.count - 120) }
     }
 

@@ -10,7 +10,7 @@ struct DashboardView: View {
                 PageHeading(title: model.t("看見 Mac 的當下", "Your Mac, right now"), subtitle: model.t("資料由官方 Mole Status 提供。離開此頁時停止監控；若自行開啟選單列監控，則共用同一個串流繼續更新。", "Live data from Mole Status. Monitoring pauses away from this page unless you enable menu bar monitoring, which shares the same stream."), symbol: "waveform.path.ecg")
                 HStack {
                     Label(model.monitoring ? model.t("即時監控中", "Live") : model.t("監控已暫停", "Paused"), systemImage: model.monitoring ? "record.circle" : "pause.circle")
-                        .foregroundStyle(model.monitoring ? Color.teal : Color.secondary)
+                        .foregroundStyle(model.monitoring ? MoPanelTheme.accent : Color.secondary)
                     if let collected = model.status?.collectedAt {
                         Text(model.t("更新於 ", "Updated ") + DisplayFormat.timestamp(collected, language: model.language))
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
@@ -196,7 +196,7 @@ struct DashboardView: View {
         HStack(spacing: 18) {
             Image(systemName: "cpu")
                 .font(.title2)
-                .foregroundStyle(.teal)
+                .foregroundStyle(MoPanelTheme.accent)
                 .frame(width: 44, height: 44)
                 .moPanelGlass(cornerRadius: 13)
             VStack(alignment: .leading, spacing: 5) {
@@ -226,7 +226,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "wave.3.right")
-                    .foregroundStyle(device.connected ? Color.teal : Color.secondary)
+                    .foregroundStyle(device.connected ? MoPanelTheme.accent : Color.secondary)
                     .frame(width: 22)
                 Text(readableBluetoothName(device.name))
                     .font(.callout.weight(.medium))
@@ -234,7 +234,7 @@ struct DashboardView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text(device.connected ? model.t("已連線", "Connected") : model.t("未連線", "Not connected"))
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(device.connected ? Color.teal : Color.secondary)
+                    .foregroundStyle(device.connected ? MoPanelTheme.accent : Color.secondary)
                     .fixedSize()
             }
             if let battery = bluetoothBattery(device) {
@@ -349,7 +349,7 @@ struct TrendCard: View {
                 else {
                     Chart(points) { point in
                         LineMark(x: .value(model.t("時間", "Time"), point.date), y: .value(unit, point.value)).foregroundStyle(by: .value(model.t("指標", "Metric"), point.series)).interpolationMethod(.linear)
-                    }.chartForegroundStyleScale(range: [Color.teal, Color.blue]).chartXAxis(.hidden).frame(height: 125)
+                    }.chartForegroundStyleScale(range: [MoPanelTheme.accent, MoPanelTheme.chartSecondary]).chartXAxis(.hidden).frame(height: 125)
                         .accessibilityLabel(title + " " + model.t("最近最多 120 筆讀值", "up to 120 recent samples"))
                 }
             }.padding(8)

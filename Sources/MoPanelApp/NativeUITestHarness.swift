@@ -113,6 +113,10 @@ struct NativeUISmokeAccessibilityEnvironment: ViewModifier {
 }
 
 private enum NativeUIControl: String, CaseIterable {
+    case sidebarToggle = "mopanel.sidebar.toggle"
+    case sidebarRegion = "mopanel.sidebar"
+    case sidebarDashboard = "mopanel.sidebar.route.dashboard"
+    case sidebarUninstall = "mopanel.sidebar.route.uninstall"
     case snapshot = "mopanel.dashboard.snapshot"
     case appScan = "mopanel.uninstall.scan"
     case overview = "mopanel.analyze.overview"
@@ -130,7 +134,11 @@ private enum NativeUIControl: String, CaseIterable {
     case operationDetails = "mopanel.operation.details.toggle"
 
     var allowedRoles: Set<String> {
-        self == .acknowledge ? ["AXCheckBox", "AXSwitch"] : ["AXButton"]
+        switch self {
+        case .acknowledge: return ["AXCheckBox", "AXSwitch"]
+        case .sidebarRegion: return ["AXGroup"]
+        default: return ["AXButton"]
+        }
     }
 }
 
@@ -343,7 +351,7 @@ private enum NativeUIFailure: LocalizedError {
 @MainActor private final class OwnWindowRunner {
     private let model: AppModel
     private let window: NSWindow
-    private let deadline = ContinuousClock.now.advanced(by: .seconds(20))
+    private let deadline = ContinuousClock.now.advanced(by: .seconds(25))
     private var contextWasValidated = false
     private var publicAccessibilityEnvironmentEnabled: Bool?
     private var environmentWasObserved = false
@@ -385,6 +393,31 @@ private enum NativeUIFailure: LocalizedError {
             // Route selection and monitor teardown are test setup, explicitly
             // distinguished from the user-facing actions asserted below.
             model.pauseMonitoring()
+
+            try await waitFor("expanded sidebar is readable") { (self.sidebarWidth() ?? 0) >= 210 }
+            try await press(.sidebarToggle)
+            try await waitFor("sidebar shrinks to its icon rail") {
+                guard let width = self.sidebarWidth() else { return false }
+                return (68...76).contains(width)
+            }
+            try record("sidebar_compacts_to_icon_width", true)
+            try record("sidebar_button_remains_momentary_without_focus_ring", try await sidebarButtonIsNeutral())
+            try verifyLastPress(.sidebarToggle)
+            try await press(.sidebarToggle)
+            try await waitFor("sidebar expands for icons and text") { (self.sidebarWidth() ?? 0) >= 210 }
+            try record("sidebar_expands_to_text_width", true)
+            try verifyLastPress(.sidebarToggle)
+
+            try await press(.sidebarUninstall)
+            try await waitFor("sidebar opens Uninstall") { self.model.section == .uninstall }
+            _ = try await find(.appScan, enabled: true)
+            try record("sidebar_route_opens_uninstall_controls", true)
+            try verifyLastPress(.sidebarUninstall)
+            try await press(.sidebarDashboard)
+            try await waitFor("sidebar returns to Dashboard") { self.model.section == .dashboard }
+            _ = try await find(.snapshot, enabled: true)
+            try record("sidebar_route_opens_dashboard_controls", true)
+            try verifyLastPress(.sidebarDashboard)
 
             model.section = .dashboard
             let statusActivity = model.activities.first?.id
@@ -522,7 +555,7 @@ private enum NativeUIFailure: LocalizedError {
             try await waitFor("confirmed operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("confirmed_operation_returned_to_page", !model.hasRunningOperation && model.error == nil)
             try verifyLastPress(.operationClose)
-            try record("all_19_dispatches_have_verified_postconditions", actions.count == 19 &&
+            try record("all_23_dispatches_have_verified_postconditions", actions.count == 23 &&
                        actions.allSatisfy { $0.hasSingleSuccessfulDispatch && $0.postconditionVerified })
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true
@@ -596,6 +629,9 @@ private enum NativeUIFailure: LocalizedError {
         try validateContext()
         let valid: Bool
         switch control {
+        case .sidebarToggle, .sidebarDashboard, .sidebarUninstall:
+            valid = !model.hasRunningOperation && model.pending == nil && !model.showOperation
+        case .sidebarRegion: valid = false // Geometry only; never an action target.
         case .snapshot: valid = model.section == .dashboard && model.canStart
         case .appScan: valid = model.section == .uninstall && model.canStart
         case .overview, .rescan, .parent: valid = model.section == .analyze && model.canStart
@@ -614,6 +650,40 @@ private enum NativeUIFailure: LocalizedError {
         checks[name] = value
         breadcrumb(value ? "postcondition.pass" : "postcondition.fail")
         if !value { throw NativeUIFailure.unexpectedState(name) }
+    }
+
+    private func sidebarWidth() -> CGFloat? {
+        guard let content = window.contentView else { return nil }
+        content.layoutSubtreeIfNeeded()
+        var pending: [(NSView, Int)] = [(content, 0)]
+        var visited = Set<ObjectIdentifier>()
+        var widths: [CGFloat] = []
+        while let (view, depth) = pending.popLast() {
+            guard visited.insert(ObjectIdentifier(view)).inserted else { continue }
+            guard visited.count <= 4096, depth <= 40, view.window === window else { return nil }
+            // Read the real visible sidebar material's rendered bounds. A
+            // drawer's clipped labels can extend its AX group's union rect.
+            if view is NSVisualEffectView, view.identifier?.rawValue == "mopanel.sidebar.surface" {
+                widths.append(view.bounds.width)
+            }
+            guard pending.count + view.subviews.count <= 4096 else { return nil }
+            pending.append(contentsOf: view.subviews.map { ($0, depth + 1) })
+        }
+        return widths.count == 1 ? widths.first : nil
+    }
+
+    private func sidebarButtonIsNeutral() async throws -> Bool {
+        let node = try await find(.sidebarToggle, enabled: true)
+        let button = (node.object as? NSButton) ?? ((node.object as? NSCell)?.controlView as? NSButton)
+        guard let button else { checks["sidebar_native_button_found"] = false; return false }
+        checks["sidebar_native_button_found"] = true
+        checks["sidebar_button_in_supplied_window"] = button.window === window
+        checks["sidebar_button_state_off"] = button.state == .off
+        checks["sidebar_button_not_highlighted"] = button.cell?.isHighlighted == false
+        checks["sidebar_button_has_no_focus_ring"] = button.focusRingType == .none
+        checks["sidebar_button_borderless"] = !button.isBordered
+        return button.window === window && button.state == .off && button.cell?.isHighlighted == false &&
+            button.focusRingType == .none && !button.isBordered
     }
 
     private func completedActivity(after previousID: UUID?, command: String) -> Bool {

@@ -99,6 +99,7 @@ struct TrendSample: Identifiable {
     let diskWrite: Double?
     let down: Double?
     let up: Double?
+    var gpu: Double? = nil
 }
 
 struct ActivityEntry: Identifiable {
@@ -140,7 +141,7 @@ struct MoPanelGlassSurface: ViewModifier {
                 .background(Color(nsColor: .controlBackgroundColor), in: shape)
                 .overlay { shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 1) }
         } else {
-            content.glassEffect(.regular, in: shape)
+            content.glassEffect(.regular.interactive(), in: shape)
         }
     }
 }
@@ -186,7 +187,7 @@ struct PageHeading: View {
     let symbol: String
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(.teal)
+            Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(MoPanelTheme.accent)
                 .frame(width: 48, height: 48).moPanelGlass(cornerRadius: 14)
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(.system(.largeTitle, design: .rounded).weight(.bold))
@@ -205,10 +206,10 @@ struct Notice: View {
             icon: { Image(systemName: warning ? "exclamationmark.shield" : "info.circle") }
             .font(.callout).foregroundStyle(warning ? Color.orange : Color.secondary)
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(warning ? Color.orange.opacity(0.08) : Color.teal.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(warning ? Color.orange.opacity(0.08) : MoPanelTheme.accent.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 1, style: .continuous)
-                    .fill(warning ? Color.orange.opacity(0.65) : Color.teal.opacity(0.45))
+                    .fill(warning ? Color.orange.opacity(0.65) : MoPanelTheme.accent.opacity(0.45))
                     .frame(width: 3)
                     .padding(.vertical, 8)
             }

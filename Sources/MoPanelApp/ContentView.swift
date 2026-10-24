@@ -15,162 +15,97 @@ struct ContentView: View {
     @State private var started = false
     @State private var isSidebarCollapsed = false
     var body: some View {
-        NavigationSplitView {
-            VStack(spacing: 0) {
-                Group {
-                    if isSidebarCollapsed {
-                        Image(systemName: "square.stack.3d.up.fill")
-                            .font(.title2)
-                            .foregroundStyle(.teal)
-                            .frame(maxWidth: .infinity)
-                            .help("MoPanel")
-                    } else {
-                        HStack(spacing: 10) {
-                            Image(systemName: "square.stack.3d.up.fill").font(.title2).foregroundStyle(.teal)
-                            VStack(alignment: .leading) {
-                                Text("MoPanel").font(.title2.bold())
-                                Text(model.t("非官方原生介面", "Unofficial native interface")).font(.caption).foregroundStyle(.secondary)
+        NavigationStack {
+            HStack(spacing: 0) {
+                SidebarNavigation(isCompact: $isSidebarCollapsed)
+                Divider()
+                VStack(spacing: 0) {
+                    if model.fixtureMode {
+                        Text(model.t("自動化測試模式 · 以下為合成測試資料", "AUTOMATED TEST MODE · Synthetic fixture data"))
+                            .font(.caption.weight(.semibold)).frame(maxWidth: .infinity).padding(8).background(Color.yellow.opacity(0.22))
+                    }
+                    if let error = model.error {
+                        HStack(alignment: .top) {
+                            Label(error, systemImage: "exclamationmark.triangle").font(.callout).textSelection(.enabled)
+                            Spacer(minLength: 12)
+                            NativeActionButton(model.t("關閉錯誤訊息", "Dismiss error"), identifier: "mopanel.error.dismiss",
+                                               systemImage: "xmark", appearance: .icon) { model.error = nil }
+                        }.padding(14).background(Color.orange.opacity(0.12))
+                    }
+                    if let busy = model.busy {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(model.scanActivityTitle).font(.headline)
+                                Spacer()
+                                NativeActionButton(model.t("停止掃描", "Stop Scan"), identifier: "mopanel.scan.stop") {
+                                    model.cancelScan()
+                                }
                             }
-                            Spacer()
+                            ProgressView().progressViewStyle(.linear).accessibilityLabel(model.scanActivityTitle)
+                            Text(model.t("指令：", "Command: ") + busy).font(.caption.monospaced()).textSelection(.enabled)
+                        }.padding(12).background(.thinMaterial)
+                    }
+                    if model.section == .settings { SettingsView() }
+                    else if model.section == .appUpdates {
+                        AppUpdatesView(controller: appUpdates, language: model.language,
+                                       operationInProgress: model.moleOperationInProgress || model.isDetecting || startup.isBusy || worktrees.isBusy || systemTools.ejectingVolumeID != nil)
+                    }
+                    else if model.section == .startup {
+                        StartupView(controller: startup, language: model.language,
+                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || worktrees.isBusy || systemTools.ejectingVolumeID != nil)
+                    }
+                    else if model.section == .worktrees {
+                        GitWorktreeView(controller: worktrees, language: model.language,
+                                        operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy || systemTools.ejectingVolumeID != nil)
+                    }
+                    else if model.section == .tools {
+                        SystemToolsView(controller: systemTools, language: model.language,
+                                        operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy || worktrees.isBusy,
+                                        cliSummary: model.installation.map { "Mole \($0.version) · \($0.source.rawValue) · \($0.executable.path)" })
+                    }
+                    else if model.installation == nil { MissingEngineView() }
+                    else {
+                        switch model.section {
+                        case .dashboard: DashboardView()
+                        case .uninstall: UninstallView()
+                        case .analyze: AnalyzeView()
+                        case .history: HistoryView()
+                        case .clean, .optimize, .purge, .installer, .slim: MaintenanceView(section: model.section).id(model.section)
+                        case .settings, .tools, .appUpdates, .startup, .worktrees: EmptyView()
                         }
                     }
                 }
-                .padding(.vertical, 20)
-                .padding(.horizontal, isSidebarCollapsed ? 8 : 20)
-                List(AppSection.allCases, selection: Binding<AppSection?>(get: { model.section }, set: { if let value = $0 { model.section = value } })) { section in
-                    Group {
-                        if isSidebarCollapsed {
-                            Label(model.t(section.zh, section.en), systemImage: section.symbol)
-                                .labelStyle(.iconOnly)
-                        } else {
-                            Label(model.t(section.zh, section.en), systemImage: section.symbol)
-                        }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if let pending = model.pending {
+                        ConfirmationPanel(pending: pending).id(pending.id)
+                            .padding(.horizontal, 16).padding(.bottom, 12)
+                    } else if model.homebrewConfirmation {
+                        HomebrewInstallConfirmationPanel().padding(.horizontal, 16).padding(.bottom, 12)
+                    } else if appUpdates.showOperation, let session = appUpdates.operationSession, session.running || appUpdates.isBusy {
+                        AppUpdateOperationView(controller: appUpdates, session: session, language: model.language)
+                            .id(ObjectIdentifier(session)).padding(.horizontal, 16).padding(.bottom, 12)
+                    } else if model.showOperation {
+                        OperationPanel(session: model.operationSession).id(ObjectIdentifier(model.operationSession))
+                            .padding(.horizontal, 16).padding(.bottom, 12)
+                    } else if appUpdates.showOperation, let session = appUpdates.operationSession {
+                        AppUpdateOperationView(controller: appUpdates, session: session, language: model.language)
+                            .id(ObjectIdentifier(session)).padding(.horizontal, 16).padding(.bottom, 12)
                     }
-                        .foregroundStyle(model.section == section ? Color.white : Color.primary)
-                        .frame(maxWidth: .infinity, alignment: isSidebarCollapsed ? .center : .leading)
-                        .help(model.t(section.zh, section.en))
-                        .tag(section).padding(.vertical, 5)
-                }.listStyle(.sidebar)
-                if isSidebarCollapsed {
-                    Label(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"),
-                          systemImage: model.installation == nil ? "circle.dashed" : "checkmark.circle")
-                        .labelStyle(.iconOnly)
-                        .frame(maxWidth: .infinity)
-                        .help(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"))
-                        .padding(.vertical, 20)
-                } else {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Label(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"), systemImage: model.installation == nil ? "circle.dashed" : "checkmark.circle")
-                            .font(.caption.weight(.medium))
-                        Text(model.t("清理由官方 CLI 執行", "Powered by the official CLI")).font(.caption2).foregroundStyle(.secondary)
-                    }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
                 }
-            }
-            .navigationSplitViewColumnWidth(min: isSidebarCollapsed ? 58 : 210,
-                                            ideal: isSidebarCollapsed ? 66 : 230,
-                                            max: isSidebarCollapsed ? 74 : 270)
-        } detail: {
-            VStack(spacing: 0) {
-                if model.fixtureMode {
-                    Text(model.t("自動化測試模式 · 以下為合成測試資料", "AUTOMATED TEST MODE · Synthetic fixture data"))
-                        .font(.caption.weight(.semibold)).frame(maxWidth: .infinity).padding(8).background(Color.yellow.opacity(0.22))
-                }
-                if let error = model.error {
-                    HStack(alignment: .top) {
-                        Label(error, systemImage: "exclamationmark.triangle").font(.callout).textSelection(.enabled)
-                        Spacer(minLength: 12)
-                        NativeActionButton(model.t("關閉錯誤訊息", "Dismiss error"), identifier: "mopanel.error.dismiss",
-                                           systemImage: "xmark", appearance: .icon) { model.error = nil }
-                    }.padding(14).background(Color.orange.opacity(0.12))
-                }
-                if let busy = model.busy {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(model.scanActivityTitle).font(.headline)
-                            Spacer()
-                            NativeActionButton(model.t("停止掃描", "Stop Scan"), identifier: "mopanel.scan.stop") {
-                                model.cancelScan()
-                            }
-                        }
-                        ProgressView().progressViewStyle(.linear).accessibilityLabel(model.scanActivityTitle)
-                        Text(model.t("指令：", "Command: ") + busy).font(.caption.monospaced()).textSelection(.enabled)
-                    }.padding(12).background(.thinMaterial)
-                }
-                if model.section == .settings { SettingsView() }
-                else if model.section == .appUpdates {
-                    AppUpdatesView(controller: appUpdates, language: model.language,
-                                   operationInProgress: model.moleOperationInProgress || model.isDetecting || startup.isBusy || worktrees.isBusy || systemTools.ejectingVolumeID != nil)
-                }
-                else if model.section == .startup {
-                    StartupView(controller: startup, language: model.language,
-                                operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || worktrees.isBusy || systemTools.ejectingVolumeID != nil)
-                }
-                else if model.section == .worktrees {
-                    GitWorktreeView(controller: worktrees, language: model.language,
-                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy || systemTools.ejectingVolumeID != nil)
-                }
-                else if model.section == .tools {
-                    SystemToolsView(controller: systemTools, language: model.language,
-                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy || worktrees.isBusy,
-                                    cliSummary: model.installation.map { "Mole \($0.version) · \($0.source.rawValue) · \($0.executable.path)" })
-                }
-                else if model.installation == nil { MissingEngineView() }
-                else {
-                    switch model.section {
-                    case .dashboard: DashboardView()
-                    case .uninstall: UninstallView()
-                    case .analyze: AnalyzeView()
-                    case .history: HistoryView()
-                    case .clean, .optimize, .purge, .installer, .slim: MaintenanceView(section: model.section).id(model.section)
-                    case .settings, .tools, .appUpdates, .startup, .worktrees: EmptyView()
+                .navigationTitle(model.t(model.section.zh, model.section.en))
+                .toolbar {
+                    ToolbarItem {
+                        if model.isDetecting { ProgressView().controlSize(.small) }
+                        else { Button { Task { await model.detect() } } label: { Label(model.t("重新偵測", "Re-detect"), systemImage: "arrow.clockwise") }.disabled(model.hasRunningOperation) }
                     }
                 }
             }
-            .background(Color(nsColor: .windowBackgroundColor))
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if let pending = model.pending {
-                    ConfirmationPanel(pending: pending).id(pending.id)
-                        .padding(.horizontal, 16).padding(.bottom, 12)
-                } else if model.homebrewConfirmation {
-                    HomebrewInstallConfirmationPanel().padding(.horizontal, 16).padding(.bottom, 12)
-                } else if appUpdates.showOperation, let session = appUpdates.operationSession, session.running || appUpdates.isBusy {
-                    AppUpdateOperationView(controller: appUpdates, session: session, language: model.language)
-                        .id(ObjectIdentifier(session)).padding(.horizontal, 16).padding(.bottom, 12)
-                } else if model.showOperation {
-                    OperationPanel(session: model.operationSession).id(ObjectIdentifier(model.operationSession))
-                        .padding(.horizontal, 16).padding(.bottom, 12)
-                } else if appUpdates.showOperation, let session = appUpdates.operationSession {
-                    AppUpdateOperationView(controller: appUpdates, session: session, language: model.language)
-                        .id(ObjectIdentifier(session)).padding(.horizontal, 16).padding(.bottom, 12)
-                }
-            }
-            .navigationTitle(model.t(model.section.zh, model.section.en))
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                            isSidebarCollapsed.toggle()
-                        }
-                    } label: {
-                        Label(model.t(isSidebarCollapsed ? "展開側邊欄" : "收合側邊欄",
-                                      isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"),
-                              systemImage: "sidebar.left")
-                    }
-                    .help(model.t(isSidebarCollapsed ? "展開側邊欄" : "收合側邊欄",
-                                  isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"))
-                    .buttonStyle(.glass)
-                    .accessibilityIdentifier("mopanel.sidebar.toggle")
-                }
-                ToolbarItem {
-                    if model.isDetecting { ProgressView().controlSize(.small) }
-                    else { Button { Task { await model.detect() } } label: { Label(model.t("重新偵測", "Re-detect"), systemImage: "arrow.clockwise") }.disabled(model.hasRunningOperation) }
-                }
-            }
+            .background(MoPanelBackdrop())
         }
-        .toolbar(removing: .sidebarToggle)
         .groupBoxStyle(MoPanelGroupBoxStyle())
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isSidebarCollapsed)
-        .tint(.teal)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.24), value: isSidebarCollapsed)
+        .tint(MoPanelTheme.accent)
         .task {
             guard !started else { return }
             started = true
@@ -201,7 +136,7 @@ struct MissingEngineView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         VStack(spacing: 22) {
-            Image(systemName: "externaldrive.badge.questionmark").font(.system(size: 60)).foregroundStyle(.teal)
+            Image(systemName: "externaldrive.badge.questionmark").font(.system(size: 60)).foregroundStyle(MoPanelTheme.accent)
             Text(model.t("先連接官方 Mole CLI", "Connect the official Mole CLI")).font(.largeTitle.bold())
             Text(model.t("MoPanel 是操作介面。清理、分析及維護都交由獨立安裝的官方引擎執行。", "MoPanel is an interface. An independently installed official engine performs analysis, cleanup and maintenance."))
                 .foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 520)

@@ -1,43 +1,307 @@
 import SwiftUI
 import AppKit
+import MoPanelCore
 
 struct MenuBarPanel: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var systemTools: SystemToolsController
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack { Label("MoPanel", systemImage: "gauge.with.dots.needle.67percent").font(.headline); Spacer(); Text(model.monitoring ? model.t("即時", "Live") : model.t("暫停", "Paused")).font(.caption).foregroundStyle(.secondary) }
-            if let snapshot = model.status {
-                LabeledContent("CPU", value: snapshot.cpu.logicalCPU > 0 ? DisplayFormat.percent(snapshot.cpu.usage) : model.unavailable)
-                LabeledContent(model.t("記憶體", "Memory"), value: snapshot.memory.total > 0 ? DisplayFormat.bytes(snapshot.memory.used) : model.unavailable)
-                LabeledContent(model.t("健康分數", "Health"), value: snapshot.healthScore.map { "\($0) / 100" } ?? model.unavailable)
-                if let network = snapshot.network.first(where: { $0.name == model.selectedNetwork }) {
-                    LabeledContent("↓ " + network.name, value: DisplayFormat.number(network.rxRateMbs, suffix: " MB/s"))
-                    LabeledContent("↑ " + network.name, value: DisplayFormat.number(network.txRateMbs, suffix: " MB/s"))
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                if model.fixtureMode {
+                    Text(model.t("合成測試資料", "Synthetic test data"))
+                        .font(.caption2.weight(.semibold)).foregroundStyle(.orange)
                 }
-                Text(model.t("更新於 ", "Updated ") + DisplayFormat.timestamp(snapshot.collectedAt, language: model.language))
-                    .font(.caption2).foregroundStyle(.secondary)
-            } else { Text(model.t("尚無讀值；請先連接 Mole CLI。", "No readings yet. Connect Mole CLI first.")).foregroundStyle(.secondary) }
-            if model.hasRunningOperation { Text(model.t("其他作業執行中，監控暫停。", "Monitoring pauses during another operation.")).font(.caption) }
-            Divider()
-            HStack {
-                Button(model.t("開啟總覽", "Dashboard")) { show(.dashboard) }
+                if let snapshot = model.status {
+                    health(snapshot)
+                    resourceCards(snapshot)
+                    battery(snapshot)
+                    processes(snapshot)
+                    Text(model.t("更新於 ", "Updated ") + DisplayFormat.timestamp(snapshot.collectedAt, language: model.language))
+                        .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                } else {
+                    Label("MoPanel", systemImage: "gauge.with.dots.needle.67percent").font(.title2.bold())
+                    ContentUnavailableView(model.t("等待系統讀值", "Waiting for Readings"), systemImage: "waveform.path.ecg",
+                                           description: Text(model.t("連接 Mole 後，這裡會顯示即時資源狀態。", "Connect Mole to see live system metrics.")))
+                }
+                controls
+                Text(model.t("資料來源：Mole Status · 與總覽同步", "Mole Status · Shared with Dashboard"))
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+            }.padding(14)
+        }
+        .frame(width: 390, height: model.status == nil ? 360 : min(790, max(520, (NSScreen.main?.visibleFrame.height ?? 900) - 60)))
+        .background(MoPanelBackdrop(translucent: true))
+        .tint(MoPanelTheme.accent)
+    }
+
+    private func health(_ snapshot: StatusSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: 9) {
+                Image(systemName: "sun.max.fill").font(.title2).foregroundStyle(MoPanelTheme.accent)
+                Text(snapshot.healthScore.flatMap { (0...100).contains($0) ? String($0) : nil } ?? "—")
+                    .font(.system(size: 39, weight: .semibold, design: .rounded)).monospacedDigit()
+                    .contentTransition(.numericText())
+                Text(healthDescription(snapshot.healthScore, message: snapshot.healthScoreMsg)).font(.headline).foregroundStyle(.secondary)
+                    .lineLimit(1).help(snapshot.healthScoreMsg ?? model.unavailable)
                 Spacer()
+                Circle().fill(model.monitoring ? Color.green : .secondary).frame(width: 6, height: 6)
+                Text(model.monitoring ? model.t("即時", "Live") : model.t("暫停", "Paused"))
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 5) {
+                chip(snapshot.hardware?.cpuModel?.replacingOccurrences(of: "Apple ", with: "") ?? "Mac")
+                chip(snapshot.memory.total > 0 ? DisplayFormat.bytes(snapshot.memory.total) : "—")
+                chip(snapshot.hardware?.osVersion ?? snapshot.platform ?? "—")
+                chip(uptime(snapshot))
+            }
+        }
+    }
+
+    private func resourceCards(_ snapshot: StatusSnapshot) -> some View {
+        let gpu = snapshot.gpu.first { value in value.usage.map { $0.isFinite && (0...100).contains($0) } == true } ?? snapshot.gpu.first
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            MonitorTile(title: "CPU", symbol: "cpu", tint: MoPanelTheme.positive,
+                        badge: temperature(snapshot.thermal?.cpuTemp),
+                        value: percentage(snapshot.cpu.logicalCPU > 0 ? snapshot.cpu.usage : nil),
+                        detail: model.t("平均負載 ", "Load ") + DisplayFormat.number(snapshot.cpu.load1, suffix: "")) {
+                CoreUsageBars(values: Array((snapshot.cpu.perCore ?? []).prefix(16)))
+            }
+            MonitorTile(title: "GPU", symbol: "cpu", tint: MoPanelTheme.accent,
+                        badge: temperature(snapshot.thermal?.gpuTemp),
+                        value: percentage(gpu?.usage),
+                        detail: gpu?.name ?? model.t("尚無 GPU 讀值", "GPU data unavailable")) {
+                MiniResourceTrend(values: model.trends.map(\.gpu), color: MoPanelTheme.accent, ceiling: 100)
+            }
+            MonitorTile(title: model.t("記憶體", "Memory"), symbol: "memorychip", tint: MoPanelTheme.accent,
+                        badge: memoryPressure(snapshot.memory.pressure),
+                        value: percentage(snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil),
+                        detail: snapshot.memory.total > 0 ? DisplayFormat.bytes(snapshot.memory.used) + " / " + DisplayFormat.bytes(snapshot.memory.total) : model.unavailable) {
+                MiniResourceTrend(values: model.trends.map(\.memory), color: MoPanelTheme.accent, ceiling: 100)
+            }
+            storage(snapshot)
+            network(snapshot)
+            MonitorTile(title: model.t("風扇", "Fans"), symbol: "fan", tint: MoPanelTheme.accent,
+                        badge: model.t("讀值", "Readout"),
+                        value: fanSpeed(snapshot.thermal),
+                        detail: model.t("模式控制未提供", "Mode control unavailable")) {
+                Text(model.t("Mole 硬體讀值", "Mole hardware data"))
+                    .font(.caption2).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func storage(_ snapshot: StatusSnapshot) -> some View {
+        let disk = snapshot.disks.first(where: { $0.mount == "/" }) ?? snapshot.disks.first
+        let available: UInt64? = disk.flatMap { $0.total > 0 && $0.used <= $0.total ? $0.total - $0.used : nil }
+        return MonitorTile(title: model.t("可用空間", "Free Space"), symbol: "internaldrive", tint: MoPanelTheme.chartSecondary,
+                           badge: disk.map { DisplayFormat.bytes($0.total) } ?? "—",
+                           value: DisplayFormat.bytes(available),
+                           detail: disk.map { model.t("已用 ", "Used ") + DisplayFormat.bytes($0.used) + " · " + percentage($0.usedPercent) } ?? model.unavailable) {
+            if let disk, disk.total > 0, disk.usedPercent.isFinite, (0...100).contains(disk.usedPercent) {
+                ProgressView(value: disk.usedPercent, total: 100).tint(MoPanelTheme.chartSecondary)
+            } else {
+                Text(model.t("尚無磁碟讀值", "Disk data unavailable")).font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private func network(_ snapshot: StatusSnapshot) -> some View {
+        let network = snapshot.network.first(where: { $0.name == model.selectedNetwork }) ?? snapshot.network.first
+        return MonitorTile(title: model.t("網路", "Network"), symbol: "network", tint: MoPanelTheme.chartSecondary,
+                           badge: network?.name ?? "—", value: rate(network?.rxRateMbs),
+                           detail: "↑ " + rate(network?.txRateMbs)) {
+            MiniResourceTrend(values: model.trends.map(\.down), color: MoPanelTheme.chartSecondary)
+        }
+    }
+
+    private func battery(_ snapshot: StatusSnapshot) -> some View {
+        let battery = snapshot.batteries.first
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label(model.t("電池", "Battery"), systemImage: "battery.100percent").font(.caption.weight(.semibold))
+                Spacer()
+                Text(battery?.health ?? model.t("未提供健康度", "Health unavailable")).font(.caption2).foregroundStyle(.secondary)
+            }
+            HStack(alignment: .firstTextBaseline) {
+                Text(percentage(battery?.percent)).font(.system(size: 29, weight: .semibold, design: .rounded)).monospacedDigit()
+                    .contentTransition(.numericText())
+                Spacer()
+                Text(batteryState(battery?.status)).font(.caption).foregroundStyle(.secondary)
+            }
+        }.padding(12).moPanelGlass(cornerRadius: 16)
+    }
+
+    private func processes(_ snapshot: StatusSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Text(model.t("高佔用程式", "Top Processes")).font(.caption.weight(.semibold))
+                Spacer()
+                Text(model.t("記憶體", "Memory")).frame(width: 75, alignment: .trailing)
+                Text("CPU").frame(width: 48, alignment: .trailing)
+            }.font(.caption2).foregroundStyle(.secondary)
+            ForEach(Array(snapshot.topProcesses.sorted { $0.cpu > $1.cpu }.prefix(5))) { process in
+                HStack(spacing: 7) {
+                    Text(process.name).font(.caption.weight(.medium)).lineLimit(1)
+                    Spacer(minLength: 2)
+                    Text(DisplayFormat.bytes(process.memoryBytes)).frame(width: 75, alignment: .trailing)
+                    Text(DisplayFormat.percent(process.cpu)).frame(width: 48, alignment: .trailing)
+                }.font(.caption2).monospacedDigit()
+            }
+            if snapshot.topProcesses.isEmpty {
+                Text(model.t("尚無行程讀值", "No process readings")).font(.caption).foregroundStyle(.secondary)
+            }
+            if snapshot.processStale == true {
+                Text(model.t("行程清單為較早的樣本", "Process list is an older sample")).font(.caption2).foregroundStyle(.secondary)
+            }
+        }.padding(12).moPanelGlass(cornerRadius: 16)
+    }
+
+    private var controls: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Button { show(.dashboard) } label: { Label(model.t("總覽", "Dashboard"), systemImage: "square.grid.2x2") }
+                    .buttonStyle(.glass)
+                Spacer()
+                Button(systemTools.assertionIsActive ? model.t("保持喚醒中", "Keep Awake On") : model.t("系統工具", "System Tools")) { show(.tools) }
+            }
+            HStack {
                 Button(model.monitoringPaused ? model.t("繼續監控", "Resume") : model.t("暫停監控", "Pause")) {
                     if model.monitoringPaused { model.resumeMonitoring() } else { model.pauseMonitoring() }
                 }.disabled(model.installation == nil || model.hasRunningOperation)
-            }
-            HStack {
-                Button(model.t("系統工具", "System Tools")) { show(.tools) }
                 Spacer()
                 Button(model.t("結束 MoPanel", "Quit MoPanel")) { NSApp.terminate(nil) }
+                    .buttonStyle(.plain).foregroundStyle(.secondary)
             }
-            Text(model.t("MoPanel 新實作。與總覽共用同一個 Mole 串流；關閉最後視窗或結束 App 就會停止。", "Added by MoPanel. Shares one Mole stream with Dashboard and stops when the last window or the app closes."))
-                .font(.caption2).foregroundStyle(.secondary)
-        }.padding(18).frame(width: 355)
+            if model.hasRunningOperation {
+                Text(model.t("作業執行中，監控暫停。", "Monitoring pauses during an operation.")).font(.caption2).foregroundStyle(.secondary)
+            }
+        }.buttonStyle(.bordered).font(.caption)
+    }
+
+    private func chip(_ text: String) -> some View {
+        Text(text).font(.system(size: 10, weight: .medium)).lineLimit(1)
+            .padding(.horizontal, 7).padding(.vertical, 4)
+            .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+            .help(text)
+    }
+    private func percentage(_ value: Double?) -> String {
+        guard let value, value.isFinite, (0...100).contains(value) else { return "—" }
+        return String(format: "%.0f%%", value)
+    }
+    private func temperature(_ value: Double?) -> String {
+        ThermalStatus.availablePositive(value).map { String(format: "%.0f°C", $0) } ?? "—"
+    }
+    private func fanSpeed(_ thermal: ThermalStatus?) -> String {
+        guard let thermal, let speed = thermal.fanSpeed,
+              speed > 0 || (speed == 0 && (thermal.fanCount ?? 0) > 0) else { return "—" }
+        return speed.formatted() + " RPM"
+    }
+    private func rate(_ value: Double?) -> String {
+        guard let value, value.isFinite, value >= 0 else { return "—" }
+        return value < 1 ? String(format: "%.0f KB/s", value * 1000) : String(format: "%.1f MB/s", value)
+    }
+    private func memoryPressure(_ value: String?) -> String {
+        switch value?.lowercased() {
+        case "normal", "nominal": return model.t("壓力正常", "Normal")
+        case "warn", "warning": return model.t("壓力偏高", "Elevated")
+        case "critical": return model.t("壓力過高", "High pressure")
+        default: return model.t("未提供壓力", "Pressure unavailable")
+        }
+    }
+    private func healthDescription(_ score: Int?, message: String?) -> String {
+        guard let score, (0...100).contains(score) else { return model.t("未提供", "Unavailable") }
+        switch message?.lowercased() {
+        case "good", "excellent", "healthy", "normal": return model.t("良好", "Good")
+        case "fair", "warning", "moderate": return model.t("需留意", "Fair")
+        case "poor", "critical": return model.t("需關注", "Needs attention")
+        default: return model.t("健康分數", "Health Score")
+        }
+    }
+    private func uptime(_ snapshot: StatusSnapshot) -> String {
+        guard let seconds = snapshot.uptimeSeconds else { return snapshot.uptime ?? "—" }
+        let days = seconds / 86400, hours = seconds % 86400 / 3600
+        return model.language == "en" ? "\(days)d \(hours)h" : "\(days) 天 \(hours) 小時"
+    }
+    private func batteryState(_ value: String?) -> String {
+        switch value?.lowercased() {
+        case "charged", "full": return model.t("已充飽", "Charged")
+        case "charging": return model.t("充電中", "Charging")
+        case "discharging": return model.t("使用電池", "On battery")
+        default: return value ?? model.t("尚無電池讀值", "Battery data unavailable")
+        }
     }
     private func show(_ section: AppSection) {
         model.section = section
         NSApp.activate()
         NSApp.windows.first(where: { $0.styleMask.contains(.titled) && !$0.isSheet })?.makeKeyAndOrderFront(nil)
+    }
+}
+
+private struct MonitorTile<Chart: View>: View {
+    let title: String
+    let symbol: String
+    let tint: Color
+    let badge: String
+    let value: String
+    let detail: String
+    @ViewBuilder let chart: () -> Chart
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 5) {
+                Label(title, systemImage: symbol).foregroundStyle(tint).font(.caption.weight(.semibold))
+                Spacer(minLength: 0)
+                Text(badge).font(.system(size: 10, weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Text(value).font(.system(size: 28, weight: .semibold, design: .rounded)).monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.65).contentTransition(.numericText())
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: value)
+            chart().frame(height: 18)
+            Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1).help(detail)
+        }.padding(10).frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+            .moPanelGlass(cornerRadius: 16)
+    }
+}
+
+private struct CoreUsageBars: View {
+    let values: [Double]
+    var body: some View {
+        GeometryReader { proxy in
+            HStack(alignment: .bottom, spacing: 3) {
+                ForEach(Array(values.enumerated()), id: \.offset) { _, value in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(LinearGradient(colors: [MoPanelTheme.positive.opacity(0.9), MoPanelTheme.positive.opacity(0.35)], startPoint: .top, endPoint: .bottom))
+                        .frame(height: value.isFinite ? proxy.size.height * min(max(value, 0), 100) / 100 : 0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
+            }
+        }.accessibilityLabel("CPU")
+    }
+}
+
+private struct MiniResourceTrend: View {
+    let values: [Double?]
+    let color: Color
+    var ceiling: Double? = nil
+    var body: some View {
+        GeometryReader { proxy in
+            let samples = Array(values.suffix(40))
+            let maximum = ceiling ?? max(samples.compactMap { $0 }.filter { $0.isFinite && $0 >= 0 }.max() ?? 0, 0.001)
+            if samples.count >= 2 {
+                Path { path in
+                    var connected = false
+                    for (index, sample) in samples.enumerated() {
+                        guard let sample, sample.isFinite, sample >= 0 else { connected = false; continue }
+                        let point = CGPoint(x: proxy.size.width * Double(index) / Double(samples.count - 1),
+                                            y: proxy.size.height * (1 - min(sample / maximum, 1)))
+                        if connected { path.addLine(to: point) } else { path.move(to: point) }
+                        connected = true
+                    }
+                }.stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            } else {
+                Rectangle().fill(.primary.opacity(0.08)).frame(height: 1).frame(maxHeight: .infinity)
+            }
+        }.accessibilityHidden(true)
     }
 }

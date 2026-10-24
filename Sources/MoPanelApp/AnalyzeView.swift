@@ -71,7 +71,7 @@ struct AnalyzeView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(entries) { entry in
                             HStack(spacing: 12) {
-                                Image(systemName: entry.isDir ? "folder" : "doc").foregroundStyle(entry.isDir ? Color.teal : Color.secondary)
+                                Image(systemName: entry.isDir ? "folder" : "doc").foregroundStyle(entry.isDir ? MoPanelTheme.accent : Color.secondary)
                                 Button {
                                     if entry.isDir { Task { await model.analyze(path: entry.path) } } else { model.reveal(entry.path) }
                                 } label: {
@@ -137,7 +137,7 @@ private struct TreemapTile: Identifiable {
 private struct Treemap: View {
     let entries: [AnalyzeEntry]
     let select: (AnalyzeEntry) -> Void
-    private let colors: [Color] = [.teal, .blue, .indigo, .cyan, .mint]
+    private let colors: [Color] = [MoPanelTheme.accent, MoPanelTheme.chartSecondary, .indigo, .orange, MoPanelTheme.positive]
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .topLeading) {

@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-24",
+  "timezone": "Asia/Taipei",
+  "source_revision": "9b0c39c06049ee534cebbd190343fd2265bb104f",
+  "scope": "local fixture-only full build before subsequent UI review changes",
+  "swift_test_bundles": [
+    {
+      "suite": "MoPanelProcessTests",
+      "tests": 35,
+      "failures": 0
+    },
+    {
+      "suite": "MoPanelCoreTests",
+      "tests": 150,
+      "failures": 0
+    }
+  ],
+  "ui_checks_passed": 20,
+  "ui_check_count": 20,
+  "actual_accessibility_presses": 19,
+  "all_press_postconditions_verified": true,
+  "guardian_tests_passed": 17,
+  "signature": "ad-hoc; bundle and ZIP verification succeeded",
+  "archive_sha256": "cfaf25c5c39617683a4ba35d1023ea5e0984636b6124cd4a157020c34eafe105",
+  "fixture_performance": [
+    {
+      "mode": "idle",
+      "cpu_mean_percent": 0.005,
+      "cpu_peak_percent": 0.1,
+      "rss_mean_bytes": 180077363,
+      "rss_peak_bytes": 180273152,
+      "max_process_count": 1
+    },
+    {
+      "mode": "monitor",
+      "cpu_mean_percent": 4.737,
+      "cpu_peak_percent": 22.6,
+      "rss_mean_bytes": 191794553,
+      "rss_peak_bytes": 192020480,
+      "max_process_count": 4
+    },
+    {
+      "mode": "scan",
+      "cpu_mean_percent": 33.18,
+      "cpu_peak_percent": 56.6,
+      "rss_mean_bytes": 201599386,
+      "rss_peak_bytes": 207208448,
+      "max_process_count": 4
+    }
+  ],
+  "performance_limitations": "Synthetic fixtures measure GUI overhead, not real CLI workload costs. CPU is ps lifetime-average percent; peaks are observed sample maxima, not Instruments traces. RSS is summed across the GUI and observed descendants, so shared pages may be counted more than once; it is not unique physical footprint or Activity Monitor memory pressure.",
+  "not_validated": [
+    "all 203 UI controls",
+    "complete manual layout review",
+    "real destructive operations and TCC/administrator flows",
+    "Stats integration and custom menu bar feature completion",
+    "1/8/24 hour or Instruments acceptance"
+  ]
+}

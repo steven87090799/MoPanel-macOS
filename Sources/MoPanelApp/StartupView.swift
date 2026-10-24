@@ -66,7 +66,7 @@ struct StartupView: View {
         GroupBox {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
-                    Image(systemName: row.item.scope == .systemDaemon ? "gearshape.2" : "app.badge").font(.title2).foregroundStyle(.teal)
+                    Image(systemName: row.item.scope == .systemDaemon ? "gearshape.2" : "app.badge").font(.title2).foregroundStyle(MoPanelTheme.accent)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(row.item.snapshot?.label ?? row.item.url.lastPathComponent).font(.headline).textSelection(.enabled)
                         Text(row.item.url.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)

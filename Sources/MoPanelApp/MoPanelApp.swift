@@ -80,7 +80,7 @@ import Darwin
             }
         }
         MenuBarExtra(isInserted: menuBarInsertion) {
-            MenuBarPanel().environmentObject(model).preferredColorScheme(model.colorScheme)
+            MenuBarPanel().environmentObject(model).environmentObject(systemTools).preferredColorScheme(model.colorScheme)
         } label: {
             Label {
                 if model.monitoring, let cpu = model.status?.cpu.usage { Text("CPU " + DisplayFormat.percent(cpu)) }
