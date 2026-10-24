@@ -8,15 +8,15 @@
 
 **已取得真正的 macOS 27 ARM64 編譯與測試結果；最新整合版尚有 macOS 測試失敗，未產生可交付的 `MoPanel-macOS27-arm64.zip`。**
 
-公開 repository 為 [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS)。最新的 [run 40074350936](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40074350936)（commit `cb4188b7e7753848109eb10ad53ab987a394c92f`）使用 macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64；原生 App Updates、Startup、System Tools、選單、行程及自身 accessibility 測試程式通過 Debug 編譯。
+公開 repository 為 [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS)。最新的 [run 40074913811](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40074913811)（commit `b24978163e313263858cd402a75fba305baa5134`）使用 macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64；**140／140 Mac XCTest 通過，0 failures／skipped**，其中116 Core及24 Process／Editor／Streaming。之前的Startup15項與installed receipt12項路徑回歸均已通過真Mac測試。
 
-本輪實際執行 138 個 Mac XCTest：24 個 Process／Editor／Streaming 全部通過；114 個 Core 有 7 個失敗斷言，其中 Startup 的兩個測項共 5 個斷言失敗，另兩個 installed receipt 測項拋出未預期的路徑拒絕錯誤。問題位於 FileManager 列出路徑的表示方式與已批准根目錄的比較。後續修正以父目錄的 POSIX realpath 與 device／inode 檢查後重建子項 URL，保留原有 symlink、owner、O_NOFOLLOW 與逃逸防護。修後 Startup 15 項 Linux 通過；App Updates／receipt／環境 filtered 32 項 Linux 通過。這些修正尚待下一輪真 Mac 驗證，未忽略原失敗紀錄。
+主App及兩個helper也完成release編譯、ARM64與ad-hoc完整性驗證。Homebrew Python15案例、獨立gate Bash6案例在真Mac全部通過；官方Mole最新穩定唯讀契約亦通過。這些成功不能代替尚未通過的UI驗收。
 
-先前的 Homebrew audit cleanup EPERM 問題在本輪 Mac 已驗證修復：**15／15 Python 案例通過，0 failures／skipped，0.476 秒**。明確的 bash pipefail 已生效。實際 Homebrew 7.0.10 唯讀契約通過；有 5 個 installed cask、0 個 outdated cask，新增固定 caskroom 位置介面也已驗證，但沒有讀取 runner 舊 recipe／receipt 或進行真實 App 升級。
+本輪fixture-only UI smoke在**45秒期限**後逾時，當輪沒有App最終JSON、stderr進度或截圖，因此不能判定卡在系統API、Startup mock、AX按鈕或收尾。兩個獨立gate正確保存XCTest command/tee/pipeline皆0、smoke command/pipeline為1且tee為0，並阻止效能、後續guardian驗收、baseline probe與ZIP封裝。
 
-本輪在 XCTest gate 停止，未進 UI smoke／效能／ZIP。為取得獨立的 UI 診斷，下一輪流程改為分別保存 XCTest 與 fixture-only UI smoke 的 command／tee／pipeline 退出碼；只有編譯成功才能啟動 App，兩個 gate 都成功且 XCTest 無略過才可繼續後續驗收與發行。6 個隔離 Bash 管線案例已實際通過（`docs/VALIDATION_GATE_HARNESS_OUTPUT.txt`，1.384 秒），證明 Swift、smoke、tee 任一非零，或零退出卻有失敗／略過摘要，均阻止後續 phase；Swift 失敗仍保留獨立 smoke 結果。未使用 `|| true` 忽略失敗。
+下一輪只增加階段／AX breadcrumb與有界診斷。外部driver會直接保存stdout/stderr，在45秒判定失敗後，對仍存活的**同一個Popen子App**嘗試2秒stack sample（診斷command上限8秒），再停止並回收該App。取樣失敗或權限拒絕只如實記錄，不更改TCC、entitlement或安全設定。額外診斷時間**不延長45秒測試期限，也不會把晚完成改為通過**。4個隔離driver案例已在Linux通過，0失敗，0.238秒（`docs/SMOKE_DRIVER_TEST_OUTPUT.txt`）；這裡的Mac sampler使用mock，真實取樣仍待下一輪需要時驗證。
 
-較早的 [run 40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 通過 77 個 Mac XCTest、ARM64 主程式及兩個 helper 的 release 編譯與 ad-hoc bundle 驗證。其 UI smoke 12 項中 11 項通過，僅監控串流樣本檢查失敗；完整 JSON、stdout／stderr 及自身視窗截圖已保存。之後找到 Foundation 讀取會等待緩衝填滿的實際問題，新增串流回歸，改用增量 POSIX read；新回歸已在本輪 Mac 通過，但尚未再次抵達 UI smoke。
+較早的 [run 40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 通過 77 個 Mac XCTest、ARM64 主程式及兩個 helper 的 release 編譯與 ad-hoc bundle 驗證。其 UI smoke 12 項中 11 項通過，僅監控串流樣本檢查失敗；完整 JSON、stdout／stderr 及自身視窗截圖已保存。之後找到 Foundation 讀取會等待緩衝填滿的實際問題，新增串流回歸，改用增量 POSIX read；新回歸已在本輪 Mac 通過；完整UI smoke仍因上述逾時未通過。
 
 下表保留各套 Linux 基準測試的實際證據與範圍。後續新增功能的測試亦各有獨立紀錄，不能將不同版本／平台重複加總為一次完整驗收。Guardian Python 整合、效能三態與 ZIP gate 尚未在 Mac 完整執行。
 
@@ -53,11 +53,11 @@
 
 | 增量 | 實際結果與尚待驗證範圍 |
 |---|---|
-| App Updates 與舊安裝 receipt | `docs/APP_UPDATES_TEST_OUTPUT.txt`：32 個 Linux filtered XCTest 通過，0 失敗，0.952 秒；其中18個既有更新模型、12個 receipt 案例、2個程序環境案例。後兩項亦包含在程序24案例中，不可重複加總。新 receipt 邏輯尚待下一輪 Mac 驗證，沒有真實App升級 |
+| App Updates 與舊安裝 receipt | `docs/APP_UPDATES_TEST_OUTPUT.txt`：32 個 Linux filtered XCTest 通過，0 失敗，0.952 秒；其中18個既有更新模型、12個 receipt 案例、2個程序環境案例。後兩項亦包含在程序24案例中，不可重複加總。12項receipt案例已在run40074913811通過Mac，沒有真實App升級 |
 | Homebrew audit cleanup 與 caskroom | `docs/HOMEBREW_AUDIT_TEST_OUTPUT.txt`：15個Linux Python案例通過，0失敗，0.309秒；Mac15項回歸及caskroom probe已在run40074350936通過。沒有讀取runner舊recipe／receipt |
 | 增量管線讀取 | `docs/PROCESS_STREAMING_REGRESSION_OUTPUT.txt`：24個Linux程序／Editor／Streaming案例通過；相同24案例在run40073252380的Mac也通過，包含小量stdout／stderr與PTY提示即時送達，尚不能代替UI監控smoke |
 | System Tools policy | `docs/SYSTEM_TOOLS_POLICY_TEST_OUTPUT.txt`：7個Linux政策案例通過；run40073252380對應Mac測項亦通過。這些不是IOPM、螢幕輸入攔截或硬碟退出的實機操作驗收 |
-| Startup inventory | run40073252380兩案例在Mac失敗；修前以相對base URL在Linux重現，見`docs/STARTUP_URL_REGRESSION_BEFORE.txt`。第二次修後15個Linux案例通過（`docs/STARTUP_TEST_OUTPUT.txt`），含真Mac launchctl樣本及enumerated child重建回歸；尚待Mac重跑 |
+| Startup inventory | run40073252380兩案例在Mac失敗；修前以相對base URL在Linux重現，見`docs/STARTUP_URL_REGRESSION_BEFORE.txt`。第二次修後15個Linux案例通過（`docs/STARTUP_TEST_OUTPUT.txt`），含真Mac launchctl樣本及enumerated child重建回歸；15項已在run40074913811通過Mac，原生Startup controller smoke尚未取得完成證據 |
 
 上述增量與基準測試有重疊；最終發行包僅由一次實際成功的Mac整合測試、完整smoke、六種效能模式及ZIP驗證產生，不以重複加總取代驗收。
 
@@ -71,12 +71,12 @@
 
 | 項目 | 狀態 |
 |---|---|
-| macOS27 SwiftUI/AppKit/Charts 編譯 | 基礎 release通過；run40073252380新增原生工具等Debug編譯通過，但XCTest失敗阻止後續release gate |
+| macOS27 SwiftUI/AppKit/Charts 編譯 | run40074913811完整整合版release編譯與140XCTest通過；UI仍逾時 |
 | SwiftTerm 與 MoPanelEditor macOS 編譯 | 基礎版本通過 |
 | 真正 ARM64 Mach-O 產物 | runner 已編譯並驗證；因 smoke 失敗未上傳發行 App |
 | ad-hoc Code Signing／codesign verify | 基礎版本通過 build.sh 的 bundle gate |
 | Apple Developer ID／公證 | 未進行，未宣稱 |
-| macOS 原生視窗 smoke test | run40072470759為11/12；增量POSIX讀取回歸已通過Mac，後續UI smoke尚待整合測試通過後重跑 |
+| macOS 原生視窗 smoke test | run40074913811為45秒逾時，未產生完整App證據；已補進度與timeout診斷，沒有放寬deadline |
 | 十個頁面的全部按鈕與 VoiceOver | 未完整實機驗收 |
 | 官方 status/analyze/uninstall-list 的真實 Mac 整合 | CLI 唯讀合約通過；原生 GUI 真實引擎 benchmark 待接續驗證 |
 | Full Disk Access／Touch ID／sudo | 尚未實機驗證 |

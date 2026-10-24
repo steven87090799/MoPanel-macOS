@@ -60,11 +60,13 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-[Run 40074350936](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40074350936) 已通過最新整合版 Debug 編譯，實際執行 138 個 Mac XCTest：24 個 Process／Editor／Streaming 全部通過，114 個 Core 出現 7 個失敗斷言（Startup 5、installed receipt 2）。後續依實際 Mac 路徑表示差異補強父目錄 realpath／device／inode 校驗及子 URL 重建；Startup 15 項與 App Updates／receipt／環境 32 項 filtered Linux 回歸通過，尚待 Mac 重跑。
+[Run 40074913811](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40074913811) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit與6個獨立gate harness案例也在真Mac全過。
 
-Homebrew 7.0.10 的固定唯讀命令（包含 caskroom）通過，JSON 有 5 個 installed cask、0 個 outdated cask，沒有執行更新或讀取 runner 舊 receipt。15 個 Python audit harness 案例也已在本輪 Mac 全部通過，修復了先前 EPERM cleanup。工作流程依 [GitHub shell 說明](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell) 使用明確 bash，確保 tee 不遮蔽測試錯誤；發行報告另要求 harness 無失敗／略過。
+本輪UI smoke在45秒期限後逾時，沒有最終App JSON、stderr進度或截圖；不能據此推定卡在哪個模組。`validation-gates.json`分別保留XCTest成功與smoke失敗，最後明確非零退出，未進效能／後續guardian／baseline probe／ZIP。
 
-下一輪 `build.sh` 將獨立收集 XCTest 與 fixture-only UI smoke 的實際 command／tee／pipeline 退出碼，寫入 `validation-gates.json`。只有編譯與 bundle 驗證通過才有 App 可啟動；兩個 gate 都成功、XCTest 無略過，才可進後續 profile／guardian／官方 baseline probe／ZIP。任一失敗仍使腳本明確非零退出。`test_validation_gates.py` 的 6 個隔離 Bash 案例已在 Linux 通過；這個變更增加失敗診斷，不放寬發行門檻。
+下一輪以Popen將stdout/stderr直接寫檔，並加入App階段與AX breadcrumb。到45秒時仍立即判定測試失敗；隨後對同一存活子App嘗試固定2秒`/usr/bin/sample`（command上限8秒），再只停止並回收該App。診斷不更改安全設定、不提升權限，失敗也不覆蓋原timeout；診斷期間晚完成不會成為pass。4個隔離Python driver案例已在Linux通過，Mac sampler權限情境使用mock。
+
+XCTest與fixture-only UI仍獨立收集，只有編譯／bundle成功才能啟動App，兩個gate都成功且無略過，才可進後續驗收。發行報告另強制完整成功的gate JSON及harness logs，任何失敗均阻擋ZIP。
 
 較早的 [run40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 已通過77個 Mac XCTest、基礎App ARM64 release與ad-hoc驗證，但UI smoke僅11/12通過。失敗的watch小量輸出問題已透過增量POSIX read修正，且新增兩個Mac串流回歸通過；尚待本輪其他失敗修正後重新執行UI與三態測量。
 

@@ -90,12 +90,18 @@ private enum NativeUIFailure: LocalizedError {
     private var maximumTreeNodesObserved = 0
     private var observedIdentifiers = Set<String>()
     private var cleanupRequested = false
+    private var activeControl: NativeUIControl?
+    private var phaseBreadcrumbs = 0
+    private var nodeBreadcrumbs = 0
 
     init(model: AppModel, window: NSWindow) { self.model = model; self.window = window }
 
     func run() async -> NativeUIReport {
+        breadcrumb("run.begin")
         do {
+            breadcrumb("fixture.validate.begin")
             try validateContext()
+            breadcrumb("fixture.validate.end")
             contextWasValidated = true
             guard !model.hasRunningOperation, model.pending == nil, !model.showOperation,
                   model.error == nil else { throw NativeUIFailure.unexpectedState("start with no active operation, modal or error") }
@@ -211,6 +217,7 @@ private enum NativeUIFailure: LocalizedError {
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true
         } catch {
+            breadcrumb("run.failed")
             errors.append(error.localizedDescription)
             if let error = model.error { errors.append(String(error.prefix(1_024))) }
             if contextWasValidated {
@@ -222,6 +229,7 @@ private enum NativeUIFailure: LocalizedError {
                 model.pending = nil
             }
         }
+        breadcrumb("run.report")
         return NativeUIReport(passed: errors.isEmpty && checks["fixture_guard_retained_after_all_actions"] == true && checks.values.allSatisfy { $0 },
             mechanism: "AppKit NSAccessibilityProtocol on own-window objects", fixtureOnly: contextWasValidated,
             ownProcessOnly: true, physicalInputInjected: false, accessibilityPermissionRequested: false,
@@ -266,6 +274,7 @@ private enum NativeUIFailure: LocalizedError {
 
     private func record(_ name: String, _ value: Bool) throws {
         checks[name] = value
+        breadcrumb(value ? "postcondition.pass" : "postcondition.fail")
         if !value { throw NativeUIFailure.unexpectedState(name) }
     }
 
@@ -275,26 +284,35 @@ private enum NativeUIFailure: LocalizedError {
 
     private func waitFor(_ description: String, seconds: Double = 3,
                          condition: () -> Bool) async throws {
+        breadcrumb("postcondition.wait.begin")
         let local = ContinuousClock.now.advanced(by: .milliseconds(Int64(seconds * 1_000)))
         repeat {
             try validateContext()
-            if condition() { return }
+            if condition() { breadcrumb("postcondition.wait.end"); return }
             guard ContinuousClock.now < deadline, ContinuousClock.now < local else { throw NativeUIFailure.timedOut(description) }
             try await Task.sleep(for: .milliseconds(40))
         } while true
     }
 
     private func press(_ control: NativeUIControl) async throws {
+        activeControl = control
+        breadcrumb("press.validate.begin")
         try validateAction(control)
+        breadcrumb("press.find.begin")
         let element = try await find(control, enabled: true)
+        breadcrumb("press.find.end")
         try validateAction(control)
+        breadcrumb("press.role.begin")
         let role = element.accessibilityRole()?.rawValue ?? ""
+        breadcrumb("press.role.end", role: role)
         let targetWindow = try scopeWindow(for: control)
         guard let owned = element.accessibilityWindow() as? NSWindow, owned === targetWindow,
               control.allowedRoles.contains(role), element.isAccessibilityEnabled() else {
             throw NativeUIFailure.unavailableControl(control.rawValue)
         }
+        breadcrumb("press.perform.begin", role: role)
         let accepted = element.accessibilityPerformPress()
+        breadcrumb(accepted ? "press.perform.accepted" : "press.perform.rejected", role: role)
         actions.append(.init(identifier: control.rawValue, role: role, enabledBeforePress: true,
                              pressAccepted: accepted, ownedWindow: true))
         guard accepted else { throw NativeUIFailure.actionRejected(control.rawValue) }
@@ -315,13 +333,20 @@ private enum NativeUIFailure: LocalizedError {
     }
 
     private func find(_ control: NativeUIControl, enabled: Bool) async throws -> any NSAccessibilityProtocol {
+        activeControl = control
+        breadcrumb("find.begin")
         let local = ContinuousClock.now.advanced(by: .seconds(2))
         repeat {
             try validateContext()
             if let target = try? scopeWindow(for: control) {
                 let matches = try matches(control, in: target)
                 guard matches.count <= 1 else { throw NativeUIFailure.duplicateControl(control.rawValue) }
-                if let match = matches.first, match.isAccessibilityEnabled() == enabled { return match }
+                if let match = matches.first {
+                    breadcrumb("find.enabled.begin")
+                    let actualEnabled = match.isAccessibilityEnabled()
+                    breadcrumb("find.enabled.end")
+                    if actualEnabled == enabled { breadcrumb("find.end"); return match }
+                }
             }
             guard ContinuousClock.now < deadline, ContinuousClock.now < local else { throw NativeUIFailure.unavailableControl(control.rawValue) }
             try await Task.sleep(for: .milliseconds(40))
@@ -330,7 +355,9 @@ private enum NativeUIFailure: LocalizedError {
 
     private func matches(_ control: NativeUIControl, in targetWindow: NSWindow) throws -> [any NSAccessibilityProtocol] {
         guard let content = targetWindow.contentView else { throw NativeUIFailure.missingWindow }
+        breadcrumb("tree.layout.begin", node: 0)
         content.layoutSubtreeIfNeeded()
+        breadcrumb("tree.layout.end", node: 0)
         var queue: [(NSObject, Int)] = [(content, 0)]
         var index = 0
         var visited = Set<ObjectIdentifier>()
@@ -340,7 +367,9 @@ private enum NativeUIFailure: LocalizedError {
             guard visited.insert(ObjectIdentifier(object)).inserted else { continue }
             guard visited.count <= 4_096, depth <= 40, queue.count <= 16_384 else { throw NativeUIFailure.treeLimit }
             if let accessibility = object as? any NSAccessibilityProtocol {
+                breadcrumb("tree.identifier.begin", node: visited.count)
                 let identifier = accessibility.accessibilityIdentifier()
+                breadcrumb("tree.identifier.end", node: visited.count)
                 if let identifier, NativeUIControl(rawValue: identifier) != nil { observedIdentifiers.insert(identifier) }
                 if identifier == control.rawValue,
                    let role = accessibility.accessibilityRole()?.rawValue, control.allowedRoles.contains(role),
@@ -351,7 +380,10 @@ private enum NativeUIFailure: LocalizedError {
                     if !hiddenView, targetWindow.isVisible, frame.width > 0, frame.height > 0,
                        frame.intersects(targetWindow.frame) { result.append(accessibility) }
                 }
-                for child in accessibility.accessibilityChildren() ?? [] {
+                breadcrumb("tree.children.begin", node: visited.count)
+                let children = accessibility.accessibilityChildren() ?? []
+                breadcrumb("tree.children.end", node: visited.count)
+                for child in children {
                     if let child = child as? NSObject { queue.append((child, depth + 1)) }
                 }
             }
@@ -362,6 +394,26 @@ private enum NativeUIFailure: LocalizedError {
             }
         }
         maximumTreeNodesObserved = max(maximumTreeNodesObserved, visited.count)
+        breadcrumb("tree.end", node: visited.count)
         return result
+    }
+
+    /// Diagnostics are restricted to this explicit fixture launch and fixed
+    /// phase/control names, role names and counts. No AX labels/values, terminal
+    /// content, credentials or user paths are printed. Flush before potentially
+    /// synchronous AppKit calls so a watchdog sample can identify a stuck stage.
+    private func breadcrumb(_ phase: String, role: String? = nil, node: Int? = nil) {
+        guard Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"] else { return }
+        if node != nil {
+            guard nodeBreadcrumbs < 768 else { return }
+            nodeBreadcrumbs += 1
+        } else {
+            guard phaseBreadcrumbs < 256 else { return }
+            phaseBreadcrumbs += 1
+        }
+        let safeRole = role.map { ["AXButton", "AXCheckBox", "AXSwitch"].contains($0) ? $0 : "other" } ?? "none"
+        let line = "[MoPanelNativeUI] \(phase) id=\(activeControl?.rawValue ?? "none") role=\(safeRole) node=\(node ?? 0)\n"
+        fputs(line, stderr)
+        fflush(stderr)
     }
 }

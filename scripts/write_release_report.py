@@ -24,6 +24,11 @@ gate_harness_count = re.search(r"Ran (\d+) tests? in", gate_harness_log)
 if (not gate_harness_count or not re.search(r"^OK\s*$", gate_harness_log, re.MULTILINE)
         or re.search(r"^(FAILED|ERROR:)", gate_harness_log, re.MULTILINE)):
     raise RuntimeError("Independent validation gate harness did not finish without failures/skips")
+smoke_driver_log = (reports / "smoke-driver-tests.log").read_text()
+smoke_driver_count = re.search(r"Ran (\d+) tests? in", smoke_driver_log)
+if (not smoke_driver_count or not re.search(r"^OK\s*$", smoke_driver_log, re.MULTILINE)
+        or re.search(r"^(FAILED|ERROR:)", smoke_driver_log, re.MULTILINE)):
+    raise RuntimeError("Smoke diagnostic driver tests did not finish without failures/skips")
 smoke = json.loads((reports / "smoke-test.json").read_text())
 performance = json.loads((reports / "performance.json").read_text())
 if (not smoke.get("success") or not smoke.get("window_created") or not smoke.get("fixture_only")
@@ -78,6 +83,7 @@ lines = ["# 實際建置與驗證報告", "", f"產生時間：{date}", "",
          "此報告由成功建置後的實際紀錄產生；原始紀錄位於 `Reports/`。", "",
          "| 驗證 | 結果與範圍 |", "|---|---|",
          f"| 獨立驗收 gate harness | {gate_harness_count.group(1)} 個隔離Bash管線案例通過；Swift／smoke／tee非零與skip皆不能進後續phase。見 validation-gate-harness.log |",
+         f"| Smoke 診斷 driver | {smoke_driver_count.group(1)} 個隔離案例通過；進度輸出保留、逾時不被診斷錯誤掩蓋、只取樣存活的自身子程序。sampler權限情境使用mock。見 smoke-driver-tests.log |",
          "| XCTest／fixture UI gate | 兩者分別保存command、tee與pipeline退出碼，全部為0且無略過；見 validation-gates.json |",
          f"| Swift 編譯與單元測試 | 合計 {total_swift_tests} 個 XCTest，{skips} skipped，0 failures；多個 .xctest bundle 分別加總。見 swift-test.log |",
          f"| Guardian 程序整合測試 | {guardian_count.group(1)} 個案例通過，0 failures／skipped。見 guardian-test.log |",

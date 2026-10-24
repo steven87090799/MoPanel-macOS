@@ -1,0 +1,11 @@
+Linux fixture-only Python driver tests; macOS sample is mocked, not executed.
+
+test_nonzero_exit_retains_logs_without_sampling (__main__.SmokeDriverTests.test_nonzero_exit_retains_logs_without_sampling) ... ok
+test_progress_survives_timeout_and_diagnostic_error_cannot_mask_it (__main__.SmokeDriverTests.test_progress_survives_timeout_and_diagnostic_error_cannot_mask_it) ... ok
+test_sampler_never_runs_after_owned_child_exited (__main__.SmokeDriverTests.test_sampler_never_runs_after_owned_child_exited) ... ok
+test_sampler_permission_failure_is_recorded_without_elevation (__main__.SmokeDriverTests.test_sampler_permission_failure_is_recorded_without_elevation) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.238s
+
+OK

@@ -6,6 +6,7 @@ import MoPanelCore
 @MainActor enum SmokeHarness {
     static func run(_ model: AppModel, systemTools: SystemToolsController) async {
         let arguments = ProcessInfo.processInfo.arguments
+        checkpoint("entered")
         if let error = model.testLaunchError {
             // An invalid manifest has no trusted report destination. Log failure
             // and stop without probing a CLI or writing an arbitrary file.
@@ -29,7 +30,9 @@ import MoPanelCore
         var failures: [String] = []
         try? await Task.sleep(for: .milliseconds(300))
         checks["window_created"] = NSApp.windows.contains { $0.isVisible && $0.contentView != nil }
+        checkpoint("detect.begin")
         await model.detect()
+        checkpoint("detect.end")
         checks["fixture_cli_detected"] = model.installation?.source == .fixture
         checks["fixture_resource_inside_app"] = model.installation?.executable.resolvingSymlinksInPath().path.hasPrefix(Bundle.main.bundleURL.resolvingSymlinksInPath().path + "/") == true
         guard checks["fixture_cli_detected"] == true, checks["fixture_resource_inside_app"] == true else {
@@ -37,36 +40,51 @@ import MoPanelCore
             return
         }
         checks["public_contracts_compatible"] = model.installation?.compatibility.allowsDestructive == true && model.installation?.incompatible.isEmpty == true
+        checkpoint("system_tools.begin")
         let toolsEvidence = await systemTools.runSafeSmokeTest()
+        checkpoint("system_tools.end")
         checks["native_assertion_created_and_released"] = toolsEvidence.assertionCreated && toolsEvidence.assertionReadableBeforeRelease && toolsEvidence.assertionReleaseCode == 0 && toolsEvidence.assertionAbsentAfterRelease
         checks["native_clean_screen_windows_constructed_and_closed"] = toolsEvidence.screenCount > 0 && toolsEvidence.overlayWindowsCreated == toolsEvidence.screenCount && toolsEvidence.overlayWindowsClosed == toolsEvidence.overlayWindowsCreated
         checks["native_tools_no_input_interception_or_ejection"] = !toolsEvidence.overlayWasPresented && !toolsEvidence.inputWasIntercepted && !toolsEvidence.ejectWasCalled
         checks["native_doctor_metadata_read"] = toolsEvidence.doctorEntryCount > 0
         failures.append(contentsOf: toolsEvidence.errors)
+        checkpoint("startup_mock.begin")
         let startupEvidence = await StartupController.runSafeSmokeTest()
+        checkpoint("startup_mock.end")
         checks["startup_mock_enable_disable_readback"] = startupEvidence.inventoryCount == 1 && startupEvidence.enableVerifiedWithMock && startupEvidence.disableVerifiedWithMock
         checks["startup_mock_cancel_and_unknown_format"] = startupEvidence.cancelledReviewDidNotMutate && startupEvidence.unknownFormatDidNotMutate
         checks["startup_no_real_mutation_or_persistent_job"] = startupEvidence.realLaunchctlMutations == 0 && startupEvidence.persistentJobsCreated == 0
         failures.append(contentsOf: startupEvidence.errors)
+        checkpoint("status_snapshot.begin")
         await model.takeSnapshot()
+        checkpoint("status_snapshot.end")
         checks["status_decoded"] = model.status?.host == "fixture-only"
         if let error = model.error { failures.append(error) }
+        checkpoint("app_inventory.begin")
         await model.loadApps()
+        checkpoint("app_inventory.end")
         checks["app_inventory_decoded"] = !model.apps.isEmpty
         if let error = model.error { failures.append(error) }
+        checkpoint("analyze.begin")
         await model.analyze(path: "/MoPanel-safe-fixture")
+        checkpoint("analyze.end")
         checks["analyze_preserves_partial"] = model.analysis?.scanStatus == .partial && model.analysis?.entries.contains { $0.scanStatus == .unavailable && $0.measuredBytes == nil } == true
         if let error = model.error { failures.append(error) }
+        checkpoint("history.begin")
         await model.loadHistory()
+        checkpoint("history.end")
         checks["history_decoded"] = model.history != nil
         if let error = model.error { failures.append(error) }
         model.section = .dashboard
         model.windowActive = true
+        checkpoint("watch.begin")
         model.startMonitoring()
         try? await Task.sleep(for: .milliseconds(2600))
         checks["watch_ndjson_received"] = model.trends.count >= 2
         model.section = .clean
         checks["watch_stopped_on_navigation"] = !model.monitoring
+        checkpoint("watch.end")
+        checkpoint("routes.begin")
         for section in AppSection.allCases {
             model.section = section
             try? await Task.sleep(for: .milliseconds(80))
@@ -75,10 +93,13 @@ import MoPanelCore
         // accessibility correctness for every page. Button postconditions below
         // provide stronger evidence for their explicitly named flows only.
         checks["navigation_routes_selected_with_window_alive"] = NSApp.windows.contains { $0.isVisible }
+        checkpoint("routes.end")
         checks["no_real_engine_selected"] = model.installation?.source == .fixture
         var nativeUIObject: Any = [:]
         if let mainWindow = NSApp.windows.first(where: { $0.isVisible && !$0.isSheet && $0.styleMask.contains(.titled) && $0.contentView != nil }) {
+            checkpoint("native_ui.begin")
             let uiEvidence = await NativeUITestHarness.run(model: model, window: mainWindow)
+            checkpoint("native_ui.end")
             checks["native_accessibility_button_flows"] = uiEvidence.passed
             nativeUIObject = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(uiEvidence))) ?? [:]
             failures.append(contentsOf: uiEvidence.errors)
@@ -89,6 +110,7 @@ import MoPanelCore
         let success = !checks.values.contains(false) && failures.isEmpty
         let encodedTools = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(toolsEvidence))) ?? [:]
         let encodedStartup = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(startupEvidence))) ?? [:]
+        checkpoint("report.begin")
         await finish(model, environmentKey: "MOPANEL_SMOKE_REPORT", report: [
             "success": success, "window_created": checks["window_created"] == true,
             "fixture_only": true, "checks": checks, "errors": failures,
@@ -98,6 +120,14 @@ import MoPanelCore
             "navigation_sections_selected": AppSection.allCases.map(\.rawValue),
             "note": "Native window and route selection survival, adapter, safe system API probes, private Startup mock and explicitly identified own-process accessibility button actions. Route selection alone does not prove every page rendered correctly. This does not verify every physical interaction, TCC permission, real cleanup, app update or hardware control."
         ], success: success)
+    }
+
+    /// Fixed stage names only. Diagnostic output is restricted to an explicit
+    /// smoke launch, never terminal content, user paths or production actions.
+    private static func checkpoint(_ stage: String) {
+        guard Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"] else { return }
+        fputs("[MoPanel smoke] \(stage)\n", stderr)
+        fflush(stderr)
     }
 
     private static func benchmark(_ model: AppModel, mode: String) async {
@@ -199,9 +229,13 @@ import MoPanelCore
         if model.fixtureMode, ProcessInfo.processInfo.arguments == [ProcessInfo.processInfo.arguments[0], "--smoke-test"] {
             model.section = .dashboard
             try? await Task.sleep(for: .milliseconds(150))
+            checkpoint("own_window_capture.begin")
             saveOwnWindowScreenshot()
+            checkpoint("own_window_capture.end")
         }
+        checkpoint("finish_testing.begin")
         await model.finishTesting()
+        checkpoint("finish_testing.end")
         guard let path = ProcessInfo.processInfo.environment[environmentKey], path.hasPrefix("/") else {
             fputs("Missing test report destination\n", stderr); exit(2)
         }
@@ -216,6 +250,7 @@ import MoPanelCore
             let data = try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
             try data.write(to: URL(fileURLWithPath: path), options: .atomic)
         } catch { fputs("Cannot write test report: \(error)\n", stderr); exit(2) }
+        checkpoint("report.written")
         exit(success ? 0 : 1)
     }
 
