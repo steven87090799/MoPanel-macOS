@@ -41,10 +41,18 @@ Actual Linux results on 2026-10-24:
 
 `ControlPipeTests.swift` adds three actual-session peer-closure cases, queued write/close ordering, signal-mask/pending-state verification, and a macOS-only descriptor flag check. The focused Linux Process suite passed **32 tests, zero failures, zero skips**; the full output is `CONTROL_PIPE_PROCESS_TEST_OUTPUT.txt`. This includes the existing cancellation, timeout, streaming, PTY, environment and configuration-editor regressions. The new Darwin-only flag check and the formal 17-action Mac UI sequence are **not** counted as passed by these Linux results.
 
+## macOS preflight and portable fixture correction
+
+Real Mac run `40082574523` successfully compiled the actual `ManagedProcess.swift` and the standalone Swift probe against the macOS SDK. Its isolated pending-signal case passed (`PENDING_SIGNAL_PRESERVED MASK_RESTORED`, exit 0). The resize, send and cancel cases stopped at `ManagedProcessError.executableMissing`, before their peer-closure/write markers: both test fixtures had used `/bin/true`, which is absent on that runner. The preflight gate correctly failed and stopped the job; the planned 177 XCTest cases, formal app UI flow and subsequent build gates did **not** run in that job. This is not evidence that the three Darwin write paths or the full app now pass.
+
+The only source correction was to use `/usr/bin/true` in `ControlPipeSIGPIPEProbe.swift` and `ControlPipeTests.swift`, a location available on both tested platforms. The private fake guardian never executes that requested program; the path is only subject to the normal executable validation. No production validation, signal handling, deadline or success condition was changed.
+
+After this correction, all four isolated Linux probes passed again. The five focused Linux `ControlPipeTests` also passed with zero failures and zero skips in 1.301 seconds; see `CONTROL_PIPE_FIXTURE_PATH_TEST_OUTPUT.txt`. `CONTROL_PIPE_SIGPIPE_AFTER.json` was regenerated using the corrected probe (SHA-256 `f6a84c2c3464181c2526e679bb89bf598d84bf074ad260e4bddc9150bff5eb3d`). The production source SHA-256 remains `c5df31bd15a5f9b0a81d204554160906c7b41749d221ff0456d4ffea1c18affe`. The historical BEFORE evidence retains the earlier probe hash and its original, actually observed Linux results. The corrected three Mac write-path probes and the complete Mac validation remain pending the next CI run.
+
 ## Apple primary references
 
 - [fcntl(2) source](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/man/man2/fcntl.2): `F_SETNOSIGPIPE` prevents SIGPIPE when a write fails because a pipe or socket has no reader; `F_GETNOSIGPIPE` reads the descriptor setting.
 - [pipe(2) source](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/man/man2/pipe.2): explicitly identifies `F_SETNOSIGPIPE` as the suppression mechanism.
 - [Public fcntl header](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/fcntl.h): declarations of both commands outside the private API section.
 
-Inspected 2026-10-24. The implementation uses SDK constants rather than hardcoded command numbers. Actual macOS SDK compilation remains a separate CI gate.
+Inspected 2026-10-24. The implementation uses SDK constants rather than hardcoded command numbers. The standalone macOS SDK compilation passed in run `40082574523`; full-app compilation and runtime gates remain separate checks.

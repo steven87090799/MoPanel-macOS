@@ -26,7 +26,7 @@ MoPanel 將官方 Mole 當作獨立、可更新的執行引擎。沒有 Node.js/
 5. 若 Mole 裝在自訂位置，在設定選取正式執行檔，重新偵測。
 6. 需要完整磁碟存取時，依介面引導到「系統設定 → 隱私權與安全性 → 完整磁碟存取」，手動授權；程式不修改 TCC 資料庫。
 
-ad-hoc 版本沒有 Apple Developer ID 或公證。若 macOS 因為來源驗證而阻擋，先核對來源與校驗值，再使用 macOS 提供的「隱私權與安全性／仍要打開」流程。不要關閉 Gatekeeper，也不需要修改 SIP。本程式不自動清除 quarantine。
+ad-hoc 版本沒有 Apple Developer ID 或公證。若 macOS 因為來源驗證而阻擋，先核對來源與校驗值，再使用 macOS 提供的「隱私權與安全性／強制打開（Open Anyway）」流程。不要關閉 Gatekeeper，也不需要修改 SIP。本程式不自動清除 quarantine。
 
 ## Mole 偵測位置
 

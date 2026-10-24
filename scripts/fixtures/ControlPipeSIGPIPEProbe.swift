@@ -32,7 +32,7 @@ import Glibc
             default: preconditionFailure("Unknown isolated probe mode")
             }
         }
-        try session.start(request: .init(executable: URL(fileURLWithPath: "/bin/true"), arguments: [], timeout: 2), interactive: true)
+        try session.start(request: .init(executable: URL(fileURLWithPath: "/usr/bin/true"), arguments: [], timeout: 2), interactive: true)
         let result = await session.wait()
         session.onOutput = nil
         guard triggered, !session.running else { exit(42) }

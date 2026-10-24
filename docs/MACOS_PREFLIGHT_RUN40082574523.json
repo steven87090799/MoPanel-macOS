@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "summary_of": "Actual early preflight failure. No XCTest, release App, UI smoke, performance or packaging ran in this workflow attempt.",
+  "workflow_run_url": "https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082574523",
+  "source_revision": "f53428499dda5165e0cf726e94bfb13d47eabea4",
+  "artifact_id": 12556040754,
+  "artifact_sha256": "288fffb1e0a998d36aaf994dbe95385eeab0d727da48be8297539bbed72e76db",
+  "original_probe_report_sha256": "63f34247502ca85eaf74e73193ced878eaa3b14f2338fd6b74bbaa9746a571d0",
+  "passed_preflight_harness_counts": {
+    "homebrew_audit": 15,
+    "validation_gate": 6,
+    "smoke_driver": 8,
+    "crash_evidence": 5,
+    "debug_diagnostic": 9,
+    "release_report": 4
+  },
+  "standalone_probe_compiled": true,
+  "standalone_probe": {
+    "scope": "Actual ManagedProcess.swift compiled into disposable children with SIGPIPE=SIG_DFL; a private helper closes stdin before reporting READY and remains alive. No installed Mole or user data.",
+    "source_sha256": "c5df31bd15a5f9b0a81d204554160906c7b41749d221ff0456d4ffea1c18affe",
+    "probe_sha256": "fbedb283d140964c8db3853f4126f0871e60f98169279867f6e04f74e9909eb8",
+    "expect_sigpipe": false,
+    "all_passed": false,
+    "results": [
+      {
+        "mode": "resize",
+        "exit": -5,
+        "passed": false,
+        "stdout": "",
+        "stderr": "Swift/ErrorType.swift:254: Fatal error: Error raised at top level: main.ManagedProcessError.executableMissing\n"
+      },
+      {
+        "mode": "send",
+        "exit": -5,
+        "passed": false,
+        "stdout": "",
+        "stderr": "Swift/ErrorType.swift:254: Fatal error: Error raised at top level: main.ManagedProcessError.executableMissing\n"
+      },
+      {
+        "mode": "cancel",
+        "exit": -5,
+        "passed": false,
+        "stdout": "",
+        "stderr": "Swift/ErrorType.swift:254: Fatal error: Error raised at top level: main.ManagedProcessError.executableMissing\n"
+      },
+      {
+        "mode": "pending",
+        "exit": 0,
+        "passed": true,
+        "stdout": "PENDING_SIGNAL_PRESERVED MASK_RESTORED\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "failure_scope": "resize/send/cancel terminated with executableMissing before the intended closed-control-pipe write. The fixture requested /bin/true, which was not executable on this macOS runner. This does not establish whether those three SIGPIPE regressions pass after transport changes. The pending-signal/mask scenario passed.",
+  "xctest_executed": false,
+  "release_app_built": false,
+  "ui_smoke_executed": false,
+  "zip_produced": false
+}

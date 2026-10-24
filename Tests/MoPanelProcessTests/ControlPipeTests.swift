@@ -34,7 +34,7 @@ final class ControlPipeTests: XCTestCase {
             case .cancel: session.cancel()
             }
         }
-        try session.start(request: .init(executable: URL(fileURLWithPath: "/bin/true"), arguments: [], timeout: 2), interactive: true)
+        try session.start(request: .init(executable: URL(fileURLWithPath: "/usr/bin/true"), arguments: [], timeout: 2), interactive: true)
         let result = await session.wait()
         XCTAssertTrue(triggered)
         XCTAssertFalse(session.running)

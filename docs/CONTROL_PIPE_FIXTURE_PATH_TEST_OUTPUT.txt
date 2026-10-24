@@ -1,0 +1,32 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write sources
+[1/3] Write swift-version--692D7D6F1AAC6E0F.txt
+[3/6] Emitting module MoPanelProcessTests
+[4/6] Compiling MoPanelProcessTests ControlPipeTests.swift
+[5/7] /workspace/scratch/295743c3c15b/MoPanel/.build-control-pipe/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[6/8] Write sources
+[8/12] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[9/12] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[10/12] Emitting module MoPanelPackageDiscoveredTests
+[11/12] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[12/14] Write Objects.LinkFileList
+[13/14] Linking MoPanelPackageTests.xctest
+Build complete! (1.45s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-24 17:38:37.287
+Test Suite 'ControlPipeTests' started at 2026-10-24 17:38:37.290
+Test Case 'ControlPipeTests.testCancelSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:38:37.290
+Test Case 'ControlPipeTests.testCancelSurvivesClosedPeerWhileSessionStillRunning' passed (0.317 seconds)
+Test Case 'ControlPipeTests.testEPIPEPreservesCallingThreadSignalMaskAndPendingState' started at 2026-10-24 17:38:37.607
+Test Case 'ControlPipeTests.testEPIPEPreservesCallingThreadSignalMaskAndPendingState' passed (0.104 seconds)
+Test Case 'ControlPipeTests.testInputSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:38:37.710
+Test Case 'ControlPipeTests.testInputSurvivesClosedPeerWhileSessionStillRunning' passed (0.447 seconds)
+Test Case 'ControlPipeTests.testResizeSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:38:38.157
+Test Case 'ControlPipeTests.testResizeSurvivesClosedPeerWhileSessionStillRunning' passed (0.43 seconds)
+Test Case 'ControlPipeTests.testWriterPreservesQueuedOrderAndClosesBeforeLaterWrites' started at 2026-10-24 17:38:38.587
+Test Case 'ControlPipeTests.testWriterPreservesQueuedOrderAndClosesBeforeLaterWrites' passed (0.004 seconds)
+Test Suite 'ControlPipeTests' passed at 2026-10-24 17:38:38.591
+	 Executed 5 tests, with 0 failures (0 unexpected) in 1.301 (1.301) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 17:38:38.591
+	 Executed 5 tests, with 0 failures (0 unexpected) in 1.301 (1.301) seconds
