@@ -31,6 +31,7 @@ python3 scripts/test_crash_evidence.py 2>&1 | tee build/reports/crash-evidence-t
 python3 scripts/test_debug_smoke_failure.py 2>&1 | tee build/reports/debug-diagnostic-tests.log
 python3 scripts/test_release_report.py 2>&1 | tee build/reports/release-report-tests.log
 python3 scripts/test_copy_release_reports.py
+python3 scripts/test_replace_release_app.py 2>&1 | tee build/reports/release-app-tests.log
 python3 scripts/test_control_pipe_sigpipe.py --output build/reports/control-pipe-sigpipe.json 2>&1 | tee build/reports/control-pipe-sigpipe.log
 mopanel_initialize_validation_gates build/reports/validation-gates.json
 build_staging="$(mktemp -d "$project_root/build/staging.XXXXXX")"
@@ -146,6 +147,7 @@ ditto -c -k --sequesterRsrc "$package_path" "$staged_archive"
 bash scripts/verify-package.sh "$staged_archive" > build/reports/zip-verification.txt 2>&1
 mv "$staged_archive" "$archive"
 (cd build/releases && shasum -a 256 MoPanel-macOS27-arm64.zip > SHA256SUMS.txt)
-ditto "$app_path" "$project_root/build/releases/MoPanel.app"
+python3 scripts/replace_release_app.py "$app_path" "$project_root/build/releases/MoPanel.app"
+bash scripts/verify-package.sh "$project_root/build/releases/MoPanel.app" > build/reports/final-app-verification.txt 2>&1
 echo "Verified artifact: $archive"
 cat build/releases/SHA256SUMS.txt

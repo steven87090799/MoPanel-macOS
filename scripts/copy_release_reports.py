@@ -9,7 +9,7 @@ resolve.log build-guardian.log build-app.log build-editor.log swift-test.log val
 validation-gate-harness.log smoke-driver-tests.log crash-evidence-tests.log debug-diagnostic-tests.log
 release-report-tests.log control-pipe-sigpipe.json control-pipe-sigpipe.log bundle-verification.txt
 smoke-run.log smoke-test.json smoke-test.stdout.log smoke-test.stderr.log smoke-window.png
-performance.json performance-real-cli.json profile-harness-tests.log guardian-test.log cli-contract.json'''.split())
+release-app-tests.log performance.json performance-real-cli.json profile-harness-tests.log guardian-test.log cli-contract.json'''.split())
 REQUIRED = frozenset(['swift-test.log', 'smoke-test.json', 'performance.json', 'validation-gates.json'])
 
 def copy_reports(source, destination):
