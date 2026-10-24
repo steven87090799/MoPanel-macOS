@@ -48,7 +48,9 @@
 
 ## MoPanel 額外原生整合
 
-App Updates、Startup、System Tools、選單列與 App 結束要求不屬於 Mole CLI API。它們分別使用 Homebrew 公開 JSON／命令、Apple launchctl／ServiceManagement、IOKit／AppKit 與 SwiftUI。更新 Mole CLI 不會自動更新這些整合。
+App Updates、Startup、Git Worktrees、System Tools、選單列與 App 結束要求不屬於 Mole CLI API。它們分別使用 Homebrew 公開 JSON／命令、Apple launchctl／ServiceManagement、正式 Git、IOKit／AppKit 與 SwiftUI。更新 Mole CLI 不會自動更新這些整合。
+
+Git Worktrees 另外驗證已安裝 Git 的實際能力與機器可讀格式，包含 `--no-lazy-fetch` 等保護旗標；不支援的 Git 不會以較弱設定繼續。它不自動安裝 Git，也不讀取 AI session 判斷閒置。移除／重建僅使用正式 `git worktree` 命令與受控環境，恢復點為原倉庫內的本地分支；不是檔案系統備份。可重現的隔離測試與限制見 `docs/GIT_WORKTREES.md`，Mac 結果以本版 TEST_REPORT／Reports 為準。
 
 CI 另保存 runner 的 Homebrew 唯讀介面與 launchctl 格式樣本；沒有執行真實 App 升級或修改真實啟動項目。本輪原生 smoke 已實際建立、讀回、釋放 IOPM system-idle assertion 並確認不存在；建立及關閉 1 個遮罩視窗但未呈現、未攔截輸入；Doctor 讀到 18 項中繼資料，未呼叫磁碟退出 API。Startup 使用真暫存 plist＋注入的私有 mock，啟用／停用讀回、取消及未知格式拒絕均通過，真 launchctl 變更與持續工作建立皆為 0。這些有限證據不代表完整原生 UI、實體風扇／電池／AWDL 或真 launchd 變更已驗收；詳細邊界見 `docs/GUI_PARITY.md`。
 

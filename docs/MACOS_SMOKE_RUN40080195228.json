@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "summary_of": "Actual smoke-test.json from verified GitHub Actions artifact; this is a concise derived summary, not a full transcript.",
+  "workflow_run_url": "https://github.com/steven87090799/MoPanel-macOS/actions/runs/40080195228",
+  "source_revision": "bc1a3195fdc11db9b68b17a15293a6e2f26bce1b",
+  "artifact_id": 12554564625,
+  "artifact_sha256": "e0d989c740fbba4ed13778aa6b7d97d95ba314955fa57eb270d919c7f9656ac9",
+  "original_smoke_report_sha256": "f1935bcf08e2a10b0a1bc194894bcbf20190fa64456d8b296947a3029a7c24b4",
+  "success": false,
+  "fixture_only": true,
+  "process_exit_code": 1,
+  "timed_out": false,
+  "elapsed_seconds": 10.873,
+  "checks": {
+    "analyze_preserves_partial": true,
+    "app_inventory_decoded": true,
+    "fixture_cli_detected": true,
+    "fixture_resource_inside_app": true,
+    "history_decoded": true,
+    "native_accessibility_button_flows": false,
+    "native_assertion_created_and_released": true,
+    "native_clean_screen_windows_constructed_and_closed": true,
+    "native_doctor_metadata_read": true,
+    "native_tools_no_input_interception_or_ejection": true,
+    "navigation_routes_selected_with_window_alive": true,
+    "no_real_engine_selected": true,
+    "public_contracts_compatible": true,
+    "startup_mock_cancel_and_unknown_format": true,
+    "startup_mock_enable_disable_readback": true,
+    "startup_no_real_mutation_or_persistent_job": true,
+    "status_decoded": true,
+    "watch_ndjson_received": true,
+    "watch_stopped_on_navigation": true,
+    "window_created": true
+  },
+  "errors": [
+    "No unique enabled own-window accessibility control was exposed for mopanel.dashboard.snapshot."
+  ],
+  "native_ui": {
+    "passed": false,
+    "publicAccessibilityEnvironmentEnabled": true,
+    "checks": {
+      "exact_bundled_fixture_guard": true,
+      "public_accessibility_environment_read_back": true
+    },
+    "actions": [],
+    "observedControlIdentifiers": [
+      "mopanel.dashboard.snapshot"
+    ],
+    "maximumTreeNodesObserved": 316,
+    "maximumProtocolNodesObserved": 210,
+    "maximumSelectorOnlyNodesObserved": 106,
+    "maximumUnsupportedChildrenObserved": 0,
+    "directActionFallbackUsed": false,
+    "ownProcessOnly": true,
+    "accessibilityPermissionRequested": false,
+    "physicalInputInjected": false
+  },
+  "debug_copy_diagnostic": {
+    "attempted": false,
+    "status": "complete_app_failure_evidence_available",
+    "original_smoke_still_failed": true
+  },
+  "formal_stdout_stderr_publishing_warning_count": 0,
+  "observed_button_cell_trace": "node class=NSButtonCell protocol=true role=AXButton id=none idABI=protocol element=true enabled=true window=owned frame=visible children=0"
+}

@@ -56,6 +56,12 @@ import SwiftUI
         button.imagePosition = appearance == .icon ? .imageOnly : button.image == nil ? .noImage : .imageLeading
         button.setAccessibilityIdentifier(identifier)
         button.setAccessibilityLabel(title)
+        // AppKit can expose the button's cell as the actionable AX element
+        // while treating its control view as an ignored container. Keep the
+        // same production identity on that real cell; do not change its role,
+        // enabled state, ownership, frame, or standard press implementation.
+        button.cell?.setAccessibilityIdentifier(identifier)
+        button.cell?.setAccessibilityLabel(title)
         button.keyEquivalent = shortcut == .cancel ? "\u{1b}" : shortcut == .defaultAction ? "\r" : ""
         button.keyEquivalentModifierMask = []
         button.invalidateIntrinsicContentSize()
@@ -118,6 +124,8 @@ import SwiftUI
         button.state = isOn ? .on : .off
         button.setAccessibilityIdentifier(identifier)
         button.setAccessibilityLabel(title)
+        button.cell?.setAccessibilityIdentifier(identifier)
+        button.cell?.setAccessibilityLabel(title)
         button.invalidateIntrinsicContentSize()
     }
 

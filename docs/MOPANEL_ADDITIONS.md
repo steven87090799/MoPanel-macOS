@@ -16,7 +16,7 @@ MoPanel 是非官方原生 GUI。官方 Mole CLI 仍負責其清理、卸載、�
 
 | 部分 | 使用者得到什麼 | 執行責任／程式碼 | 限制與驗證界線 |
 |---|---|---|---|
-| 原生導覽與偏好 | 十個主要 CLI 功能頁及三個新增頁、繁中／英文、系統／淺／深色、快捷鍵、原生 Liquid Glass | `Sources/MoPanelApp/` | 自有 UI；本輪 13 個路由選取後視窗存活，不等於全頁渲染驗收。AX 尚未完成任何按鈕動作；VoiceOver、Retina、全按鈕仍須完整驗收 |
+| 原生導覽與偏好 | 十個主要 CLI 功能頁及四個新增頁、繁中／英文、系統／淺／深色、快捷鍵、原生 Liquid Glass | `Sources/MoPanelApp/` | 自有 UI；歷史 run 的 13 個路由不包含新增 Git 頁。新版本路由及 AX 按鈕結果須看本版 TEST_REPORT／Reports；VoiceOver、Retina、全按鈕仍須完整驗收 |
 | 原生資料頁 | Status 圖表、App 清單、Analyze 層級圖、History 搜尋與內容 | `DashboardView.swift`、`UninstallView.swift`、`AnalyzeView.swift`、`HistoryView.swift` | 正式使用時資料來自官方 CLI；本輪 smoke 的 bundled fixture 解碼、watch 接收與切頁停止已通過，不冒充真硬體 benchmark。圖表不是新掃描引擎，某些操作仍進官方 PTY |
 | CLI 探索 | Homebrew／官方腳本／PATH／自訂路徑、symlink 與實際資源位置判斷 | `MoleDiscovery.swift`、`CLIProbe.swift` | 來源不明或身分無法確認時失敗，不隨意回退到另一個執行檔 |
 | 相容層 | 版本、正式 help 契約、JSON 型別、未知掃描狀態檢查；更新後重新探測 | `Compatibility.swift`、`MoleCommand.swift`、`MoleModels.swift` | 是介面相容性檢查，不是對所有未來 CLI 核心行為的保證 |
@@ -34,6 +34,7 @@ MoPanel 是非官方原生 GUI。官方 Mole CLI 仍負責其清理、卸載、�
 | Doctor 唯讀報告 | 明確來源的 OS／硬體／電源／顯示器／磁碟中繼資料，可複製或儲存 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**；本輪實際讀到 18 項中繼資料，複製／儲存按鈕仍待驗收。不掃描目錄內容、不探測私人檔案，不知道的 FDA／安全狀態明示未檢查，非官方完整 Doctor |
 | App Updates | Homebrew 結構化版本、官方預覽、逐項確認、計畫重驗及結果；其他 App 來源辨識與 handoff | `AppUpdatesController.swift`、`AppUpdatesView.swift`、`AppUpdateModels.swift` | **MoPanel 新實作**；直接更新僅符合安全條件的一般官方 cask。30 個 Core 與 2 個環境測試已在 Mac 通過，沒有真實 App 升級驗收。Sparkle／App Store 不代管下載安裝；詳見 APP_UPDATES.md |
 | Startup | 有界 plist 清單、搜尋、來源、實際狀態、受保護 user LaunchAgent 預覽與確認 | `StartupController.swift`、`StartupView.swift`、`StartupModels.swift` | **MoPanel 新實作**；15 項 Core 與 controller 私有 mock 的啟用／停用讀回、取消不變更及未知格式拒絕已通過。真 launchctl 變更／持續工作建立皆為 0，AX 按鈕尚待驗收；不刪 plist、不用 sudo、不讀私有 BTM DB，其他項目交由系統設定 |
+| Git 工作目錄與保留分支重建 | 只檢查選定倉庫、逐項保護理由、確認前重驗、保留 HEAD 分支、官方 Git 移除與新位置重建 | `GitWorktreeController.swift`、`GitWorktreeView.swift`、`GitWorktreeService.swift`、`GitWorktreeModels.swift` | **MoPanel 新實作**；真 Git 拋棄式倉庫測試使用合成提交與檔案，不碰個人倉庫。主工作目錄、dirty／untracked／ignored、鎖定、submodule、特殊設定及無法驗證狀態受保護。沒有 AI session／閒置判讀，保留分支不是獨立備份；Mac 驗收與精確案例見本版 TEST_REPORT 及 GIT_WORKTREES.md |
 | 選單列監控 | 預設關閉；CPU／記憶體／健康／網速，與總覽共用同一個 watch，手動暫停與 App 退出停止 | `MenuBarPanel.swift`、`AppModel.swift`、`NativeControlPolicy.swift` | **MoPanel 新實作**；沒有另開監控程序、沒有 Login Item、沒有隱藏 Dock。Mac 實際結果以 Reports 為準 |
 | 行程搜尋／排序／置頂及 App 結束要求 | 官方 top-process 樣本；確認前後核對 App 身分與樣本時效，AppKit 一般或強制結束 | `ProcessInspectorView.swift`、`NativeControlPolicy.swift` | **MoPanel 新實作**；7 項政策測試通過，不對未知 PID、系統 App 或背景程序傳送終止訊號。未實測結束真實使用者 App，非所有程序控制對等 |
 | 測試與打包工具 | Mock CLI、schema fixtures、程序生命週期測試、ARM64 簽章／ZIP 驗證流程 | `Tests/`、`scripts/`、`.github/workflows/` | 僅測試模式使用合成資料；正式 UI 不以 fixture 當 fallback。成功必須由實際 run 證明 |
@@ -48,7 +49,7 @@ MoPanel 是非官方原生 GUI。官方 Mole CLI 仍負責其清理、卸載、�
 |---|---|
 | 跨來源第三方 App 更新 | MoPanel 新更新協調模組；不能用 `mo update` 代替。每種來源須有識別、驗證、取消與恢復測試 |
 | Startup／背景項目管理 | MoPanel 原生系統整合；保護 Apple／企業管理項目，確認身分與可操作性 |
-| AI session／worktree／閒置工具處理 | MoPanel 額外工具整合；對話索引、保留副本、Git 未提交／獨有內容與使用中資料不能靠猜測 |
+| AI session／閒置工具處理與 AI 專用 worktree 規則 | 通用 Git worktree 保護與分支重建已有獨立實作；對話索引、AI 工具所有權、閒置規則與 session 清理仍未完成，不能靠猜測 |
 | Menu Bar、程序控制、Doctor 擴充 | MoPanel UI／診斷／系統整合；按需工作，程序操作要重新驗證身分。Doctor 基礎報告已有實作，官方完整條件集合仍未完成 |
 | Keep Screen On／Clean Screen 的完整對等與隱私提醒 | Keep Awake、基本遮罩與裝置退出已新增；閉蓋、跨重啟恢復、全域輸入保護及隱私訊號仍未完成，不能把基礎版本稱為完全對等 |
 | 風扇模式、Battery Care、AWDL | MoPanel 新硬體／系統控制，已在最新需求範圍內；需要受支援硬體、窄授權、狀態讀回與故障恢復，不放置假控制項 |

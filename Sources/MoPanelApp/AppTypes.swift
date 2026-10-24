@@ -3,7 +3,7 @@ import AppKit
 import MoPanelCore
 
 enum AppSection: String, CaseIterable, Identifiable {
-    case dashboard, clean, uninstall, appUpdates, startup, optimize, analyze, purge, installer, slim, history, tools, settings
+    case dashboard, clean, uninstall, appUpdates, startup, optimize, analyze, purge, worktrees, installer, slim, history, tools, settings
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -15,6 +15,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .optimize: return "slider.horizontal.3"
         case .analyze: return "chart.pie"
         case .purge: return "hammer"
+        case .worktrees: return "arrow.triangle.branch"
         case .installer: return "shippingbox"
         case .slim: return "square.stack.3d.up"
         case .history: return "clock.arrow.circlepath"
@@ -32,6 +33,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .optimize: return "系統最佳化"
         case .analyze: return "磁碟分析"
         case .purge: return "專案清理"
+        case .worktrees: return "Git 工作目錄"
         case .installer: return "安裝檔管理"
         case .slim: return "App 瘦身"
         case .history: return "操作歷史"
@@ -42,6 +44,7 @@ enum AppSection: String, CaseIterable, Identifiable {
     var en: String {
         switch self {
         case .appUpdates: return "App Updates"
+        case .worktrees: return "Git Worktrees"
         case .tools: return "System Tools"
         default: return rawValue.capitalized
         }
@@ -49,7 +52,7 @@ enum AppSection: String, CaseIterable, Identifiable {
     var command: MoleCommand? {
         switch self {
         case .dashboard: return .status
-        case .settings, .tools, .appUpdates, .startup: return nil
+        case .settings, .tools, .appUpdates, .startup, .worktrees: return nil
         default: return MoleCommand(rawValue: rawValue)
         }
     }

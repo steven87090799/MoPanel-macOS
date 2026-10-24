@@ -8,32 +8,40 @@ import Darwin
     @StateObject private var systemTools = SystemToolsController()
     @StateObject private var appUpdates = AppUpdatesController()
     @StateObject private var startup = StartupController()
+    @StateObject private var worktrees = GitWorktreeController()
     var body: some Scene {
         WindowGroup("MoPanel") {
             ContentView().environmentObject(model).environmentObject(systemTools)
-                .environmentObject(appUpdates).environmentObject(startup).preferredColorScheme(model.colorScheme)
+                .environmentObject(appUpdates).environmentObject(startup).environmentObject(worktrees)
+                .preferredColorScheme(model.colorScheme)
                 .frame(minWidth: 1000, minHeight: 700)
                 .onAppear {
                     // Bind references before nested weak captures; do not capture
                     // SwiftUI's StateObject storage through an outer App value.
                     let appModel = model, toolsController = systemTools
                     let updatesController = appUpdates, startupController = startup
+                    let worktreeController = worktrees
                     delegate.model = appModel
                     delegate.systemTools = toolsController
                     delegate.appUpdates = updatesController
                     delegate.startup = startupController
+                    delegate.worktrees = worktreeController
                     toolsController.language = appModel.language
-                    appModel.nativeOperationInProgress = { [weak toolsController, weak updatesController, weak startupController] in
-                        toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true || startupController?.isBusy == true
+                    if worktreeController.language != appModel.language { worktreeController.language = appModel.language }
+                    appModel.nativeOperationInProgress = { [weak toolsController, weak updatesController, weak startupController, weak worktreeController] in
+                        toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true || startupController?.isBusy == true || worktreeController?.isBusy == true
                     }
-                    toolsController.externalOperationInProgress = { [weak appModel, weak updatesController, weak startupController] in
-                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || updatesController?.isBusy == true || startupController?.isBusy == true
+                    toolsController.externalOperationInProgress = { [weak appModel, weak updatesController, weak startupController, weak worktreeController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || updatesController?.isBusy == true || startupController?.isBusy == true || worktreeController?.isBusy == true
                     }
-                    updatesController.externalOperationInProgress = { [weak appModel, weak toolsController, weak startupController] in
-                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || startupController?.isBusy == true
+                    updatesController.externalOperationInProgress = { [weak appModel, weak toolsController, weak startupController, weak worktreeController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || startupController?.isBusy == true || worktreeController?.isBusy == true
                     }
-                    startupController.externalOperationInProgress = { [weak appModel, weak toolsController, weak updatesController] in
-                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true
+                    startupController.externalOperationInProgress = { [weak appModel, weak toolsController, weak updatesController, weak worktreeController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true || worktreeController?.isBusy == true
+                    }
+                    worktreeController.externalOperationInProgress = { [weak appModel, weak toolsController, weak updatesController, weak startupController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true || startupController?.isBusy == true
                     }
                     NSApplication.shared.setActivationPolicy(.regular)
                     NSApplication.shared.activate()
@@ -46,10 +54,14 @@ import Darwin
                 .onChange(of: systemTools.ejectingVolumeID) { _, _ in nativeOperationChanged() }
                 .onChange(of: appUpdates.isBusy) { _, _ in nativeOperationChanged() }
                 .onChange(of: startup.isBusy) { _, _ in nativeOperationChanged() }
+                .onChange(of: worktrees.isBusy) { _, _ in nativeOperationChanged() }
                 .onChange(of: model.installation?.fingerprint) { _, _ in
                     systemTools.additionalProtectedPaths = [model.installation?.executable.path, model.installation?.resourceLocation].compactMap { $0 }
                 }
-                .onChange(of: model.language) { _, language in systemTools.language = language; appUpdates.language = language; startup.language = language }
+                .onChange(of: model.language) { _, language in
+                    systemTools.language = language; appUpdates.language = language; startup.language = language
+                    if worktrees.language != language { worktrees.language = language }
+                }
         }
         .defaultSize(width: 1260, height: 860)
         .commands {
@@ -60,7 +72,7 @@ import Darwin
             }
             CommandMenu(model.t("作業", "Operation")) {
                 Button(model.t("停止目前作業", "Stop Current Operation")) {
-                    model.cancelScan(); model.operationSession.cancel(); startup.cancel(); appUpdates.requestCancellation()
+                    model.cancelScan(); model.operationSession.cancel(); startup.cancel(); appUpdates.requestCancellation(); worktrees.requestCancellation()
                 }
                     .keyboardShortcut(".", modifiers: .command)
                 Button(model.t("暫停監控", "Pause Monitoring")) { model.pauseMonitoring() }
@@ -96,6 +108,7 @@ import Darwin
     weak var systemTools: SystemToolsController?
     weak var appUpdates: AppUpdatesController?
     weak var startup: StartupController?
+    weak var worktrees: GitWorktreeController?
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard geteuid() == 0 else { return }
         let alert = NSAlert()
@@ -113,7 +126,7 @@ import Darwin
         if let model, model.hasRunningOperation, !model.fixtureMode, hasContentWindow {
             let alert = NSAlert()
             alert.messageText = model.t("停止作業並離開？", "Stop the operation and quit?")
-            alert.informativeText = model.t("已完成的變更不會自動回復。MoPanel 將要求受控子程序停止；Slim 與 Homebrew 更新若正在替換或回復 App，可能需要等待安全步驟完成。", "Completed changes are not automatically reversed. MoPanel requests cancellation of controlled subprocesses. Slim and Homebrew updates may need to finish an app replacement or rollback safely.")
+            alert.informativeText = model.t("已完成的變更不會自動回復。MoPanel 將要求受控子程序停止；Slim、Homebrew 更新或 Git 工作目錄作業可能需要等待安全步驟完成。Git 的保留分支不會自動刪除。", "Completed changes are not automatically reversed. MoPanel requests cancellation of controlled subprocesses. Slim, Homebrew updates and Git worktree operations may need to finish a safe step. Git recovery branches are not deleted automatically.")
             alert.addButton(withTitle: model.t("停止並離開", "Stop and Quit"))
             alert.addButton(withTitle: model.t("繼續作業", "Keep Running"))
             if alert.runModal() != .alertFirstButtonReturn { return .terminateCancel }
@@ -121,10 +134,11 @@ import Darwin
         systemTools?.cleanupForQuit()
         appUpdates?.shutdown()
         startup?.cleanupForQuit()
+        worktrees?.shutdown()
         model?.shutdown()
         return .terminateNow
     }
     func applicationWillTerminate(_ notification: Notification) {
-        systemTools?.cleanupForQuit(); appUpdates?.shutdown(); startup?.cleanupForQuit(); model?.shutdown()
+        systemTools?.cleanupForQuit(); appUpdates?.shutdown(); startup?.cleanupForQuit(); worktrees?.shutdown(); model?.shutdown()
     }
 }

@@ -303,6 +303,7 @@ private enum NativeUIFailure: LocalizedError {
     private var phaseBreadcrumbs = 0
     private var nodeBreadcrumbs = 0
     private var nodeDiagnostics = 0
+    private var priorityNodeDiagnostics = Set<String>()
 
     init(model: AppModel, window: NSWindow) { self.model = model; self.window = window }
 
@@ -671,16 +672,27 @@ private enum NativeUIFailure: LocalizedError {
         guard Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"] else { return }
         let name = String(NSStringFromClass(type(of: node.object)).filter { $0.isASCII && ($0.isLetter || $0.isNumber || "._<>".contains($0)) }.prefix(140))
         if observedElementClasses.count < 48 { observedElementClasses.insert(name) }
-        guard nodeDiagnostics < 256 else { return }
-        nodeDiagnostics += 1
+        let knownIdentifier = identifier.flatMap(NativeUIControl.init(rawValue:))?.rawValue
+        // The actual control may be visited after hundreds of sidebar nodes.
+        // Reserve bounded, deduplicated diagnostics for exact allowlisted IDs
+        // so a failed predicate remains inspectable without logging UI text.
+        if knownIdentifier != nil {
+            guard priorityNodeDiagnostics.count < 128 else { return }
+        } else {
+            guard nodeDiagnostics < 256 else { return }
+            nodeDiagnostics += 1
+        }
         let roles = ["AXButton", "AXCheckBox", "AXSwitch", "AXGroup", "AXWindow", "AXStaticText", "AXScrollArea", "AXSplitGroup", "AXOutline", "AXRow", "AXTextField", "AXUnknown"]
         let safeRole = role.map { roles.contains($0) ? $0 : "other" } ?? "none"
-        let safeIdentifier = identifier.flatMap(NativeUIControl.init(rawValue:))?.rawValue ?? (identifier == nil ? "none" : "other")
+        let safeIdentifier = knownIdentifier ?? (identifier == nil ? "none" : "other")
         let owner = node.accessibilityWindow()
         let ownership = node.belongs(to: targetWindow) ? "owned" : owner.map { _ in "other" } ?? "unknown"
         let enabled = node.enabledValue().map { $0 ? "true" : "false" } ?? "unknown"
         let frame = node.accessibilityFrame().map { $0.width > 0 && $0.height > 0 && $0.intersects(targetWindow.frame) ? "visible" : "empty-or-outside" } ?? "unknown"
-        fputs("[MoPanelNativeUI] node class=\(name) protocol=\(node.hasProtocolConformance) role=\(safeRole) id=\(safeIdentifier) idABI=\(node.identifierAccessorStatus) element=\(node.isAccessibilityElement()) enabled=\(enabled) window=\(ownership) frame=\(frame) children=\(childCount)\n", stderr)
+        let hiddenView = (node.object as? NSView).map { $0.isHiddenOrHasHiddenAncestor ? "true" : "false" } ?? "not-a-view"
+        let diagnostic = "class=\(name) protocol=\(node.hasProtocolConformance) role=\(safeRole) id=\(safeIdentifier) idABI=\(node.identifierAccessorStatus) element=\(node.isAccessibilityElement()) enabled=\(enabled) window=\(ownership) frame=\(frame) hiddenView=\(hiddenView) children=\(childCount)"
+        if knownIdentifier != nil, !priorityNodeDiagnostics.insert(diagnostic).inserted { return }
+        fputs("[MoPanelNativeUI] node \(diagnostic)\n", stderr)
         fflush(stderr)
     }
 

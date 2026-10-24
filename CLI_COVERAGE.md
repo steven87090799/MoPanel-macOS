@@ -84,6 +84,10 @@
 - CLI 未輸出的數值、跳過原因或歷史細節不會補成假數值。歷史中 `command` 歸屬不是唯一執行識別；未結束及 `ambiguous` 紀錄不能宣稱完整成功。
 - Shell 的環境變數、測試開關與內部函式不是穩定 GUI API。MoPanel 不暴露任意 Shell 指令／環境注入入口。
 
+## 明確分開的 MoPanel 新實作
+
+Git 工作目錄、App Updates、Startup、System Tools、選單列與受保護的 App 結束要求不是新增的 `mo` 指令，也不計入官方 CLI 指令覆蓋數。Git 工作目錄的原生頁面由 `GitWorktreeView.swift`／`GitWorktreeController.swift` 接至 `GitWorktreeService.swift`，只呼叫正式 Git 的列舉、檢查、保留分支、`worktree remove` 與 `worktree add`；不自行遞迴刪除、不使用 force。完整來源責任見 `docs/MOPANEL_ADDITIONS.md`；逐項保護與實測見 `docs/GIT_WORKTREES.md`。
+
 ## 更新與相容性邊界
 
 1. 啟動時執行實際 `--version`、頂層 `--help` 及各命令 `--help`，查核必要 flags。

@@ -9,6 +9,7 @@ struct ContentView: View {
     @EnvironmentObject private var systemTools: SystemToolsController
     @EnvironmentObject private var appUpdates: AppUpdatesController
     @EnvironmentObject private var startup: StartupController
+    @EnvironmentObject private var worktrees: GitWorktreeController
     @Environment(\.scenePhase) private var scenePhase
     @State private var started = false
     var body: some View {
@@ -60,15 +61,19 @@ struct ContentView: View {
                 if model.section == .settings { SettingsView() }
                 else if model.section == .appUpdates {
                     AppUpdatesView(controller: appUpdates, language: model.language,
-                                   operationInProgress: model.moleOperationInProgress || model.isDetecting || startup.isBusy || systemTools.ejectingVolumeID != nil)
+                                   operationInProgress: model.moleOperationInProgress || model.isDetecting || startup.isBusy || worktrees.isBusy || systemTools.ejectingVolumeID != nil)
                 }
                 else if model.section == .startup {
                     StartupView(controller: startup, language: model.language,
-                                operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || systemTools.ejectingVolumeID != nil)
+                                operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || worktrees.isBusy || systemTools.ejectingVolumeID != nil)
+                }
+                else if model.section == .worktrees {
+                    GitWorktreeView(controller: worktrees, language: model.language,
+                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy || systemTools.ejectingVolumeID != nil)
                 }
                 else if model.section == .tools {
                     SystemToolsView(controller: systemTools, language: model.language,
-                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy,
+                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy || worktrees.isBusy,
                                     cliSummary: model.installation.map { "Mole \($0.version) · \($0.source.rawValue) · \($0.executable.path)" })
                 }
                 else if model.installation == nil { MissingEngineView() }
@@ -79,7 +84,7 @@ struct ContentView: View {
                     case .analyze: AnalyzeView()
                     case .history: HistoryView()
                     case .clean, .optimize, .purge, .installer, .slim: MaintenanceView(section: model.section).id(model.section)
-                    case .settings, .tools, .appUpdates, .startup: EmptyView()
+                    case .settings, .tools, .appUpdates, .startup, .worktrees: EmptyView()
                     }
                 }
             }

@@ -1,0 +1,9 @@
+test_absent_or_incomplete_git_suite_does_not_claim_git_execution (__main__.ReleaseReportTests.test_absent_or_incomplete_git_suite_does_not_claim_git_execution) ... ok
+test_actual_suite_summaries_supply_counts_and_history_is_preserved (__main__.ReleaseReportTests.test_actual_suite_summaries_supply_counts_and_history_is_preserved) ... ok
+test_failed_suite_still_blocks_generation_and_keeps_documents_unchanged (__main__.ReleaseReportTests.test_failed_suite_still_blocks_generation_and_keeps_documents_unchanged) ... ok
+test_parser_only_does_not_claim_real_git_integration (__main__.ReleaseReportTests.test_parser_only_does_not_claim_real_git_integration) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.232s
+
+OK

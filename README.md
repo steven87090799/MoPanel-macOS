@@ -46,6 +46,7 @@ ad-hoc 版本沒有 Apple Developer ID 或公證。若 macOS 因為來源驗證�
 | 系統最佳化 | 官方項目、Dry Run、白名單與互動結果；不新增舊式調校 |
 | 磁碟分析 | 官方 JSON 逐層瀏覽、大小排序、搜尋、Finder 入口；保留不完整狀態 |
 | 專案清理 | 選擇掃描根目錄、Dry Run、paths 設定及官方選取 |
+| Git 工作目錄 | **MoPanel 新實作**；只檢查選定倉庫，保護未保存內容，先保留 HEAD 分支，再由正式 Git 命令移除／重建工作目錄 |
 | 安裝檔 | 官方掃描與選取；不假造無正式 API 的刪除計畫 |
 | App 瘦身 | 官方 Universal App 檢查、Dry Run、選取與簽章檢查結果 |
 | 操作歷史 | 原生 JSON 歷史與搜尋，保留未明確歸屬紀錄 |
@@ -60,9 +61,11 @@ ad-hoc 版本沒有 Apple Developer ID 或公證。若 macOS 因為來源驗證�
 
 使用者追加的比較範圍是官方 Mole for Mac **1.17 正式版**，1.18 Preview 另列。MoPanel 並未達到全部功能對等。免費 CLI 沒有公開任意逐項清理／卸載計畫 API，相關工作仍在內嵌官方互動介面完成；不能把它稱為與官方付費 App 完全相同的原生選取流程。
 
-以上三個新增頁面、選單列、行程搜尋／排序／置頂與受保護的 App 結束要求，都會標記 **MoPanel 新實作**。它們使用 Apple 原生 API 或其他已安裝的官方工具，各自需要維護相容性。Homebrew 直接更新只開放可驗證的一般官方 cask；其他來源不會被包裝成已實作的自動更新引擎。
+以上四個新增頁面、選單列、行程搜尋／排序／置頂與受保護的 App 結束要求，都會標記 **MoPanel 新實作**。它們使用 Apple 原生 API 或其他已安裝的官方工具，各自需要維護相容性。Homebrew 直接更新只開放可驗證的一般官方 cask；其他來源不會被包裝成已實作的自動更新引擎。
 
-風扇模式、充電限制、AWDL 控制、AI sessions／worktrees 清理、Parallels VM compact，以及部分官方 GUI 細部互動與權限／硬體驗收仍未完成。本版本沒有提供無作用的控制項，也沒有對這些功能宣稱已測試通過。完整對照見 `Source/docs/GUI_PARITY.md`（來源 repository 中為 `docs/GUI_PARITY.md`），新增內容與限制見 `docs/MOPANEL_ADDITIONS.md`、`docs/APP_UPDATES.md`、`docs/STARTUP.md`、`docs/NATIVE_CONTROLS.md`。
+Git 工作目錄使用已安裝的正式 Git，不是 Mole CLI 的隱藏功能。只能移除通過保護檢查的 linked worktree；保留分支可重建已提交內容，但依賴原倉庫與物件仍存在，並非獨立備份。沒有 AI 對話判讀、閒置天數推測或自動清理。使用方式、安全限制與隔離測試見 `docs/GIT_WORKTREES.md`。
+
+風扇模式、充電限制、AWDL 控制、AI sessions／閒置工具管理、Parallels VM compact，以及部分官方 GUI 細部互動與權限／硬體驗收仍未完成。本版本沒有提供無作用的控制項，也沒有對這些功能宣稱已測試通過。完整對照見 `Source/docs/GUI_PARITY.md`（來源 repository 中為 `docs/GUI_PARITY.md`），新增內容與限制見 `docs/MOPANEL_ADDITIONS.md`、`docs/APP_UPDATES.md`、`docs/STARTUP.md`、`docs/NATIVE_CONTROLS.md`。
 
 ## 安全與資料
 

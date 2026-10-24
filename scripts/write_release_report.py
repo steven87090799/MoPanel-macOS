@@ -76,12 +76,16 @@ if skips:
 # "All tests" footer. Sum unique bundle summaries instead of taking a maximum
 # (which would report only 47 of the first Mac run's actual 47 + 20 tests).
 bundle_test_counts = {}
+git_suite_counts = {}
 test_lines = test_log.splitlines()
 for index, line in enumerate(test_lines[:-1]):
     suite = re.search(r"Test Suite '([^']+\.xctest)' passed", line)
     count = re.search(r"Executed (\d+) tests?, with", test_lines[index + 1])
     if suite and count:
         bundle_test_counts[suite.group(1)] = int(count.group(1))
+    git_suite = re.search(r"Test Suite '(GitWorktreeIntegrationTests|GitWorktreeParserTests)' passed", line)
+    if git_suite and count and int(count.group(1)) > 0:
+        git_suite_counts[git_suite.group(1)] = int(count.group(1))
 total_swift_tests = sum(bundle_test_counts.values()) if bundle_test_counts else max(int(x[0]) for x in test_counts)
 guardian_log = (reports / "guardian-test.log").read_text()
 guardian_count = re.search(r"Ran (\d+) tests? in", guardian_log)
@@ -125,7 +129,20 @@ if checks.get("native_clean_screen_windows_constructed_and_closed") is True:
     lines.append("- 螢幕清潔 overlay 視窗已建立與關閉；測試未呈現全螢幕遮罩、攔截輸入或退出磁碟。")
 if checks.get("startup_mock_enable_disable_readback") is True:
     lines.append("- Startup 的啟用／停用／回讀、取消與不明格式流程使用私有 mock 驗證；零真實 launchctl 變更或常駐 job。")
-lines += ["- 上述測試沒有要求外部 Accessibility／TCC 權限或注入實體輸入，也不代表真實清理、App 升級或硬體控制已驗證。", "", "## CLI 相容性實測", ""]
+lines += ["- 上述測試沒有要求外部 Accessibility／TCC 權限或注入實體輸入，也不代表真實清理、App 升級或硬體控制已驗證。", ""]
+if git_suite_counts:
+    lines += ["## Git worktree 隔離驗證", "",
+              "以下數量取自本次 swift-test.log 的實際 passed suite 與其緊接的 XCTest summary；已包含在前述 XCTest 總數，不另行相加。", ""]
+    parser_count = git_suite_counts.get("GitWorktreeParserTests")
+    integration_count = git_suite_counts.get("GitWorktreeIntegrationTests")
+    if parser_count:
+        lines.append(f"- GitWorktreeParserTests：{parser_count} 個案例通過，驗證 NUL 記錄解析與保護政策。")
+    if integration_count:
+        lines.append(f"- GitWorktreeIntegrationTests：{integration_count} 個案例通過；使用真 Git 與每個測試新建的私有暫存倉庫，驗證保護檢查、保留分支、移除／恢復、內容保留及失敗拒絕。沒有操作使用者的既有倉庫。")
+    else:
+        lines.append("- 本次沒有可核對的 GitWorktreeIntegrationTests passed summary，不宣稱已執行真 Git 整合驗證。")
+    lines += ["- 這些測試不等同 Git 頁面的完整 UI、AI session 格式、第三方工具整合或任意外部程序同時寫入情況的驗收。", ""]
+lines += ["## CLI 相容性實測", ""]
 for filename, label in [("cli-contract.json", "基準"), ("latest-cli-contract.json", "建置時最新穩定版")]:
     path = reports / filename
     if path.exists():
@@ -199,3 +216,23 @@ prebuild_report.write_text(final_report)
 source_report = package / "Source/TEST_REPORT.md"
 if source_report.exists():
     source_report.write_text(final_report)
+
+# These are distribution copies. Preserve development snapshots and feature
+# gaps verbatim, while making this artifact's current evidence easy to find.
+for relative_path, prefix in [
+        ("COMPATIBILITY.md", ""),
+        ("Source/COMPATIBILITY.md", "../"),
+        ("Source/docs/GUI_PARITY.md", "../../"),
+        ("Source/docs/MOPANEL_ADDITIONS.md", "../../")]:
+    document = package / relative_path
+    if document.exists():
+        original = document.read_text()
+        note = ("<!-- MOPANEL_GENERATED_RELEASE_NOTE -->\n"
+                "## 本發行產物的驗證註記（自動產生）\n\n"
+                f"產生時間：{date}。本份產物的當次驗證以 [TEST_REPORT.md]({prefix}TEST_REPORT.md) "
+                f"與 [Reports/]({prefix}Reports/) 的實際紀錄為準。\n\n"
+                "下文保留開發時的相容性基準、功能缺口與進度快照；舊 run 的失敗或待驗證狀態是歷史紀錄，"
+                "不代表本份產物的最新測試結果。這不解除既有功能限制、相容性邊界或尚未驗證的真實資料、權限與硬體事項，"
+                "也不表示全部 UI 或官方付費功能已驗收。\n\n"
+                "<!-- END_MOPANEL_GENERATED_RELEASE_NOTE -->\n\n")
+        document.write_text(note + original)

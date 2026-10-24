@@ -2,19 +2,19 @@
 
 日期：2026-10-24。工作環境：Ubuntu 24.04、x86_64，官方 Swift 6.4.1 Linux toolchain。
 
-最新修復整合後的 Linux 全套 XCTest 實際通過：**140 個案例，0 failures、0 skipped，5.581 秒**（116 Core、24 Process／Editor／Streaming；`docs/INTEGRATION_TEST_OUTPUT.txt`）。這是完整套件同次執行結果，不把各 filtered run 重複加總；Apple SDK、AppKit 與發行封裝仍必須由本批 macOS CI 另外通過。
+最新 Git 工作目錄、子程序環境及原生介面整合後的 Linux 全套 XCTest 實際通過：**171 個案例，0 failures、0 skipped，15.408 秒**（144 Core、27 Process／Editor／Streaming；`docs/INTEGRATION_WITH_WORKTREES_TEST_OUTPUT.txt`）。其中 28 個 Git 新案例為 7 個解析／契約與 21 個真 Git 拋棄式倉庫整合；已包含在 171 中。使用當前來源重新編譯 Guardian 後執行，建置輸出見 `docs/WORKTREE_INTEGRATION_GUARDIAN_BUILD.txt`。這是完整套件同次執行結果，不把 filtered run 重複加總；新頁面的 Apple SDK、AppKit 與發行封裝仍必須由本批 macOS CI 另外通過。
 
 ## 交付狀態
 
 **已編譯並真正啟動 macOS27 ARM64 原生App；20項safe smoke檢查中19項通過，剩餘accessibility按鈕驗收仍阻擋ZIP交付。**
 
-最新[run40079692503](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40079692503)，commit `6b2e8a7b1b0b9c3dd47c7733128a11cdcfd94e35`，使用macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。**140／140 Mac XCTest通過，0失敗／略過**（116 Core、24 Process／Editor／Streaming）。主App與兩個helpers完成release編譯、ARM64、ad-hoc完整性驗證，且正式executables沒有`get-task-allow`。
+最新[run40080195228](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40080195228)，commit `bc1a3195fdc11db9b68b17a15293a6e2f26bce1b`，使用macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。**143／143 Mac XCTest通過，0失敗／略過**（116 Core、27 Process／Editor／Streaming，包含3個Git環境保護案例）。主App與兩個helpers完成release編譯、ARM64、ad-hoc完整性驗證，且正式executables沒有`get-task-allow`。
 
 Homebrew audit15、獨立gate harness6、smoke driver8、crash辨識5、debug guard8個Python／Bash案例在真Mac全過，最新官方穩定CLI唯讀契約也通過。這些不與XCTest重複加總。
 
-本輪原App不再SIGSEGV，正式smoke在9.776秒產生完整JSON與自身視窗截圖；此輪沒有崩潰或逾時；前一輪正式／debug log也沒有先前publishing-during-update警告。實際通過的範圍包含：原生視窗建立、4組adapter資料解碼、真watch串流及離頁停止、13路由選取存活、IOPM assertion建立／讀取／釋放確認、1個overlay視窗建立／關閉（未呈現或攔截輸入）、18項Doctor唯讀資料，以及Startup私有mock的啟用／停用／回讀／取消／未知格式拒絕。沒有真實launchctl變更、磁碟退出或使用者資料清理。
+本輪原App不再SIGSEGV，正式smoke在10.873秒產生完整JSON與自身視窗截圖；此輪沒有崩潰或逾時；正式stdout／stderr皆沒有先前publishing-during-update警告。實際通過的範圍包含：原生視窗建立、4組adapter資料解碼、真watch串流及離頁停止、13路由選取存活、IOPM assertion建立／讀取／釋放確認、1個overlay視窗建立／關閉（未呈現或攔截輸入）、18項Doctor唯讀資料，以及Startup私有mock的啟用／停用／回讀／取消／未知格式拒絕。沒有真實launchctl變更、磁碟退出或使用者資料清理。
 
-唯一失敗是own-process accessibility harness無法找到`mopanel.dashboard.snapshot`的唯一啟用控制項；實際按鈕在截圖中可見，但這不等於已測試按壓。公開selector bridge與SwiftUI accessibilityEnabled環境設定已通過真Mac編譯；真實context讀回publicAccessibilityEnvironmentEnabled=true，必要read-back check亦為true。AX掃描最多313個節點（207個protocol、106個selector-only，unsupported child為0），已觀察到SwiftUI.AccessibilityNode，但仍0項action、0個MoPanel已識別ID；沒有直接action fallback。本輪精簡證據在`docs/MACOS_SMOKE_RUN40079692503.json`，完整原始JSON及tree trace在run artifact。**不能宣稱17項按鈕流程或完整VoiceOver已通過。**
+唯一失敗是own-process accessibility harness無法找到`mopanel.dashboard.snapshot`的唯一啟用控制項；實際按鈕在截圖中可見，但這不等於已測試按壓。公開selector bridge與SwiftUI accessibilityEnabled環境設定已通過真Mac編譯；真實context讀回publicAccessibilityEnvironmentEnabled=true，必要read-back check亦為true。新的正式可見NSButton／checkbox已通過Apple SDK編譯。AX掃描最多316個節點（210個protocol、106個selector-only，unsupported child為0），首次記錄到mopanel.dashboard.snapshot ID，但仍找不到符合全部條件的唯一候選，0項action。trace中的NSButtonCell具AXButton角色、啟用且位於可見的自身視窗，但其ID為空；不能把已識別到另一個ID節點視為按鈕驗收通過。沒有直接action fallback。本輪精簡證據在`docs/MACOS_SMOKE_RUN40080195228.json`，完整原始JSON及tree trace在run artifact。**不能宣稱17項按鈕流程或完整VoiceOver已通過。**
 
 正式smoke維持exit1與45秒deadline，不進效能、guardian Python、baseline probe或ZIP。這次已有完整有效JSON，driver正確略過不必要的LLDB副本且原失敗仍阻擋ZIP。Guardian新增17項已於Linux全過，但本輪Mac仍未抵達該階段。
 
@@ -73,12 +73,12 @@ driver窄修已在本輪Mac驗證：8個案例全過，且真實完整JSON的邏
 
 | 項目 | 狀態 |
 |---|---|
-| macOS27 SwiftUI/AppKit/Charts 編譯 | run40079692503完整整合版release與140XCTest通過；已建立視窗、smoke19／20通過 |
+| macOS27 SwiftUI/AppKit/Charts 編譯 | run40080195228完整整合版release與143XCTest通過；已建立視窗、smoke19／20通過 |
 | SwiftTerm 與 MoPanelEditor macOS 編譯 | 基礎版本通過 |
 | 真正 ARM64 Mach-O 產物 | runner 已編譯並驗證；因 smoke 失敗未上傳發行 App |
 | ad-hoc Code Signing／codesign verify | 基礎版本通過 build.sh 的 bundle gate |
 | Apple Developer ID／公證 | 未進行，未宣稱 |
-| macOS 原生視窗 smoke test | run40079692503視窗／adapter／watch／安全系統API及Startup mock通過；唯一失敗為AX控制項辨識，沒有繞過或降低gate |
+| macOS 原生視窗 smoke test | run40080195228視窗／adapter／watch／安全系統API及Startup mock通過；唯一失敗為AX控制項辨識，沒有繞過或降低gate |
 | 十個頁面的全部按鈕與 VoiceOver | 未完整實機驗收 |
 | 官方 status/analyze/uninstall-list 的真實 Mac 整合 | CLI 唯讀合約通過；原生 GUI 真實引擎 benchmark 待接續驗證 |
 | Full Disk Access／Touch ID／sudo | 尚未實機驗證 |

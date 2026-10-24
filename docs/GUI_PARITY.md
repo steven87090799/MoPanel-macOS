@@ -38,7 +38,7 @@
 | C04 | System Data 分組、快照與較高影響工作分開審查 [S3] | CLI 有相關清理流程，選取粒度不同 | **PTY／待驗收** | 真實隔離 fixture 驗證各類操作及確認流程，不能只比總釋放空間 |
 | C05 | 開發工具快取與產物審查 [S3] | `clean`／`purge`；CLI 的時限及選取規則不必然等於 GUI | **PTY／待驗收**；`MaintenanceView.swift` | 樣本專案的原始碼、Git、憑證保留與官方 GUI 規則差異 |
 | A01 | AI 快取、舊工具版本整理 [S3] | CLI 已涵蓋多個 AI 工具的快取、舊版本 | **部分**；由 `clean` 執行，沒有獨立 AI 原生審查頁 | 工具覆蓋表與每類資料所有權驗證 |
-| A02 | AI sessions、worktrees、閒置 AI CLI 的專用審查 [S1][S3] | CLI worktrees 是報告用途；Codex session/state 預設受保護 [C5][C6] | **未實作** | 需要新增工具整合、可恢復副本、索引一致性及 Git 唯一內容保護；不得直接刪目錄替代 |
+| A02 | AI sessions、worktrees、閒置 AI CLI 的專用審查 [S1][S3] | CLI worktrees 是報告用途；Codex session/state 預設受保護 [C5][C6] | **部分原生新實作**；`GitWorktreeView.swift`、`GitWorktreeController.swift`、`GitWorktreeService.swift` | 已新增使用正式 Git 的通用 linked worktree 保護、保留 HEAD 分支、確認移除及新位置重建，具有真實拋棄式倉庫測試。不是獨立備份；AI session 索引、專用閒置規則與對話清理仍未實作。Mac 驗收見本版 TEST_REPORT，安全界線見 GIT_WORKTREES.md |
 | S01 | App 清單、圖示、大小、搜尋、多選卸載 [S4] | `uninstall --list`、名稱參數及官方選取器 | **原生＋PTY／待驗收**；`UninstallView.swift` | 重名 App、cask 名稱歧義、特殊檔名與實際確認範圍的端到端測試 |
 | S02 | App 殘留、共享資料、個人資料與系統擴充的審查 [S4] | 官方卸載分析及確認；CLI 殘留計畫並非完整公開 JSON | **部分**；個人資料預選預設關閉，最終審查在 PTY | 原生逐項審查、共享資料安全、特殊卸載器 handoff；不能猜測所有權 |
 | S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／原生流程待驗收**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle 交回原 App；App Store 開啟 Apple 商店，由使用者選擇「更新」頁，MoPanel 不代管兩者的更新。30 個 Core 與 2 個環境測試已包含在通過的 Mac 140 案例中；未升級真實 App，非所有來源完整對等 |

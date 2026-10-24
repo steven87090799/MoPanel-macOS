@@ -1,0 +1,97 @@
+MoPanel Git Worktrees isolated test evidence
+Platform: Linux-6.18.55-x86_64-with-glibc2.39
+Swift version 6.4.1 (swift-6.4.1-RELEASE)
+Target: x86_64-unknown-linux-gnu
+git version 2.51.1
+Command: /workspace/scratch/295743c3c15b/toolchains/swift/usr/bin/swift test --build-system native --scratch-path .build-worktrees --filter GitWorktree
+No user repository used. Every integration case creates an owned temporary fixture.
+
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[2/4] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/6] Compiling MoPanelCore GitWorktreeService.swift
+[5/6] Emitting module MoPanelCore
+[7/15] Compiling MoPanelCoreTests GitWorktreeIntegrationTests.swift
+[8/15] Emitting module MoPanelCoreTests
+[9/16] /workspace/scratch/295743c3c15b/MoPanel/.build-worktrees/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[10/17] Write sources
+[11/17] Wrapping AST for MoPanelCoreTests for debugging
+[13/21] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[14/21] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[15/21] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[16/21] Emitting module MoPanelPackageDiscoveredTests
+[17/22] /workspace/scratch/295743c3c15b/MoPanel/.build-worktrees/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[18/23] Write sources
+[19/23] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[21/25] Emitting module MoPanelPackageTests
+[22/25] Compiling MoPanelPackageTests runner.swift
+[23/25] Write Objects.LinkFileList
+[24/25] Linking MoPanelPackageTests.xctest
+Build complete! (6.54s)
+Test Suite 'Selected tests' started at 2026-10-24 17:09:06.438
+Test Suite 'GitWorktreeIntegrationTests' started at 2026-10-24 17:09:06.439
+Test Case 'GitWorktreeIntegrationTests.testAssumeUnchangedAndSkipWorktreeCannotHideDirtyContent' started at 2026-10-24 17:09:06.439
+Test Case 'GitWorktreeIntegrationTests.testAssumeUnchangedAndSkipWorktreeCannotHideDirtyContent' passed (0.245 seconds)
+Test Case 'GitWorktreeIntegrationTests.testBareAndMissingPrunableEntriesRemainReadOnly' started at 2026-10-24 17:09:06.684
+Test Case 'GitWorktreeIntegrationTests.testBareAndMissingPrunableEntriesRemainReadOnly' passed (0.08 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCancelOrFailureAfterRecoveryRefLeavesItIntactAndDoesNotClaimRemoval' started at 2026-10-24 17:09:06.764
+Test Case 'GitWorktreeIntegrationTests.testCancelOrFailureAfterRecoveryRefLeavesItIntactAndDoesNotClaimRemoval' passed (0.855 seconds)
+Test Case 'GitWorktreeIntegrationTests.testChangedDirectoryIdentityOrSymlinkNeverTargetsReplacement' started at 2026-10-24 17:09:07.619
+Test Case 'GitWorktreeIntegrationTests.testChangedDirectoryIdentityOrSymlinkNeverTargetsReplacement' passed (0.224 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCommittedMessageIsAcceptedButUniqueOrChangedDraftIsProtected' started at 2026-10-24 17:09:07.843
+Test Case 'GitWorktreeIntegrationTests.testCommittedMessageIsAcceptedButUniqueOrChangedDraftIsProtected' passed (0.49 seconds)
+Test Case 'GitWorktreeIntegrationTests.testConfigurationAndDestinationChangesAfterReviewStopBeforeMutation' started at 2026-10-24 17:09:08.333
+Test Case 'GitWorktreeIntegrationTests.testConfigurationAndDestinationChangesAfterReviewStopBeforeMutation' passed (0.691 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCustomFilterCanaryIsNotExecutedByInspection' started at 2026-10-24 17:09:09.024
+Test Case 'GitWorktreeIntegrationTests.testCustomFilterCanaryIsNotExecutedByInspection' passed (0.117 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCustomFiltersSparsePartialAndIncludeSettingsAreBlockedBeforeStatus' started at 2026-10-24 17:09:09.142
+Test Case 'GitWorktreeIntegrationTests.testCustomFiltersSparsePartialAndIncludeSettingsAreBlockedBeforeStatus' passed (0.325 seconds)
+Test Case 'GitWorktreeIntegrationTests.testDetachedHEADGetsReachableRecoveryBranchBeforeRemoval' started at 2026-10-24 17:09:09.467
+Test Case 'GitWorktreeIntegrationTests.testDetachedHEADGetsReachableRecoveryBranchBeforeRemoval' passed (0.43 seconds)
+Test Case 'GitWorktreeIntegrationTests.testFreshStatusAndHEADChangesInvalidateConfirmation' started at 2026-10-24 17:09:09.896
+Test Case 'GitWorktreeIntegrationTests.testFreshStatusAndHEADChangesInvalidateConfirmation' passed (0.5 seconds)
+Test Case 'GitWorktreeIntegrationTests.testInProgressMetadataAndExternalObjectStorageAreProtected' started at 2026-10-24 17:09:10.396
+Test Case 'GitWorktreeIntegrationTests.testInProgressMetadataAndExternalObjectStorageAreProtected' passed (0.285 seconds)
+Test Case 'GitWorktreeIntegrationTests.testMainLockedDirtyUntrackedAndIgnoredAreProtectedWithoutMutations' started at 2026-10-24 17:09:10.681
+Test Case 'GitWorktreeIntegrationTests.testMainLockedDirtyUntrackedAndIgnoredAreProtectedWithoutMutations' passed (0.221 seconds)
+Test Case 'GitWorktreeIntegrationTests.testOldDetachedReflogCommitIsNotMistakenForRetainedHEADHistory' started at 2026-10-24 17:09:10.903
+Test Case 'GitWorktreeIntegrationTests.testOldDetachedReflogCommitIsNotMistakenForRetainedHEADHistory' passed (0.153 seconds)
+Test Case 'GitWorktreeIntegrationTests.testPhysicalAncestorAliasesAndTrackedSpecialFilenamesRestoreCorrectly' started at 2026-10-24 17:09:11.055
+Test Case 'GitWorktreeIntegrationTests.testPhysicalAncestorAliasesAndTrackedSpecialFilenamesRestoreCorrectly' passed (0.656 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRealCleanUniqueCommitRemovalAndRecoveryPreserveContentsAndOriginalBranch' started at 2026-10-24 17:09:11.711
+Test Case 'GitWorktreeIntegrationTests.testRealCleanUniqueCommitRemovalAndRecoveryPreserveContentsAndOriginalBranch' passed (0.715 seconds)
+Test Case 'GitWorktreewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+IntegrationTests.testRecoveryRefCollisionIsNeverOverwritten' started at 2026-10-24 17:09:12.426
+Test Case 'GitWorktreeIntegrationTests.testRecoveryRefCollisionIsNeverOverwritten' passed (0.458 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRepositoryHooksNeverRunDuringScanRefCreationRemovalOrRestore' started at 2026-10-24 17:09:12.883
+Test Case 'GitWorktreeIntegrationTests.testRepositoryHooksNeverRunDuringScanRefCreationRemovalOrRestore' passed (0.752 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRestoreRejectsExistingDestinationAndChangedRecoveryBranch' started at 2026-10-24 17:09:13.635
+Test Case 'GitWorktreeIntegrationTests.testRestoreRejectsExistingDestinationAndChangedRecoveryBranch' passed (1.114 seconds)
+Test Case 'GitWorktreeIntegrationTests.testSubmoduleGitlinkAndPrivateRefsAreProtected' started at 2026-10-24 17:09:14.750
+Test Case 'GitWorktreeIntegrationTests.testSubmoduleGitlinkAndPrivateRefsAreProtected' passed (0.444 seconds)
+Test Case 'GitWorktreeIntegrationTests.testSymbolicRefCollisionsArePreservedBeforeAndAfterReview' started at 2026-10-24 17:09:15.194
+Test Case 'GitWorktreeIntegrationTests.testSymbolicRefCollisionsArePreservedBeforeAndAfterReview' passed (0.563 seconds)
+Test Case 'GitWorktreeIntegrationTests.testUnsupportedProtectiveFlagAndTruncatedOutputStopBeforeMutations' started at 2026-10-24 17:09:15.756
+Test Case 'GitWorktreeIntegrationTests.testUnsupportedProtectiveFlagAndTruncatedOutputStopBeforeMutations' passed (0.033 seconds)
+Test Suite 'GitWorktreeIntegrationTests' passed at 2026-10-24 17:09:15.790
+	 Executed 21 tests, with 0 failures (0 unexpected) in 9.35 (9.35) seconds
+Test Suite 'GitWorktreeParserTests' started at 2026-10-24 17:09:15.790
+Test Case 'GitWorktreeParserTests.testBoundsAndFutureStatusRecordsFailClosed' started at 2026-10-24 17:09:15.790
+Test Case 'GitWorktreeParserTests.testBoundsAndFutureStatusRecordsFailClosed' passed (0.015 seconds)
+Test Case 'GitWorktreeParserTests.testIndexHiddenFlagsAndSubmoduleModesAreExplicit' started at 2026-10-24 17:09:15.804
+Test Case 'GitWorktreeParserTests.testIndexHiddenFlagsAndSubmoduleModesAreExplicit' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testMalformedOrFutureInventoryNeverBecomesAnActionableList' started at 2026-10-24 17:09:15.805
+Test Case 'GitWorktreeParserTests.testMalformedOrFutureInventoryNeverBecomesAnActionableList' passed (0.001 seconds)
+Test Case 'GitWorktreeParserTests.testNULInventoryPreservesNewlinesUnicodeAndLiteralShellCharacters' started at 2026-10-24 17:09:15.806
+Test Case 'GitWorktreeParserTests.testNULInventoryPreservesNewlinesUnicodeAndLiteralShellCharacters' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testProtectivePrefixUsesOfficialFlagsAndNeverForce' started at 2026-10-24 17:09:15.806
+Test Case 'GitWorktreeParserTests.testProtectivePrefixUsesOfficialFlagsAndNeverForce' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testRecoveryRefsRequireDedicatedUUIDNamespaceAndRealHashShape' started at 2026-10-24 17:09:15.806
+Test Case 'GitWorktreeParserTests.testRecoveryRefsRequireDedicatedUUIDNamespaceAndRealHashShape' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testStatusSeparatesIgnoredUntrackedAndDirtyAndRejectsTruncation' started at 2026-10-24 17:09:15.806
+Test Case 'GitWorktreeParserTests.testStatusSeparatesIgnoredUntrackedAndDirtyAndRejectsTruncation' passed (0.0 seconds)
+Test Suite 'GitWorktreeParserTests' passed at 2026-10-24 17:09:15.806
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.016 (0.016) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 17:09:15.806
+	 Executed 28 tests, with 0 failures (0 unexpected) in 9.366 (9.366) seconds
