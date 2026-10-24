@@ -126,6 +126,7 @@ import Darwin
     func trackWindow(_ window: NSWindow) {
         window.identifier = NSUserInterfaceItemIdentifier("MoPanel.main")
         contentWindow = window
+        closingWindows.remove(ObjectIdentifier(window))
         if windowObservers.isEmpty {
             let center = NotificationCenter.default
             let names: [Notification.Name] = [NSWindow.didChangeOcclusionStateNotification,

@@ -25,6 +25,9 @@ struct ApplicationUsage: Identifiable, Sendable {
 final class ApplicationUsageReader {
     private struct Previous { let started: UInt64; let cpu: UInt64; let time: TimeInterval }
     private var previous: [Int32: Previous] = [:]
+    private let timebase: mach_timebase_info_data_t = {
+        var info = mach_timebase_info_data_t(); mach_timebase_info(&info); return info
+    }()
 
     func reset() { previous.removeAll(keepingCapacity: false) }
 
@@ -56,7 +59,8 @@ final class ApplicationUsageReader {
             let started = info.pbsd.pbi_start_tvsec * 1_000_000 + info.pbsd.pbi_start_tvusec
             var cpu: Double?
             if let old = previous[pid], old.started == started, now > old.time, ticks >= old.cpu {
-                cpu = Double(ticks - old.cpu) / 1_000_000_000 / (now - old.time) * 100
+                cpu = MachCPUTime.percentage(deltaTicks: ticks - old.cpu, elapsedSeconds: now - old.time,
+                                             numerator: timebase.numer, denominator: timebase.denom)
             }
             next[pid] = Previous(started: started, cpu: ticks, time: now)
             var usage = rusage_info_v2()

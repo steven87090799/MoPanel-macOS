@@ -31,7 +31,7 @@ Mole 選單投影不解析路徑來刪除檔案，不猜測選單編號。它只
 - CPU、記憶體／磁碟基本資料仍由原版 Mole Status 提供。健康分數標明「Mole CLI 評分」；商業版 App 的演算法未公開，不能捏造相同分數。
 - 壓力直接讀 macOS `kern.memorystatus_vm_pressure_level`：1 正常、2 偏高、4 過高，只顯示文字。這與記憶體使用百分比不同。
 - Stats MIT 的唯讀 AppleSMC 協定補充 M1 CPU／GPU 溫度與風扇；單一 GPU 的使用率透過 IORegistry 取得。不寫 SMC、不安裝 helper、不增加硬體控制。
-- App 表以實際 physical footprint 與兩次 CPU 時間差彙總可確認的子程序，預設依記憶體排序。無法確認歸屬的服務分列。單一核心滿載為 100%，多程序 App 可超過 100%。不填造 Energy Impact。
+- App 表以實際 physical footprint 與兩次 CPU 時間差（經 mach_timebase_info 換算 Mach tick）彙總可確認的子程序，預設依記憶體排序。無法確認歸屬的服務分列。單一核心滿載為 100%，多程序 App 可超過 100%。不填造 Energy Impact。
 - Mole 在實機上曾完全漏掉使用中的 en0；現在以 macOS 64 位元網卡計數器的時間差補充真正流量，並從 getifaddrs 取得位址。自動選取主要網路介面，標示 Wi-Fi／介面名，分開顯示未配置 IP 的介面；小流量使用 KB/s。首次樣本先建立基準，不偽造速率；計數器重設或介面身分改變不產生尖峰。切換介面保留原有 CPU／記憶體趨勢。
 - 儲存空間以十進位顯示，與常見磁碟工具口徑一致；RAM 保持二進位。大小來自顯示字串時標成估算，未知大小不當成零。
 
@@ -41,7 +41,7 @@ Mole 選單投影不解析路徑來刪除檔案，不猜測選單編號。它只
 
 原生補充在既有樣本上最多每 5 秒讀一次，使用序列 utility queue，沒有額外常駐 timer。暫停會關閉 SMC 並清除 CPU 差分基準；歷史上限 120 筆。圖示僅保留 96 像素點陣、128 張／6 MiB 快取上限。背景光暈為靜態，動畫只在互動時執行並遵從減少動態效果。
 
-`scripts/measure_resources.swift` 以公開 libproc CPU 時間差、單調時鐘與 physical footprint 觀察明確選定的 MoPanel 及其子程序，避免以程序啟動至今的平均 CPU 當成當前用量。短命子程序仍可能漏計，這也不等於 Energy Impact 或證明完全沒有洩漏。
+`scripts/measure_resources.swift` 以公開 libproc CPU Mach tick 時間差、mach_timebase_info 換算、單調時鐘與 physical footprint 觀察明確選定的 MoPanel 及其子程序，避免以程序啟動至今的平均 CPU 當成當前用量。短命子程序仍可能漏計，這也不等於 Energy Impact 或證明完全沒有洩漏。
 
 ## 測試與保留範圍
 
@@ -50,3 +50,5 @@ Mole 選單投影不解析路徑來刪除檔案，不猜測選單編號。它只
 已以真正 PTY 與 SwiftTerm 的合成 installer 選單實際點擊：預設選取 → 勾第二項 → 同頁最後確認 → 可讀結果與選取紀錄，全程不展開 CLI。另有 207 項 XCTest 完成、0 failures、2 個未提供 Guardian 時的 skipped；正式打包會補跑。
 
 本批仍需以最終乾淨 revision 完整建置、UI、實機前景／遮蔽／最小化／選單列效能與安裝驗證。不能把有限測試說成所有硬體、權限、24 小時與所有破壞性功能已全面驗收。
+
+CPU 單位曾以 Intel 的 1:1 時基假設計算；在 M1 實測為 125/3，會大幅低估程序用量。已改用系統時基換算，舊的未換算效能紀錄作廢；以已知負載與 getrusage／系統 top 交叉檢查。

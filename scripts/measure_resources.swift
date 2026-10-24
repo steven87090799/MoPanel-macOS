@@ -40,6 +40,9 @@ func resourceProcesses() -> [Int32: ResourceProcess] {
               args[4] == "--output", args[5].hasPrefix("/"), !FileManager.default.fileExists(atPath: args[5]) else {
             throw NSError(domain: "MoPanel.Observer", code: 1, userInfo: [NSLocalizedDescriptionKey: "Usage: observer PID DURATION_SECONDS INTERVAL_SECONDS --output ABSOLUTE_NEW_REPORT"])
         }
+        var timebase = mach_timebase_info_data_t(); mach_timebase_info(&timebase)
+        guard timebase.numer > 0, timebase.denom > 0 else { throw NSError(domain: "MoPanel.Observer", code: 3) }
+        let tickNanoseconds = Double(timebase.numer) / Double(timebase.denom)
         var previous = resourceProcesses()
         guard let root = previous[pid], URL(fileURLWithPath: root.path).lastPathComponent == "MoPanel" else {
             throw NSError(domain: "MoPanel.Observer", code: 2, userInfo: [NSLocalizedDescriptionKey: "PID must identify this user's running MoPanel executable"])
@@ -66,7 +69,7 @@ func resourceProcesses() -> [Int32: ResourceProcess] {
                 guard let process = records[id] else { continue }
                 var percentage = 0.0
                 if let old = previous[id], old.started == process.started, process.cpu >= old.cpu {
-                    percentage = Double(process.cpu - old.cpu) / 1e9 / elapsed * 100
+                    percentage = Double(process.cpu - old.cpu) * tickNanoseconds / 1e9 / elapsed * 100
                 }
                 cpu += percentage; footprint += process.footprint
                 processes.append(["pid": id, "name": URL(fileURLWithPath: process.path).lastPathComponent,
@@ -84,7 +87,8 @@ func resourceProcesses() -> [Int32: ResourceProcess] {
             "cpu_mean_percent": cpus.isEmpty ? 0 : cpus.reduce(0, +) / Double(cpus.count), "cpu_peak_percent": cpus.max() ?? 0,
             "physical_footprint_first_bytes": memory.first ?? 0, "physical_footprint_last_bytes": memory.last ?? 0,
             "physical_footprint_peak_bytes": memory.max() ?? 0, "samples": samples,
-            "method": "Public libproc task CPU nanosecond deltas over monotonic intervals; physical footprint; exact root identity and current-user descendants.",
+            "mach_timebase_numerator": timebase.numer, "mach_timebase_denominator": timebase.denom,
+            "method": "Public libproc task CPU Mach-tick deltas converted through mach_timebase_info over monotonic intervals; physical footprint; exact root identity and current-user descendants.",
             "limitations": "Children that exit between samples may be missed. New PIDs need a second sample for CPU deltas. Summed footprints can include shared accounting; this is not Energy Impact or a proof of no leaks."]
         let output = URL(fileURLWithPath: args[5])
         try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: output, options: .withoutOverwriting)

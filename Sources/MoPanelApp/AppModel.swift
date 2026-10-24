@@ -185,7 +185,7 @@ import MoPanelProcess
 
     func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     var colorScheme: ColorScheme? { appearance == "dark" ? .dark : appearance == "light" ? .light : nil }
-    var unavailable: String { t("不支援或尚未提供", "Unsupported or unavailable") }
+    var unavailable: String { t("暫無讀值", "No reading yet") }
     var scanActivityTitle: String {
         switch activeScanCommand {
         case .analyze: return t("正在分析磁碟", "Analyzing disk")
