@@ -45,6 +45,7 @@ struct ContentView: View {
                         Spacer(minLength: 12)
                         Button { model.error = nil } label: { Image(systemName: "xmark") }
                             .buttonStyle(.plain).accessibilityLabel(model.t("關閉錯誤訊息", "Dismiss error"))
+                            .accessibilityIdentifier("mopanel.error.dismiss")
                     }.padding(14).background(Color.orange.opacity(0.12))
                 }
                 if let busy = model.busy {
@@ -53,6 +54,7 @@ struct ContentView: View {
                         Text(busy).font(.caption.monospaced()).lineLimit(1)
                         Spacer()
                         Button(model.t("停止掃描", "Stop Scan")) { model.cancelScan() }
+                            .accessibilityIdentifier("mopanel.scan.stop")
                     }.padding(12).background(.thinMaterial)
                 }
                 if model.section == .settings { SettingsView() }
@@ -150,13 +152,16 @@ struct ConfirmationSheet: View {
             Text(pending.details).fixedSize(horizontal: false, vertical: true)
             Text(pending.invocation.displayCommand).font(.callout.monospaced()).textSelection(.enabled).padding(12).frame(maxWidth: .infinity, alignment: .leading).background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
             Toggle(model.t("我已檢查預覽，了解操作影響並要繼續。", "I reviewed the preview and understand the effect of this operation."), isOn: $acknowledged)
+                .accessibilityIdentifier("mopanel.confirmation.acknowledge")
             if pending.isRemoval { TextField("REMOVE", text: $removalText).textFieldStyle(.roundedBorder) }
             HStack {
                 Button(model.t("取消", "Cancel"), role: .cancel) { model.pending = nil }.keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier("mopanel.confirmation.cancel")
                 Spacer()
                 Button(model.t("繼續至官方操作", "Continue to Mole")) { model.confirmPending() }
                     .buttonStyle(.borderedProminent).tint(.orange)
                     .disabled(!acknowledged || (pending.isRemoval && removalText != "REMOVE"))
+                    .accessibilityIdentifier("mopanel.confirmation.continue")
             }
         }.padding(28).frame(width: 620)
     }
@@ -175,9 +180,11 @@ struct OperationSheet: View {
                 }
                 Spacer()
                 if session.running { ProgressView().controlSize(.small) }
-                Button(model.t("儲存此次輸出…", "Save Output…")) { model.exportOperationOutput() }.disabled(model.operationResult == nil)
+                Button(model.operationIsInteractive ? model.t("儲存執行摘要…", "Save Execution Summary…") : model.t("儲存此次輸出…", "Save Output…")) { model.exportOperationOutput() }.disabled(model.operationResult == nil)
                 Button(model.t("停止", "Stop"), role: .destructive) { stopping = true; session.cancel() }.disabled(!session.running || stopping)
+                    .accessibilityIdentifier("mopanel.operation.stop")
                 Button(model.t("關閉", "Close")) { model.showOperation = false; if model.section == .dashboard { model.startMonitoring() } }.disabled(session.running).keyboardShortcut(.cancelAction)
+                    .accessibilityIdentifier("mopanel.operation.close")
             }
             if model.operationWasPreview {
                 Notice(text: model.t("Dry Run 預覽：以官方畫面呈現項目、路徑、大小及略過原因。這不是已鎖定的刪除計畫，真正執行時 Mole 會重新檢查。", "Dry-run preview: Mole shows items, paths, sizes and skip reasons. This is not a locked deletion plan; Mole rechecks at execution."))
@@ -185,6 +192,7 @@ struct OperationSheet: View {
                 Notice(text: model.t("官方互動介面。可以使用下方按鈕或直接用鍵盤操作；管理員密碼由 CLI／macOS 處理。請看清楚畫面再確認。", "Official interactive interface. Use the buttons or your keyboard. CLI/macOS handles administrator authentication. Read each prompt before confirming."))
             }
             if model.operationIsInteractive {
+                Notice(text: model.t("互動終端內容只顯示在目前視窗，不保存在匯出檔案；匯出僅包含執行摘要。可在「操作歷史」查看 Mole 提供的紀錄，這些紀錄不是完整終端逐字稿。", "Interactive terminal content is shown in this window and is not stored in exports; the export contains an execution summary. History shows the records Mole provides, not a full terminal transcript."))
                 TerminalPanel(session: session, english: model.language == "en").frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black).clipShape(RoundedRectangle(cornerRadius: 10))
                 HStack {
@@ -199,6 +207,14 @@ struct OperationSheet: View {
             if let result = model.operationResult {
                 let text = result.cancelled ? model.t("已取消；已完成的步驟不會回復。", "Cancelled; completed steps are not rolled back.") : result.timedOut ? model.t("作業逾時，已停止子程序。", "Timed out; subprocesses were stopped.") : "Exit \(result.exitCode) · " + model.t("詳細結果請查看上方官方輸出及操作歷史。", "See Mole output and History for detailed results.")
                 Label(text, systemImage: result.succeeded ? "checkmark.circle" : "exclamationmark.circle").font(.callout)
+                if model.operationIsInteractive, !result.stderrText.isEmpty {
+                    DisclosureGroup(model.t("子程序管理診斷", "Subprocess Diagnostics")) {
+                        ScrollView {
+                            Text(String(TerminalText.plain(result.stderrText).prefix(16_384)))
+                                .font(.caption.monospaced()).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                        }.frame(maxHeight: 130)
+                    }
+                }
                 if result.outputTruncated { Notice(text: model.t("輸出超過安全上限，作業已停止，不能將這次結果視為完整。", "Output exceeded the safety limit. The operation was stopped; this result is incomplete."), warning: true) }
             }
             if stopping && session.running { Notice(text: model.t("正在要求官方程序停止。Slim 若正在替換 App，會先完成安全步驟；已完成的變更不會回復。", "Waiting for the official process to stop. Slim finishes an in-progress app replacement safely. Completed changes are not rolled back."), warning: true) }

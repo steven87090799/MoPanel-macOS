@@ -73,7 +73,25 @@ lines = ["# 實際建置與驗證報告", "", f"產生時間：{date}", "",
          "| 真實個人資料操作 | 未執行清理、卸載、最佳化或瘦身 |",
          "| UI 完整互動驗收 | Smoke test 不能代表每個按鈕、VoiceOver 與實機權限流程都已驗證 |",
          "| ZIP | 建置流程在封裝後解壓並驗證 manifest、結構與簽章；最終結果見外部 zip-verification.txt |",
-         "", "## CLI 相容性實測", ""]
+         "", "## 原生 UI 與安全系統 API 測試", ""]
+checks = smoke.get("checks", {})
+lines.append(f"- 本次 smoke 有 {sum(value is True for value in checks.values())}／{len(checks)} 項檢查通過；逐項布林結果見 smoke-test.json。")
+if checks.get("navigation_routes_selected_with_window_alive") is True:
+    lines.append(f"- 已依序選取 {len(smoke.get('navigation_sections_selected', []))} 個路由且視窗保持存活；這只能驗證路由切換存活，不證明每個頁面都完整或正確渲染。")
+native_ui = smoke.get("native_ui", {})
+if native_ui.get("passed") is True:
+    actions = native_ui.get("actions", [])
+    identifiers = {action.get("identifier") for action in actions}
+    lines.append(f"- 透過自身行程的公開 AppKit accessibility 介面，對 {len(identifiers)} 種明確識別的控制項執行 {len(actions)} 次按壓並驗證效果；沒有以直接呼叫 action 方法替代按壓。導覽準備仍使用 model state，不能稱為完整人工操作或所有按鈕的端到端驗收。")
+else:
+    lines.append("- 本次沒有通過自身行程的 accessibility 按鈕驗收；不宣稱已測試實際控制項按壓。")
+if checks.get("native_assertion_created_and_released") is True:
+    lines.append("- IOPM 防休眠 assertion 已實際建立、讀取、釋放並確認不存在。")
+if checks.get("native_clean_screen_windows_constructed_and_closed") is True:
+    lines.append("- 螢幕清潔 overlay 視窗已建立與關閉；測試未呈現全螢幕遮罩、攔截輸入或退出磁碟。")
+if checks.get("startup_mock_enable_disable_readback") is True:
+    lines.append("- Startup 的啟用／停用／回讀、取消與不明格式流程使用私有 mock 驗證；零真實 launchctl 變更或常駐 job。")
+lines += ["- 上述測試沒有要求外部 Accessibility／TCC 權限或注入實體輸入，也不代表真實清理、App 升級或硬體控制已驗證。", "", "## CLI 相容性實測", ""]
 for filename, label in [("cli-contract.json", "基準"), ("latest-cli-contract.json", "建置時最新穩定版")]:
     path = reports / filename
     if path.exists():
@@ -87,6 +105,10 @@ lines += ["", "## 原生擴充的唯讀平台契約", ""]
 homebrew_path = reports / "homebrew-readonly.json"
 if homebrew_path.exists():
     homebrew = json.loads(homebrew_path.read_text())
+    homebrew_test_log = (reports / "homebrew-audit-tests.log").read_text()
+    homebrew_test_count = re.search(r"Ran (\d+) tests? in", homebrew_test_log)
+    if not homebrew_test_count or not re.search(r"^OK\s*$", homebrew_test_log, re.MULTILINE) or re.search(r"^(FAILED|ERROR:)", homebrew_test_log, re.MULTILINE):
+        raise RuntimeError("Homebrew audit harness did not finish without failures/skips")
     if homebrew.get("status") not in {"passed", "read_only_compatible_upgrade_unavailable", "not_available"}:
         raise RuntimeError("Homebrew read-only audit did not reach a supported final state")
     if homebrew.get("mutations_executed") != [] or homebrew.get("real_app_updates_tested") is not False:
@@ -100,6 +122,9 @@ if homebrew_path.exists():
         lines.append("- Homebrew 升級參數：" + ("必要參數在 help 中可用。" if upgrade else "缺少必要參數，原生升級入口必須停用。") + "沒有執行 upgrade、update、install 或真實 App 更新。")
         if not contract["installed_record_fields_exercised"] or not contract["outdated_record_fields_exercised"]:
             lines.append("- Runner 沒有涵蓋全部非空記錄類型；空陣列僅驗證 JSON 外層，不能當成實際 App 更新成功。詳細限制見 homebrew-readonly.json。")
+        if homebrew.get("caskroom_contract", {}).get("installed_recipe_files_audited") is False:
+            lines.append("- caskroom 位置介面已探測，但沒有讀取 runner 的舊安裝 recipe／receipt；這些安全拒絕條件由隔離 Swift fixture 驗證，不能視為真實舊 App 升級驗收。")
+    lines.append(f"- Homebrew audit harness：{homebrew_test_count.group(1)} 個隔離案例通過，0 failures／skipped。")
 else:
     lines.append("- Homebrew：本次沒有唯讀平台探測報告，不宣稱已驗證。")
 platform_path = reports / "platform-contracts.json"
@@ -112,7 +137,8 @@ if platform_path.exists():
     lines.append("- 未執行 launchctl 啟用、停用、載入或卸載；未讀取或修改私有 BTM 資料庫。")
 else:
     lines.append("- launchctl：本次沒有唯讀格式樣本，不宣稱已驗證。")
-lines += ["", "## Fixture 效能取樣", "", "以下使用合成資料，量測 GUI 與 Mock CLI，不代表真實 CLI 大型磁碟成本。CPU 是 ps 的程序平均值，峰值是觀察樣本最大值。", "",
+lines += ["", "## Fixture 效能取樣", "", "以下使用合成資料，量測 GUI 與 Mock CLI，不代表真實 CLI 大型磁碟成本。CPU 是 ps 的程序存活期平均值，峰值是觀察樣本最大值。", "",
+          "兩組效能表的 RSS 都將 GUI 與觀察到的子程序相加，共用頁面可能被重複計算；不是唯一實體記憶體占用，也不等同活動監視器的記憶體壓力。", "",
           "| 狀態 | 平均 CPU % | 峰值 CPU % | 平均 RSS MiB | 峰值 RSS MiB |", "|---|---:|---:|---:|---:|"]
 for mode in performance["modes"]:
     lines.append(f"| {mode['mode']} | {mode['cpu_mean_percent']:.3f} | {mode['cpu_peak_percent']:.3f} | "

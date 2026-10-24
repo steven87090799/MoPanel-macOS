@@ -4,6 +4,7 @@
 import json
 import os
 import pathlib
+import signal
 import subprocess
 import sys
 import unittest
@@ -50,6 +51,16 @@ class HomebrewAuditTests(unittest.TestCase):
                     audit.invoke(args, [])
             popen.assert_not_called()
 
+    def test_caskroom_contract_requires_one_path_and_does_not_retain_it(self):
+        result = audit.validate_caskroom(b"/opt/homebrew/Caskroom\n")
+        self.assertTrue(result["single_absolute_path"])
+        self.assertFalse(result["raw_path_retained"])
+        self.assertFalse(result["installed_recipe_files_audited"])
+        self.assertNotIn("/opt/homebrew", json.dumps(result))
+        for value in (b"relative", b"/one\n/two\n", b"/one\0", b""):
+            with self.assertRaises(audit.AuditFailure):
+                audit.validate_caskroom(value)
+
     def test_environment_does_not_forward_tokens_or_homebrew_hooks(self):
         with mock.patch.dict(os.environ, {"GITHUB_TOKEN": "private", "AWS_SECRET_ACCESS_KEY": "private", "BASH_ENV": "/evil",
                                          "HOMEBREW_API_DOMAIN": "https://attacker.invalid", "HOMEBREW_NO_ANALYTICS": "0"}):
@@ -79,6 +90,46 @@ class HomebrewAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(audit.AuditFailure, "command_timeout"):
             audit.bounded_output(process, 0.1, 1024)
         self.assertIsNotNone(process.poll())
+
+    def test_darwin_zombie_permission_race_reaps_then_rechecks_group(self):
+        process = mock.Mock(pid=12345)
+        # TERM succeeds, the process exits between poll and the first probe,
+        # and a later poll reaps it so the process group disappears.
+        with mock.patch.object(audit.os, "killpg", side_effect=[None, PermissionError(1, "denied"), ProcessLookupError(3, "gone")]) as killpg:
+            audit.stop_group(process, grace_seconds=0.1)
+        self.assertEqual(killpg.call_args_list, [mock.call(12345, signal.SIGTERM), mock.call(12345, 0), mock.call(12345, 0)])
+        self.assertGreaterEqual(process.poll.call_count, 3)
+        process.wait.assert_called_once_with(timeout=3)
+
+    def test_darwin_zombie_during_term_is_not_assumed_absent(self):
+        process = mock.Mock(pid=12345)
+        with mock.patch.object(audit.os, "killpg", side_effect=[PermissionError(1, "denied"), ProcessLookupError(3, "gone")]) as killpg:
+            audit.stop_group(process, grace_seconds=0)
+        self.assertEqual(killpg.call_args_list, [mock.call(12345, signal.SIGTERM), mock.call(12345, 0)])
+        process.wait.assert_called_once_with(timeout=3)
+
+    def test_persistent_group_permission_failure_is_not_hidden(self):
+        process = mock.Mock(pid=12345)
+        with mock.patch.object(audit.os, "killpg", side_effect=PermissionError(1, "denied")) as killpg:
+            with self.assertRaisesRegex(audit.AuditFailure, "^command_cleanup_permission_denied$"):
+                audit.stop_group(process, grace_seconds=0)
+        self.assertIn(mock.call(12345, signal.SIGKILL), killpg.call_args_list)
+        process.wait.assert_called_once_with(timeout=3)
+
+    def test_absent_group_still_reaps_direct_child(self):
+        process = mock.Mock(pid=12345)
+        with mock.patch.object(audit.os, "killpg", side_effect=ProcessLookupError(3, "gone")):
+            audit.stop_group(process)
+        process.wait.assert_called_once_with(timeout=3)
+
+    def test_cleanup_failure_still_closes_both_pipes(self):
+        process = self.child("pass")
+        with mock.patch.object(audit, "stop_group", side_effect=audit.AuditFailure("command_cleanup_permission_denied")):
+            with self.assertRaisesRegex(audit.AuditFailure, "command_cleanup_permission_denied"):
+                audit.bounded_output(process, 3, 1024)
+        self.assertEqual(process.returncode, 0)
+        self.assertTrue(process.stdout.closed)
+        self.assertTrue(process.stderr.closed)
 
     def test_non_ci_environment_never_launches_homebrew(self):
         with mock.patch.object(audit.platform, "system", return_value="Linux"), mock.patch.object(audit.subprocess, "Popen") as popen:

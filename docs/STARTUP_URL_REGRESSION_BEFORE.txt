@@ -1,0 +1,46 @@
+[0/1] Planning build
+Building for debugging...
+[0/13] Write sources
+[2/13] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/14] Compiling MoPanelCore BrewInstalledReceipt.swift
+[5/14] Compiling MoPanelCore AppUpdateModels.swift
+[6/14] Emitting module MoPanelCore
+[7/15] Wrapping AST for MoPanelCore for debugging
+[9/22] Compiling MoPanelCoreTests DiscoveryTests.swift
+[10/22] Compiling MoPanelCoreTests MoleCoreTests.swift
+[11/22] Compiling MoPanelCoreTests AppUpdateTests.swift
+[12/22] Compiling MoPanelCoreTests BrewInstalledReceiptTests.swift
+[13/22] Emitting module MoPanelCoreTests
+[14/22] Compiling MoPanelCoreTests NativeControlPolicyTests.swift
+[15/22] Compiling MoPanelCoreTests ReadOnlyBenchmarkTests.swift
+[16/24] Compiling MoPanelCoreTests StartupModelsTests.swift
+[17/24] Compiling MoPanelCoreTests SystemToolsPolicyTests.swift
+[18/25] /tmp/mopanel-startup-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[19/26] Write sources
+[20/26] Wrapping AST for MoPanelCoreTests for debugging
+[22/30] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[23/30] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[24/30] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[25/30] Emitting module MoPanelPackageDiscoveredTests
+[26/31] /tmp/mopanel-startup-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[27/32] Write sources
+[28/32] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[30/34] Emitting module MoPanelPackageTests
+[31/34] Compiling MoPanelPackageTests runner.swift
+[32/34] Write Objects.LinkFileList
+[33/34] Linking MoPanelPackageTests.xctest
+Build complete! (5.03s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-24 15:27:22.265
+Test Suite 'StartupModelsTests' started at 2026-10-24 15:27:22.266
+Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' started at 2026-10-24 15:27:22.266
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelCoreTests/StartupModelsTests.swift:147: error: StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically : XCTAssertEqual failed: ("0") is not equal to ("1") - URL=file:///tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/; standardized=file:///tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/; objectEquality=false; resolvedPath=/tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884; warnings=["Unsafe or symbolic startup directory: /tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884"]; errors=[]
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelCoreTests/StartupModelsTests.swift:148: error: StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically : XCTAssertEqual failed: ("nil") is not equal to ("Optional("/tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/com.example.safe.plist")") - URL=file:///tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/; standardized=file:///tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/; objectEquality=false; resolvedPath=/tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884; warnings=["Unsafe or symbolic startup directory: /tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884"]; errors=[]
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelCoreTests/StartupModelsTests.swift:149: error: StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically : XCTAssertTrue failed - URL=file:///tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/; standardized=file:///tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884/; objectEquality=false; resolvedPath=/tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884; warnings=["Unsafe or symbolic startup directory: /tmp/MoPanelStartup-8864F06D-370B-4C42-86FA-1D9C8E5A3884"]; errors=[]
+Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' failed (0.006 seconds)
+Test Suite 'StartupModelsTests' failed at 2026-10-24 15:27:22.272
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'Selected tests' failed at 2026-10-24 15:27:22.272
+	 Executed 1 test, with 3 failures (0 unexpected) in 0.006 (0.006) seconds
+Note: Some test targets reported failures:
+  - MoPanelPackageTests (XCTest)

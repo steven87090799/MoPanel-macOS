@@ -22,14 +22,14 @@ MoPanel 是非官方原生 GUI。官方 Mole CLI 仍負責其清理、卸載、�
 | 程序執行與輸出限制 | 安全 argv、受控環境變數、逾時、非零退出、bounded output、單一 Watch | `Sources/MoPanelProcess/ManagedProcess.swift` | 不使用 shell 拼接使用者參數；不記錄輸入。互動輸出是否 echo 由終端／CLI 控制，密碼遵循原 sudo 的無 echo 流程 |
 | 程序生命週期 guardian | GUI 消失後處理其所啟動程序；正常取消與逾時有訊號策略 | `Sources/MoPanelGuardian/main.c` | 非 root、非常駐安裝服務。Slim 實際替換階段採合作式取消，不保證兩秒強殺；可能等官方安全邊界後退出 |
 | Purge 原生路徑編輯器 | 加入資料夾、編輯／儲存／取消，不必操作 vim | `Sources/MoPanelEditor/main.swift`、`PurgePathsDocument.swift` | 透過官方 `EDITOR` 擴充點。限制正式使用者設定檔、擋 symlink、容量上限、檢查外部修改；不是修改掃描引擎 |
-| 操作紀錄與匯出 | 查看執行入口、結果，使用者明確選擇後儲存此次輸出 | `OperationExport.swift`、`AppModel.swift`、`SettingsView.swift` | 不記錄鍵盤／密碼輸入；互動輸出不是完整可機器判讀的清理計畫。輸出可能含使用者檔案路徑，匯出由使用者自行決定 |
+| 操作紀錄與匯出 | 查看入口與結果；非互動輸出可匯出，互動作業只匯出執行摘要 | `OperationExport.swift`、`AppModel.swift`、`SettingsView.swift` | 不記錄鍵盤／密碼輸入，不保留完整 PTY 逐字日誌。互動內容只在終端有限回捲；Mole 自己的可用歷史另列。含路徑的非互動輸出由使用者決定是否匯出 |
 | 權限與安裝引導 | 缺 CLI、無 FDA、來源不明、相容性錯誤、官方安裝及更新入口 | `SettingsView.swift`、`CLIProbe.swift` | 不代替系統授權，不偷偷下載執行腳本，不停用 Gatekeeper |
 | Keep Awake | 原生顯示／系統閒置喚醒、可選時限、低電量暫停、接電續行、停止／睡眠／退出釋放 | `SystemToolsController.swift`、`SystemToolsPolicy.swift` | **MoPanel 新實作**，使用 IOPMAssertion；不保證關蓋、不跨重啟恢復、不改 pmset。7 個政策測試通過；IOKit 實機 smoke 待 CI |
 | Clean Screen | 原生多螢幕純色遮罩、Esc／按鈕／切換 App／5分鐘保底退出 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**，沒有全域輸入鎖，不需要輔助使用授權；尚待 AppKit 實際事件與多螢幕驗收 |
 | 外接磁碟退出 | 讀掛載中繼資料、保護根／內建／家目錄／App 所在磁碟、確認後交給 NSWorkspace | `SystemToolsController.swift`、`SystemToolsPolicy.swift` | **MoPanel 新實作**，無強制退出；純政策已測，CI 不退出任何真實 volume |
 | Doctor 唯讀報告 | 明確來源的 OS／硬體／電源／顯示器／磁碟中繼資料，可複製或儲存 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**；不掃描目錄內容、不探測私人檔案，不知道的 FDA／安全狀態明示未檢查，非官方完整 Doctor |
 | App Updates | Homebrew 結構化版本、官方預覽、逐項確認、計畫重驗及結果；其他 App 來源辨識與 handoff | `AppUpdatesController.swift`、`AppUpdatesView.swift`、`AppUpdateModels.swift` | **MoPanel 新實作**；直接更新僅符合安全條件的一般官方 cask。Sparkle／App Store 不代管下載安裝；詳見 APP_UPDATES.md |
-| Startup | 有界 plist 清單、搜尋、來源、實際狀態、受保護 user LaunchAgent 預覽與確認 | `StartupController.swift`、`StartupView.swift`、`StartupModels.swift` | **MoPanel 新實作**；不刪 plist、不用 sudo、不讀私有 BTM DB；系統與其他登入項目交由系統設定。11項Core測試與隔離mock流程，真Mac結果以Reports為準 |
+| Startup | 有界 plist 清單、搜尋、來源、實際狀態、受保護 user LaunchAgent 預覽與確認 | `StartupController.swift`、`StartupView.swift`、`StartupModels.swift` | **MoPanel 新實作**；不刪 plist、不用 sudo、不讀私有 BTM DB；系統與其他登入項目交由系統設定。14項Core測試與隔離mock流程，真Mac結果以Reports為準 |
 | 選單列監控 | 預設關閉；CPU／記憶體／健康／網速，與總覽共用同一個 watch，手動暫停與 App 退出停止 | `MenuBarPanel.swift`、`AppModel.swift`、`NativeControlPolicy.swift` | **MoPanel 新實作**；沒有另開監控程序、沒有 Login Item、沒有隱藏 Dock。Mac 實際結果以 Reports 為準 |
 | 行程搜尋／排序／置頂及 App 結束要求 | 官方 top-process 樣本；確認前後核對 App 身分與樣本時效，AppKit 一般或強制結束 | `ProcessInspectorView.swift`、`NativeControlPolicy.swift` | **MoPanel 新實作**；7 項政策測試通過，不對未知 PID、系統 App 或背景程序傳送終止訊號。未實測結束真實使用者 App，非所有程序控制對等 |
 | 測試與打包工具 | Mock CLI、schema fixtures、程序生命週期測試、ARM64 簽章／ZIP 驗證流程 | `Tests/`、`scripts/`、`.github/workflows/` | 僅測試模式使用合成資料；正式 UI 不以 fixture 當 fallback。成功必須由實際 run 證明 |

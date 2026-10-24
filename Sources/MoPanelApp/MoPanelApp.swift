@@ -14,22 +14,26 @@ import Darwin
                 .environmentObject(appUpdates).environmentObject(startup).preferredColorScheme(model.colorScheme)
                 .frame(minWidth: 1000, minHeight: 700)
                 .onAppear {
-                    delegate.model = model
-                    delegate.systemTools = systemTools
-                    delegate.appUpdates = appUpdates
-                    delegate.startup = startup
-                    systemTools.language = model.language
-                    model.nativeOperationInProgress = { [weak systemTools, weak appUpdates, weak startup] in
-                        systemTools?.ejectingVolumeID != nil || appUpdates?.isBusy == true || startup?.isBusy == true
+                    // Bind references before nested weak captures; do not capture
+                    // SwiftUI's StateObject storage through an outer App value.
+                    let appModel = model, toolsController = systemTools
+                    let updatesController = appUpdates, startupController = startup
+                    delegate.model = appModel
+                    delegate.systemTools = toolsController
+                    delegate.appUpdates = updatesController
+                    delegate.startup = startupController
+                    toolsController.language = appModel.language
+                    appModel.nativeOperationInProgress = { [weak toolsController, weak updatesController, weak startupController] in
+                        toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true || startupController?.isBusy == true
                     }
-                    systemTools.externalOperationInProgress = { [weak model, weak appUpdates, weak startup] in
-                        model?.moleOperationInProgress == true || model?.isDetecting == true || appUpdates?.isBusy == true || startup?.isBusy == true
+                    toolsController.externalOperationInProgress = { [weak appModel, weak updatesController, weak startupController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || updatesController?.isBusy == true || startupController?.isBusy == true
                     }
-                    appUpdates.externalOperationInProgress = { [weak model, weak systemTools, weak startup] in
-                        model?.moleOperationInProgress == true || model?.isDetecting == true || systemTools?.ejectingVolumeID != nil || startup?.isBusy == true
+                    updatesController.externalOperationInProgress = { [weak appModel, weak toolsController, weak startupController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || startupController?.isBusy == true
                     }
-                    startup.externalOperationInProgress = { [weak model, weak systemTools, weak appUpdates] in
-                        model?.moleOperationInProgress == true || model?.isDetecting == true || systemTools?.ejectingVolumeID != nil || appUpdates?.isBusy == true
+                    startupController.externalOperationInProgress = { [weak appModel, weak toolsController, weak updatesController] in
+                        appModel?.moleOperationInProgress == true || appModel?.isDetecting == true || toolsController?.ejectingVolumeID != nil || updatesController?.isBusy == true
                     }
                     NSApplication.shared.setActivationPolicy(.regular)
                     NSApplication.shared.activate()
@@ -88,7 +92,11 @@ import Darwin
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if let model, model.hasRunningOperation, !model.fixtureMode {
+        // Once the last content window has closed, cancelling termination would
+        // leave a windowless cleaner. Closing that window therefore stops the
+        // app; a normal Quit while a window remains can still be cancelled.
+        let hasContentWindow = sender.windows.contains { $0.isVisible && !$0.isSheet && $0.styleMask.contains(.titled) }
+        if let model, model.hasRunningOperation, !model.fixtureMode, hasContentWindow {
             let alert = NSAlert()
             alert.messageText = model.t("停止作業並離開？", "Stop the operation and quit?")
             alert.informativeText = model.t("已完成的變更不會自動回復。MoPanel 將要求受控子程序停止；Slim 與 Homebrew 更新若正在替換或回復 App，可能需要等待安全步驟完成。", "Completed changes are not automatically reversed. MoPanel requests cancellation of controlled subprocesses. Slim and Homebrew updates may need to finish an app replacement or rollback safely.")

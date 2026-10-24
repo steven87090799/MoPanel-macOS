@@ -31,6 +31,7 @@ public enum BrewHelpCommand: String, Sendable { case info, outdated, upgrade, up
 public enum BrewUpdateCommand: Sendable {
     case version, installedInfo, outdated, refreshMetadata
     case help(BrewHelpCommand)
+    case caskroom(BrewCaskIdentity)
     case preview(BrewCaskIdentity)
     case upgrade(BrewCaskIdentity)
 
@@ -41,6 +42,7 @@ public enum BrewUpdateCommand: Sendable {
         case .outdated: return ["outdated", "--cask", "--json=v2"]
         case .refreshMetadata: return ["update"]
         case .help(let command): return [command.rawValue, "--help"]
+        case .caskroom(let identity): return ["--caskroom", identity.qualifiedToken]
         case .preview(let identity): return ["upgrade", "--cask", "--no-quit", "--require-sha", "--dry-run", identity.qualifiedToken]
         case .upgrade(let identity): return ["upgrade", "--cask", "--no-quit", "--require-sha", identity.qualifiedToken]
         }
@@ -72,14 +74,42 @@ public struct BrewAppArtifact: Decodable, Equatable, Sendable {
     public let isApplication: Bool
     public let target: String?
     public let kinds: Set<String>
+    public let appDirective: BrewAppDirective?
     private struct Key: CodingKey { let stringValue: String; let intValue: Int? = nil; init?(stringValue: String) { self.stringValue = stringValue }; init?(intValue: Int) { return nil } }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: Key.self)
         kinds = Set(values.allKeys.map(\.stringValue)).subtracting(["target"])
         isApplication = kinds.contains("app")
         target = try values.decodeIfPresent(String.self, forKey: Key(stringValue: "target")!)
+        appDirective = try? values.decode(BrewAppDirective.self, forKey: Key(stringValue: "app")!)
     }
     public var supportsDirectUpgrade: Bool { !kinds.isEmpty && kinds.isSubset(of: ["app", "binary", "manpage", "zap"]) }
+}
+
+/// The app stanza's literal source and optional rename. Retaining both lets the
+/// installed receipt be compared with current metadata without guessing paths.
+public struct BrewAppDirective: Decodable, Equatable, Sendable {
+    public let source: String
+    public let renamedTarget: String?
+
+    public init(from decoder: Decoder) throws {
+        var values = try decoder.unkeyedContainer()
+        guard values.count == 1 || values.count == 2 else { throw MoleError.invalidOutput("Unsupported Homebrew app directive.") }
+        source = try values.decode(String.self)
+        if values.isAtEnd { renamedTarget = nil }
+        else {
+            let options = try values.decode([String: String].self)
+            guard Set(options.keys) == ["target"] else { throw MoleError.invalidOutput("Unknown Homebrew app directive option.") }
+            renamedTarget = options["target"]
+        }
+        for value in [source, renamedTarget].compactMap({ $0 }) {
+            guard !value.isEmpty, value.utf8.count <= 32768, !value.hasPrefix("/"),
+                  !value.split(separator: "/", omittingEmptySubsequences: false).contains(".."),
+                  !value.unicodeScalars.contains(where: { $0.value < 32 || (127...159).contains($0.value) }) else {
+                throw MoleError.invalidOutput("Unsupported Homebrew app directive path.")
+            }
+        }
+    }
 }
 
 public struct BrewCaskDependencies: Decodable, Equatable, Sendable {
@@ -129,6 +159,7 @@ public struct BrewInstalledCask: Decodable, Equatable, Sendable {
     public var supportsDirectUpgrade: Bool {
         guard tap == "homebrew/cask", let artifacts, artifacts.contains(where: \.isApplication),
               artifacts.allSatisfy(\.supportsDirectUpgrade), dependencies?.hasPackageDependencies != true,
+              artifacts.filter(\.isApplication).allSatisfy({ $0.appDirective != nil }),
               applicationPaths.count == artifacts.filter(\.isApplication).count,
               let sha256, sha256.count == 64, sha256.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else { return false }
         return true

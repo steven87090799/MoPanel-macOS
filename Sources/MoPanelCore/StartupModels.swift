@@ -113,7 +113,11 @@ public enum StartupInventoryReader {
                 if errno != ENOENT { warnings.append("Cannot read \(folder.url.path)") }
                 continue
             }
-            guard isDirectory(rootStat), folder.url.standardizedFileURL == folder.url,
+            // URL equality includes representation details (base URL and
+            // directory hint/trailing slash), not just the filesystem path.
+            // Compare canonical paths while keeping lstat and symlink checks.
+            guard folder.url.isFileURL, isDirectory(rootStat),
+                  folder.url.standardizedFileURL.path == folder.url.path,
                   folder.url.resolvingSymlinksInPath().path == folder.url.path else {
                 warnings.append("Unsafe or symbolic startup directory: \(folder.url.path)"); continue
             }

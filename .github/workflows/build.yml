@@ -17,6 +17,11 @@ jobs:
     # Official ARM64 image, macOS 27 with Xcode 27; see docs/BUILD_ENVIRONMENT.md.
     runs-on: xcode-27
     timeout-minutes: 30
+    defaults:
+      run:
+        # An explicit bash shell enables GitHub's -e -o pipefail invocation.
+        # Preserve test failures even when stdout/stderr is archived with tee.
+        shell: bash
     steps:
       - name: Check out MoPanel
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

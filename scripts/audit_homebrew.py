@@ -32,6 +32,7 @@ PROTECTIVE_ENV = {
 }
 ALLOWED = frozenset({
     ("--version",),
+    ("--caskroom",),
     ("info", "--help"), ("outdated", "--help"),
     ("upgrade", "--help"), ("update", "--help"),
     ("info", "--json=v2", "--cask", "--installed"),
@@ -53,27 +54,59 @@ def safe_environment():
     }
 
 
-def stop_group(process):
-    """Only used for this audit's read-only child process group."""
+def stop_group(process, grace_seconds=2):
+    """Stop only this audit's read-only group, and always reap its direct child.
+
+    Darwin's killpg1 filters zombies and can return EPERM while the last member
+    is exiting. Reap and probe again within a deadline; EPERM alone never means
+    the group is gone. Persistent permission failures remain audit failures.
+    See apple-oss-distributions/xnu, bsd/kern/kern_sig.c, killpg1.
+    """
+    def wait_for_group_exit():
+        deadline = time.monotonic() + grace_seconds
+        while True:
+            process.poll()
+            try:
+                os.killpg(process.pid, 0)
+            except ProcessLookupError:
+                return True
+            except PermissionError:
+                # This may be an unreaped Darwin zombie or a real permission
+                # failure. Only ESRCH on a later probe establishes absence.
+                pass
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            time.sleep(min(0.05, remaining))
+
+    cleanup_error = None
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        return
-    deadline = time.monotonic() + 2
-    while time.monotonic() < deadline:
         process.poll()
+        group_gone = False
         try:
-            os.killpg(process.pid, 0)
+            os.killpg(process.pid, signal.SIGTERM)
         except ProcessLookupError:
-            break
-        time.sleep(0.05)
-    else:
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
+            group_gone = True
+        except PermissionError:
+            # Reaping can resolve the Darwin last-member exit race.
             pass
-    if process.poll() is None:
-        process.wait(timeout=3)
+        if not group_gone and not wait_for_group_exit():
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except PermissionError:
+                if not wait_for_group_exit():
+                    cleanup_error = AuditFailure("command_cleanup_permission_denied")
+    finally:
+        # Even an already-absent group may leave a waitable direct child.
+        try:
+            process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            if cleanup_error is None:
+                cleanup_error = AuditFailure("command_cleanup_timeout")
+    if cleanup_error is not None:
+        raise cleanup_error
 
 
 def bounded_output(process, timeout, limit=MAX_OUTPUT):
@@ -112,9 +145,11 @@ def bounded_output(process, timeout, limit=MAX_OUTPUT):
     finally:
         # A launcher may have exited while descendants still hold its pipes.
         # The owned process group, not only the direct parent, must be stopped.
-        stop_group(process)
-        for name in buffers:
-            getattr(process, name).close()
+        try:
+            stop_group(process)
+        finally:
+            for name in buffers:
+                getattr(process, name).close()
 
 
 def invoke(arguments, reports, timeout=120, limit=MAX_OUTPUT):
@@ -164,6 +199,15 @@ def help_contract(helps):
 
 def valid_text(value):
     return isinstance(value, str) and 0 < len(value.encode("utf-8")) <= 32768 and all(ord(c) >= 32 and not 127 <= ord(c) <= 159 for c in value)
+
+
+def validate_caskroom(payload):
+    value = payload.decode("utf-8", errors="strict")
+    value = value[:-1] if value.endswith("\n") else value
+    if not valid_text(value) or not value.startswith("/"):
+        raise AuditFailure("invalid_caskroom_path")
+    return {"single_absolute_path": True, "raw_path_retained": False,
+            "installed_recipe_files_audited": False}
 
 
 def parse_envelope(payload):
@@ -265,6 +309,7 @@ def audit():
         if not first_line.startswith("Homebrew ") or not valid_text(first_line) or len(first_line) > 256:
             raise AuditFailure("invalid_homebrew_version_header")
         result["brew_version"] = first_line
+        result["caskroom_contract"] = validate_caskroom(invoke(("--caskroom",), result["commands"], timeout=45, limit=32768))
         helps = {name: invoke((name, "--help"), result["commands"], timeout=60, limit=1024 * 1024).decode("utf-8", errors="strict") for name in ("info", "outdated", "upgrade", "update")}
         result["capabilities"] = help_contract(helps)
         if not result["capabilities"]["read_contract_compatible"]:
@@ -272,6 +317,7 @@ def audit():
         info = invoke(("info", "--json=v2", "--cask", "--installed"), result["commands"])
         outdated = invoke(("outdated", "--cask", "--json=v2"), result["commands"])
         result["json_contract"] = validate_snapshot(info, outdated)
+        result["limitations"].append("Caskroom path protocol was observed; installed recipe and receipt safety is tested with isolated fixtures, not live app upgrades.")
         if not result["json_contract"]["installed_record_fields_exercised"]:
             result["limitations"].append("Runner has no installed casks; live JSON validates envelopes only. Record fields are covered by separate synthetic fixtures.")
         if not result["json_contract"]["outdated_record_fields_exercised"]:

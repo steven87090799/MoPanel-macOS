@@ -10,8 +10,9 @@
 | cask 版本清單 | `brew info --json=v2 --cask --installed` 與 `brew outdated --cask --json=v2` | 嚴格解析、以 token/tap 綁定，不使用 App 顯示名稱猜測；兩份資料不一致時拒絕 |
 | App 路徑 | Homebrew JSON artifact 的明確 `target` | 支援自訂 appdir；沒有 target 就標未提供，不拼接 `/Applications/<name>.app` |
 | 搜尋、篩選 | 原生 SwiftUI、LazyVStack | 搜尋名稱、cask 與路徑；篩選不會改變任何安裝計畫 |
-| 單一 App 更新預覽 | `brew upgrade --cask --no-quit --require-sha --dry-run <tap/token>` | 先讀取新 JSON 並確認 App 沒在執行，再顯示原始官方預覽；不解析預覽文字猜測索引 |
-| 確認更新 | 同一 typed argv，移除 `--dry-run`；ManagedProcess + 原生內嵌 PTY | 明確逐項確認，確認前再次檢查來源、版本、路徑、checksum、可用參數、Homebrew launcher 與 App 執行狀態 |
+| 安裝時配方驗證 | `brew --caskroom <tap/token>` 與本機 compact JSON、`INSTALL_RECEIPT.json`、`config.json` | 純唯讀；拒絕 Ruby、內部／未知 JSON、symlink、非使用者擁有、容量超限、歧義紀錄及舊版卸載 hook；不執行配方原始碼 |
+| 單一 App 更新預覽 | `brew upgrade --cask --no-quit --require-sha --dry-run <tap/token>` | 先驗證新舊配方與 App 執行狀態，Dry Run 前後比對收據，再顯示原始官方預覽；不解析預覽文字猜測索引 |
+| 確認更新 | 同一 typed argv，移除 `--dry-run`；ManagedProcess + 原生內嵌 PTY | 明確逐項確認，確認後再次檢查來源、版本、路徑、checksum、可用參數、Homebrew launcher、安裝收據／設定及 App 執行狀態 |
 | 更新後驗證 | 再讀 `info` 與 `outdated` | Exit 0 與安裝版本符合預覽分別判定；不能確認時不宣稱更新成功 |
 | 更新 Homebrew／索引 | 額外確認後執行 `brew update` | 明確說明會更新 Homebrew 本身、既有 taps、索引，可能做資料遷移；之後需重新偵測及檢查 |
 | 其他 App 來源 | 讀 `/Applications`、`~/Applications` 下的 Info.plist、收據存在與相關簽章 | 深度與數量有上限，忽略 package 內嵌 App；不搜尋個人文件、不上傳整份 App 清單 |
@@ -26,7 +27,9 @@
 
 含 `pkg`、`installer`、preflight/postflight、uninstall hook、未知 artifact、套件相依，或第三方 tap 的項目仍會顯示版本，但不提供直接更新按鈕。釘選、停用、無法比較的 `latest` 版本、缺少 checksum、缺少 target 或不相容 help 也不直接更新。這些項目需由原 App 或 Homebrew 自己處理；這個版本沒有宣稱已完成任意供應商更新器的安全自動化。
 
-Homebrew 會依自己已安裝的配方與實作完成替換、驗證、下載及回復。MoPanel 的現行 JSON 檢查不能保證歷史 cask recipe 沒有 hook，也不能提供原子交易或完整回復保證。更新前仍應儲存工作，並保持必要備份。
+Homebrew 的 upgrade 會載入 **安裝時的舊配方**，並呼叫該配方的 `uninstall_artifacts`。因此只驗證目前 info JSON 不足以排除舊版 hook。MoPanel 在執行 Dry Run 之前，就讀取官方 `--caskroom` 回傳的確切位置，只接受唯一版本／timestamp 下的 compact JSON 配方，另驗證 `INSTALL_RECEIPT.json` 的 tap、version、source identity、`uninstall_flight_blocks` 與 `uninstall_artifacts`。新舊 App source／rename 必須相同，JSON 的既有明確 target 也必須與保存的 appdir 相符。缺少或無法辨識資料、Ruby／內部 JSON、舊版 hook、多個候選、symlink、非使用者擁有或可由所有人寫入的檔案／目錄，都會停止直接更新，保留版本清單與來源 handoff。
+
+每個配方／收據／設定檔至多 1 MiB，使用 `O_NOFOLLOW`、regular-file／owner 檢查及有界讀取；不 eval Ruby，不把預覽文字當選取計畫。確認頁保留這三份本機資料的精確快照，在官方 Dry Run 後及使用者確認後重新讀取比對。這不會建立 Homebrew 的原子交易，也不保證中途取消能完整回復。更新前仍應儲存工作，並保持必要備份。
 
 ## 同意與狀態一致性
 
@@ -61,20 +64,22 @@ App Store 收據檔案存在是本機來源線索，不代表 MoPanel 驗證了�
 | 檔案 | 職責 |
 |---|---|
 | `Sources/MoPanelCore/AppUpdateModels.swift` | typed cask identity、命令白名單、能力協商、嚴格 JSON、更新計畫與 URL 政策、Homebrew layout |
+| `Sources/MoPanelCore/BrewInstalledReceipt.swift` | 唯讀舊配方／收據／設定驗證、來源與 App directive 一致性、bounded owned regular file 讀取 |
 | `Sources/MoPanelApp/AppUpdatesController.swift` | 明確觸發的偵測／查詢／預覽／確認、程序生命週期、簽章與本機 App 來源 |
 | `Sources/MoPanelApp/AppUpdatesView.swift` | 原生列表、搜尋、完整狀態、確認、Homebrew 互動輸出、App Store／Sparkle handoff |
 | `Sources/MoPanelProcess/ManagedProcess.swift` | 固定值 Homebrew 環境防護與既有子程序管理 |
 | `Sources/MoPanelTerminal/TerminalPanel.swift` | engineName 參數，讓 Homebrew 互動介面不再誤標為 Mole |
 | `Tests/MoPanelCoreTests/AppUpdateTests.swift` | 合成 JSON fixtures、schema 變更、身份歧義、命令注入、計畫漂移、腳本／相依限制、feed URL、路徑、5,000 項清單 |
+| `Tests/MoPanelCoreTests/BrewInstalledReceiptTests.swift` | 舊 hook、舊 Ruby、來源／版本／App rename 漂移、缺失／未知格式、歧義、symlink／權限／大小界限與收據改變 |
 | `Tests/MoPanelProcessTests/ManagedProcessTests.swift` | 只允許固定保護值1、拒絕任意 Homebrew env／mirror／hook |
 | `scripts/audit_homebrew.py` | 真實 ARM64 macOS GitHub CI 的既有 Homebrew 版本/help/JSON 唯讀協定稽核 |
 | `scripts/test_audit_homebrew.py` | 稽核腳本命令白名單、環境隔離、格式、串流界限／逾時的合成測試 |
 
 本機執行結果保留在 `docs/APP_UPDATES_TEST_OUTPUT.txt`；這些是模型／安全政策與 process 環境測試。沒有在開發者或使用者 Mac 上真的升級任何 App。完整 macOS 編譯、啟動與本機 API 結果以該次發行的 `TEST_REPORT.md` 及 CI artifacts 為準；不能用 Linux 的 Swift parse 代替 Apple SDK typecheck。
 
-2026-10-24 本機實際執行：App Updates 18 個 XCTest 與 Homebrew 環境 2 個 XCTest 全數通過、0 skip；另外 9 個稽核腳本測試通過，原始輸出為 `docs/HOMEBREW_AUDIT_TEST_OUTPUT.txt`。稽核腳本本身在 Linux 執行時如預期回報 `unsupported_environment`、exit 1，完全不啟動 Homebrew。
+2026-10-24 本機實際執行：App Updates 18 個 XCTest、舊收據安全 11 個 XCTest 與 Homebrew 環境 2 個 XCTest，共 **31/31 通過、0 skip、0 failures（1.203 秒）**；另外 **15/15 稽核腳本測試通過（0.309 秒）**，原始輸出為 `docs/HOMEBREW_AUDIT_TEST_OUTPUT.txt`。稽核腳本本身在 Linux 執行時如預期回報 `unsupported_environment`、exit 1，完全不啟動 Homebrew。這些新增修復須由後續 macOS CI 重驗；先前真 Mac audit 曾暴露 Darwin zombie group 的暫時 EPERM，不能把該次 harness 視為通過。修正已加入有界 reap／重試與真正 permission failure 的 fail-closed 回歸。
 
-CI 可執行 `python3 scripts/audit_homebrew.py --output build/reports/homebrew-readonly.json`。腳本只允許 `/opt/homebrew/bin/brew` 的版本、四個 help、installed info JSON 與 outdated JSON，沒有執行真正的 update／install／upgrade，連 dry-run upgrade 也未執行。它要求非 root 的 ARM64 macOS GitHub Actions 環境、過濾憑證與 shell hooks，並限制輸出總量與時間；報告只保留計數、旗標、版本及結果，不保留 App 名稱、路徑、URLs 或原始 stderr。
+CI 可執行 `python3 scripts/audit_homebrew.py --output build/reports/homebrew-readonly.json`。腳本只允許 `/opt/homebrew/bin/brew` 的版本、Caskroom 路徑、四個 help、installed info JSON 與 outdated JSON，沒有執行真正的 update／install／upgrade，連 dry-run upgrade 也未執行。它要求非 root 的 ARM64 macOS GitHub Actions 環境、過濾憑證與 shell hooks，並限制輸出總量與時間；報告只保留計數、旗標、版本及結果，不保留 App 名稱、路徑、URLs 或原始 stderr。`caskroom_contract` 僅證明單一絕對路徑介面；舊收據驗證用隔離 fixture 測試，不冒充已在 runner 真的更新 App。
 
 報告狀態會區分 `passed`、`read_only_compatible_upgrade_unavailable`、`not_available`、`failed`、`unsupported_environment`。找不到 Homebrew 不算成功；runner 沒有安裝／過期 cask 時，報告明示只驗證到空 JSON envelope，不能宣稱在真實資料上驗證了全部欄位。它驗證的是 runner 的當前安裝版本；`latest_homebrew_version_verified` 固定為 false，因為這項唯讀稽核不更新 Homebrew，也不把 runner 版本冒充已確認的上游最新版。
 
@@ -85,6 +90,7 @@ CI 可執行 `python3 scripts/audit_homebrew.py --output build/reports/homebrew-
 - [Homebrew outdated.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cmd/outdated.rb)：cask identity 與 `installed_versions` / `current_version`。
 - [Homebrew cask.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cask/cask.rb)：`to_h`、installed version、artifact target、auto-update 與 latest 行為。
 - [Homebrew upgrade.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cmd/upgrade.rb)：參數與官方確認流程；[cask/upgrade.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cask/upgrade.rb)：搬移、安裝、finalize 與 rollback。
+- [cask/caskroom.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cask/caskroom.rb)、[cask/cask_loader.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cask/cask_loader.rb)、[cask/tab.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cask/tab.rb)、[cask/config.rb](https://github.com/Homebrew/brew/blob/main/Library/Homebrew/cask/config.rb)：安裝時 JSON 的位置、來源、artifact fallback 與保存設定。這些內部格式若改變會停止直接更新，不假裝是穩定的遠端 API。
 - [Homebrew Cask Cookbook](https://docs.brew.sh/Cask-Cookbook)：installer／pkg／flight hook 行為與限制。
 - [Sparkle customization](https://sparkle-project.org/documentation/customization/)：`SUFeedURL`、動態覆寫與簽章選項。
 - [Apple：使用 App Store 更新 App](https://support.apple.com/guide/app-store/update-purchased-apps-fir9b01adda3/mac)：官方 Updates 操作。

@@ -29,6 +29,7 @@ struct UninstallView: View {
                     Text(model.t("來源", "Source")).tag("source")
                 }.frame(width: 210)
                 Button(model.t("掃描／重新整理", "Scan / Refresh")) { Task { await model.loadApps() } }.disabled(!model.canStart)
+                    .accessibilityIdentifier("mopanel.uninstall.scan")
             }
             if model.apps.isEmpty {
                 ContentUnavailableView(model.t("尚無 App 清單", "No App Inventory"), systemImage: "app.dashed", description: Text(model.t("按「掃描」取得官方清單；無權限或掃描失敗會顯示錯誤。", "Scan to retrieve the official inventory. Permission or scan failures appear explicitly.")))
@@ -69,7 +70,7 @@ struct UninstallView: View {
                     .buttonStyle(.borderedProminent).disabled(selected.isEmpty || !model.canStart)
                 Button(model.t("確認卸載…", "Review Uninstall…")) { Task { await model.uninstall(selected: selected, preview: false, withData: withData, permanent: permanent, debug: debug) } }.disabled(selected.isEmpty || !model.canStart)
                 Spacer()
-                Button(model.t("官方選取器／預覽", "Official Selector / Preview")) { model.request(.uninstall, options: [.dryRun] + (debug ? [.debug] : [])) }.disabled(!model.canStart)
+                Button(model.t("官方選取器／預覽", "Official Selector / Preview")) { model.request(.uninstall, options: [.dryRun] + (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)
                 Button(model.t("官方選取器／卸載", "Official Selector / Uninstall")) { model.request(.uninstall, options: (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)
                 Button(model.t("說明", "Help")) { model.request(.uninstall, options: [.help]) }.disabled(!model.canStart)
             }

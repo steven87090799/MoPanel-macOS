@@ -25,6 +25,7 @@ struct AppUpdatePreview: Identifiable {
     let output: String
     let createdAt: Date
     let executableFingerprint: String
+    let installedReceipt: BrewInstalledReceiptProof
 }
 
 private struct InstalledHomebrew {
@@ -135,15 +136,19 @@ private struct InstalledHomebrew {
             let brew = try await currentHomebrew(requireUpgrade: true)
             let snapshot = try await readSnapshot(brew)
             try selectedPlan.revalidate(in: snapshot)
+            let installedReceipt = try await inspectInstalledReceipt(selectedPlan, snapshot: snapshot, brew: brew)
             try requireApplicationsClosed(selectedPlan)
             let preview = try await capture(.preview(selectedPlan.identity), brew: brew, timeout: 180, limit: 1024 * 1024)
             try checkCancellation()
             let output = TerminalText.plain(preview.stdoutText + "\n" + preview.stderrText).trimmingCharacters(in: .whitespacesAndNewlines)
             guard !output.isEmpty else { throw failure("Homebrew 未提供 Dry Run 輸出，已停止更新。", "Homebrew returned no dry-run output. The update is blocked.") }
+            guard try await inspectInstalledReceipt(selectedPlan, snapshot: snapshot, brew: brew) == installedReceipt else {
+                throw failure("安裝時的 Homebrew 紀錄已變更，請重新預覽。", "The installed Homebrew receipt changed. Review a new preview.")
+            }
             items = snapshot.items; lastChecked = Date()
             pendingPreview = AppUpdatePreview(plan: selectedPlan,
                                              output: output,
-                                             createdAt: Date(), executableFingerprint: brew.fingerprint)
+                                             createdAt: Date(), executableFingerprint: brew.fingerprint, installedReceipt: installedReceipt)
         } catch { finish(error) }
     }
 
@@ -164,6 +169,9 @@ private struct InstalledHomebrew {
             }
             let fresh = try await readSnapshot(brew)
             try preview.plan.revalidate(in: fresh)
+            guard try await inspectInstalledReceipt(preview.plan, snapshot: fresh, brew: brew) == preview.installedReceipt else {
+                throw failure("安裝時的 Homebrew 配方或設定已變更，已停止更新；請重新檢查並確認。", "The installed Homebrew recipe or configuration changed. The update is blocked; check and confirm again.")
+            }
             try requireApplicationsClosed(preview.plan)
             try checkCancellation()
             let result = try await perform(.upgrade(preview.plan.identity), brew: brew,
@@ -336,6 +344,18 @@ private struct InstalledHomebrew {
     }
     private func capture(_ command: BrewUpdateCommand, brew: InstalledHomebrew, timeout: TimeInterval = 180, limit: Int = 16 * 1024 * 1024) async throws -> ProcessResult {
         try await captureDirect(command, executable: brew.layout.executable, timeout: timeout, limit: limit)
+    }
+    private func inspectInstalledReceipt(_ plan: BrewUpdatePlan, snapshot: BrewUpdateSnapshot, brew: InstalledHomebrew) async throws -> BrewInstalledReceiptProof {
+        guard let item = snapshot.items.first(where: { $0.installed.identity == plan.identity }) else {
+            throw failure("找不到原本選取的 cask。", "The selected cask is no longer present.")
+        }
+        let result = try await capture(.caskroom(plan.identity), brew: brew, timeout: 45, limit: 32768)
+        let directory = try BrewInstalledReceipt.caskDirectory(output: result.stdoutText, identity: plan.identity)
+        let proof = try await Task.detached(priority: .utility) {
+            try BrewInstalledReceipt.inspect(caskDirectory: directory, item: item)
+        }.value
+        try checkCancellation()
+        return proof
     }
     private func captureDirect(_ command: BrewUpdateCommand, executable: URL, timeout: TimeInterval, limit: Int = 16 * 1024 * 1024) async throws -> ProcessResult {
         try checkCancellation()

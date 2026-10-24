@@ -1,0 +1,72 @@
+{
+  "scope": "Linux bundled mock script execution and group cancellation only; not AppKit/UI validation",
+  "passed": 7,
+  "failures": 0,
+  "cases": [
+    {
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "exit": 0,
+      "seconds": 0.026,
+      "output_valid": true
+    },
+    {
+      "argv": [
+        "uninstall",
+        "--list"
+      ],
+      "exit": 0,
+      "seconds": 0.009,
+      "output_valid": true
+    },
+    {
+      "argv": [
+        "analyze",
+        "--json",
+        "/MoPanel-safe-fixture"
+      ],
+      "exit": 0,
+      "seconds": 0.014,
+      "output_valid": true
+    },
+    {
+      "argv": [
+        "analyze",
+        "--json"
+      ],
+      "exit": 0,
+      "seconds": 3.017,
+      "output_valid": true
+    },
+    {
+      "argv": [
+        "clean"
+      ],
+      "exit": 0,
+      "seconds": 0.008,
+      "output_valid": true
+    },
+    {
+      "argv": [
+        "analyze",
+        "--json"
+      ],
+      "exit": 130,
+      "seconds": 0.201,
+      "group_sigint_cancelled": true,
+      "no_partial_output": true
+    },
+    {
+      "argv": [
+        "clean",
+        "--dry-run"
+      ],
+      "exit": 130,
+      "seconds": 0.202,
+      "group_sigint_cancelled": true,
+      "no_partial_output": true
+    }
+  ]
+}

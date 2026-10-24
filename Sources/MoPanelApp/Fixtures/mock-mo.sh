@@ -23,6 +23,15 @@ case "$command_name" in
     *) printf '%s\n' 'TEST FIXTURE: unsupported command' >&2; exit 2 ;;
 esac
 case "$command_name" in
+    clean)
+        # Exact fixture-only dry-run delay keeps the real Stop button testable.
+        # This script never invokes an installed CLI or touches cleanup targets.
+        if [[ "$#" -eq 2 && "${2:-}" == "--dry-run" ]]; then
+            trap 'exit 130' INT TERM HUP
+            sleep 3
+        fi
+        printf '%s\n' 'TEST FIXTURE: no system changes performed'
+        ;;
     status)
         for fixture_arg in "$@"; do
             if [[ "$fixture_arg" == "--watch" ]]; then
@@ -33,6 +42,12 @@ case "$command_name" in
         cat "$fixture_root/status.json"
         ;;
     analyze)
+        # Only the no-path overview call is delayed for the native scan-cancel
+        # test. Explicit-path and large benchmark fixture reads stay unchanged.
+        if [[ "$#" -eq 2 && "${2:-}" == "--json" ]]; then
+            trap 'exit 130' INT TERM HUP
+            sleep 3
+        fi
         if [[ "${!#}" == "/MoPanel-fixture-large" ]]; then cat "$fixture_root/analyze-large.json"; else cat "$fixture_root/analyze.json"; fi
         ;;
     uninstall)

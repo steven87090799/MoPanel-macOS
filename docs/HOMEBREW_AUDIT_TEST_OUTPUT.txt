@@ -1,14 +1,20 @@
+test_absent_group_still_reaps_direct_child (__main__.HomebrewAuditTests.test_absent_group_still_reaps_direct_child) ... ok
+test_caskroom_contract_requires_one_path_and_does_not_retain_it (__main__.HomebrewAuditTests.test_caskroom_contract_requires_one_path_and_does_not_retain_it) ... ok
+test_cleanup_failure_still_closes_both_pipes (__main__.HomebrewAuditTests.test_cleanup_failure_still_closes_both_pipes) ... ok
+test_darwin_zombie_during_term_is_not_assumed_absent (__main__.HomebrewAuditTests.test_darwin_zombie_during_term_is_not_assumed_absent) ... ok
+test_darwin_zombie_permission_race_reaps_then_rechecks_group (__main__.HomebrewAuditTests.test_darwin_zombie_permission_race_reaps_then_rechecks_group) ... ok
 test_environment_does_not_forward_tokens_or_homebrew_hooks (__main__.HomebrewAuditTests.test_environment_does_not_forward_tokens_or_homebrew_hooks) ... ok
 test_missing_and_conflicting_json_cannot_pass (__main__.HomebrewAuditTests.test_missing_and_conflicting_json_cannot_pass) ... ok
 test_mutations_rejected_before_process_creation (__main__.HomebrewAuditTests.test_mutations_rejected_before_process_creation) ... ok
 test_non_ci_environment_never_launches_homebrew (__main__.HomebrewAuditTests.test_non_ci_environment_never_launches_homebrew) ... ok
 test_output_limit_stops_owned_child (__main__.HomebrewAuditTests.test_output_limit_stops_owned_child) ... ok
+test_persistent_group_permission_failure_is_not_hidden (__main__.HomebrewAuditTests.test_persistent_group_permission_failure_is_not_hidden) ... ok
 test_safety_flag_loss_is_explicitly_read_only (__main__.HomebrewAuditTests.test_safety_flag_loss_is_explicitly_read_only) ... ok
 test_shared_homebrew_fixtures_match_native_contract (__main__.HomebrewAuditTests.test_shared_homebrew_fixtures_match_native_contract) ... ok
 test_small_stdout_and_stderr_are_drained (__main__.HomebrewAuditTests.test_small_stdout_and_stderr_are_drained) ... ok
 test_timeout_stops_owned_child (__main__.HomebrewAuditTests.test_timeout_stops_owned_child) ... ok
 
 ----------------------------------------------------------------------
-Ran 9 tests in 0.254s
+Ran 15 tests in 0.309s
 
 OK

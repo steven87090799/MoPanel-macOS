@@ -123,7 +123,7 @@ struct AppUpdatesView: View {
                         }
                     }
                 }
-                Text(t("直接升級支援：官方 homebrew/cask、可驗證 checksum、一般 App／連結 artifact，且沒有套件相依或自訂安裝／卸載腳本。其他 cask 仍列出版本，交由原 App 或 Homebrew 自行處理。MoPanel 不加入 --force、--zap、--no-quarantine 或全體升級。", "Direct upgrades support official homebrew/cask entries with a checksum, ordinary app/link artifacts, and no package dependencies or custom install/uninstall hooks. Other casks still show versions for handling in the app or Homebrew. MoPanel never adds --force, --zap, --no-quarantine or upgrade-all.")).font(.caption).foregroundStyle(.secondary)
+                Text(t("直接升級支援：官方 homebrew/cask、可驗證 checksum、一般 App／連結 artifact，且沒有套件相依或自訂安裝／卸載腳本。預覽前還會讀取安裝時的 JSON 配方與收據；舊版 Ruby、缺失、歧義、變更或不安全的卸載紀錄都會停止直接更新。其他 cask 仍列出版本，交由原 App 或 Homebrew 自行處理。MoPanel 不加入 --force、--zap、--no-quarantine 或全體升級。", "Direct upgrades support official homebrew/cask entries with a checksum, ordinary app/link artifacts, and no package dependencies or custom install/uninstall hooks. Before previewing, the installed JSON recipe and receipt are checked too. Legacy Ruby, missing, ambiguous, changed or unsafe uninstall records block direct updates. Other casks still show versions for handling in the app or Homebrew. MoPanel never adds --force, --zap, --no-quarantine or upgrade-all.")).font(.caption).foregroundStyle(.secondary)
             }.padding(12)
         }
     }
@@ -234,6 +234,7 @@ private struct AppUpdateConfirmationView: View {
             Text(preview.plan.title).font(.headline)
             Text(preview.plan.installedVersion + " → " + preview.plan.availableVersion).font(.title3.monospaced())
             Text(preview.plan.identity.qualifiedToken).font(.caption.monospaced()).textSelection(.enabled)
+            Text(t("新版配方與安裝時的 JSON 卸載紀錄均已驗證；確認後會再次比對收據與設定。", "Both the current recipe and installed JSON uninstall records were checked. Receipts and configuration are compared again after confirmation.")).font(.caption).foregroundStyle(.secondary)
             Text(t("Homebrew 將下載並替換 App。請先儲存工作並自行關閉 App；MoPanel 不會強制結束。停用自動 Homebrew 更新、清理與無關套件升級，並要求 checksum。Homebrew 保留自身驗證與確認；中斷後不保證完全復原。", "Homebrew will download and replace the app. Save your work and close the app first; MoPanel will not force-quit it. Implicit Homebrew updates, cleanup and unrelated dependent upgrades are disabled, and a checksum is required. Homebrew retains its own checks and prompts. Cancellation does not guarantee full rollback."))
             ScrollView {
                 Text(preview.output.isEmpty ? t("Homebrew 未輸出預覽說明。", "Homebrew returned no preview text.") : preview.output)

@@ -43,6 +43,13 @@ final class StartupModelsTests: XCTestCase {
         try StartupInventoryReader.inspect(url: url, folder: .init(url: folder, scope: scope), userID: userID)
     }
 
+    private func inventoryDiagnostic(_ result: StartupInventory, url: URL) -> String {
+        "URL=\(url.absoluteString); standardized=\(url.standardizedFileURL.absoluteString); " +
+        "objectEquality=\(url.standardizedFileURL == url); " +
+        "resolvedPath=\(url.resolvingSymlinksInPath().path); warnings=\(result.warnings); " +
+        "errors=\(result.items.compactMap(\.error))"
+    }
+
     func testEnablePlanPreservesUnicodePlistPathAsSingleArgument() throws {
         let url = try write("測試 ' $() path", label: "com.example.safe")
         let snapshot = try inspect(url)
@@ -109,8 +116,8 @@ final class StartupModelsTests: XCTestCase {
         try Data("not read".utf8).write(to: nested.appendingPathComponent("nested.plist"))
         try Data("invalid plist".utf8).write(to: folder.appendingPathComponent("broken.plist"))
         let result = StartupInventoryReader.inventory(folders: [.init(url: folder, scope: .userAgent)], userID: userID)
-        XCTAssertEqual(result.items.count, 2)
-        XCTAssertEqual(result.items.filter { $0.error != nil }.count, 1)
+        XCTAssertEqual(result.items.count, 2, inventoryDiagnostic(result, url: folder))
+        XCTAssertEqual(result.items.filter { $0.error != nil }.count, 1, inventoryDiagnostic(result, url: folder))
         XCTAssertFalse(result.truncated)
     }
 
@@ -119,9 +126,42 @@ final class StartupModelsTests: XCTestCase {
         let allowed = StartupInventoryReader.maximumTotalBytes / bytes.count
         for index in 0...allowed { try bytes.write(to: folder.appendingPathComponent("broken-\(index).plist")) }
         let result = StartupInventoryReader.inventory(folders: [.init(url: folder, scope: .userAgent)], userID: userID)
-        XCTAssertTrue(result.truncated)
-        XCTAssertEqual(result.items.count, allowed)
+        XCTAssertTrue(result.truncated, inventoryDiagnostic(result, url: folder))
+        XCTAssertEqual(result.items.count, allowed, inventoryDiagnostic(result, url: folder))
         XCTAssertTrue(result.items.allSatisfy { $0.error != nil })
+    }
+
+    func testCanonicalDirectoryURLRepresentationsEnumerateIdentically() throws {
+        let file = try write()
+        let parent = URL(fileURLWithPath: folder.deletingLastPathComponent().path, isDirectory: true)
+        let relative = try XCTUnwrap(URL(string: folder.lastPathComponent + "/", relativeTo: parent))
+        let representations = [
+            folder!,
+            URL(fileURLWithPath: folder.path, isDirectory: true),
+            URL(fileURLWithPath: folder.path, isDirectory: false),
+            relative
+        ]
+        for root in representations {
+            XCTAssertEqual(root.path, folder.path)
+            let result = StartupInventoryReader.inventory(folders: [.init(url: root, scope: .userAgent)], userID: userID)
+            XCTAssertEqual(result.items.count, 1, inventoryDiagnostic(result, url: root))
+            XCTAssertEqual(result.items.first?.snapshot?.url.path, file.path, inventoryDiagnostic(result, url: root))
+            XCTAssertTrue(result.warnings.isEmpty, inventoryDiagnostic(result, url: root))
+        }
+    }
+
+    func testInventoryStillRejectsSymbolicDirectoryAndTraversal() throws {
+        _ = try write()
+        let alias = folder.appendingPathComponent("symbolic-directory", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: folder)
+        let nested = folder.appendingPathComponent("nested", isDirectory: true)
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: false)
+        let traversal = try XCTUnwrap(URL(string: folder.absoluteString.hasSuffix("/") ? folder.absoluteString + "nested/../" : folder.absoluteString + "/nested/../"))
+        for root in [alias, traversal] {
+            let result = StartupInventoryReader.inventory(folders: [.init(url: root, scope: .userAgent)], userID: userID)
+            XCTAssertTrue(result.items.isEmpty, inventoryDiagnostic(result, url: root))
+            XCTAssertFalse(result.warnings.isEmpty, inventoryDiagnostic(result, url: root))
+        }
     }
 
     func testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent() throws {
@@ -134,6 +174,27 @@ final class StartupModelsTests: XCTestCase {
                         "disabled services = {\n\"x\" => true\n\"x\" => false\n}", "{\"x\": false}"] {
             XCTAssertThrowsError(try LaunchctlOutputParser.disabledOverrides(Data(invalid.utf8)))
         }
+    }
+
+    func testRecordedMacOS2701LaunchctlContracts() throws {
+        // Captured by read-only audit_platform.py, macOS 27.0.1 arm64,
+        // GitHub Actions run 40073252380. No live service mutation was made.
+        func fixture(_ name: String) throws -> Data {
+            try Data(contentsOf: XCTUnwrap(Bundle.module.url(forResource: name, withExtension: "txt", subdirectory: "Fixtures")))
+        }
+        let disabled = try fixture("launchctl-disabled-macos27")
+        let overrides = try LaunchctlOutputParser.disabledOverrides(disabled)
+        XCTAssertEqual(overrides.count, 5)
+        XCTAssertEqual(overrides["com.apple.Siri.agent"], .disabled)
+        XCTAssertTrue(overrides.values.allSatisfy { $0 == .disabled })
+        XCTAssertNil(overrides["com.mopanel.nonexistent.fixture"], "No explicit override is not an enabled state.")
+        let missing = try fixture("launchctl-missing-macos27")
+        XCTAssertEqual(try LaunchctlOutputParser.service(stdout: Data(), stderr: missing, exitCode: 113,
+            domain: "gui/501", label: "com.mopanel.nonexistent.fixture"), .notLoaded)
+        XCTAssertThrowsError(try LaunchctlOutputParser.service(stdout: Data(), stderr: missing, exitCode: 1,
+            domain: "gui/501", label: "com.mopanel.nonexistent.fixture"))
+        let unknown = String(decoding: disabled, as: UTF8.self).replacingOccurrences(of: "=> disabled", with: "=> future-state")
+        XCTAssertThrowsError(try LaunchctlOutputParser.disabledOverrides(Data(unknown.utf8)))
     }
 
     func testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity() throws {

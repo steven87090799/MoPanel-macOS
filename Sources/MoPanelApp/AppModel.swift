@@ -394,7 +394,9 @@ import MoPanelProcess
             self.operationResult = result
             self.record(invocation.displayCommand, result: result)
             if !invocation.requiresPTY { self.rawResult = String(TerminalText.plain(result.stdoutText + "\n" + result.stderrText).suffix(500_000)) }
-            if invocation.command == .update || invocation.command == .remove {
+            // Mole's own main menu can also update or remove the CLI. Never
+            // keep an installation snapshot from before an interactive menu.
+            if invocation.command == .update || invocation.command == .remove || invocation.command == .menu {
                 self.installation = nil
                 Task { await self.detect() }
             }

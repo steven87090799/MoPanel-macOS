@@ -29,9 +29,11 @@ struct MaintenanceView: View {
                             Button { model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en)) }
                                 label: { Label(model.t("掃描並預覽", "Scan and Preview"), systemImage: "magnifyingglass") }
                                 .buttonStyle(.borderedProminent).controlSize(.large)
+                                .accessibilityIdentifier("mopanel.maintenance.\(command.rawValue).preview")
                             Button { model.request(command, options: options + (section == .purge && unattended ? [.yes] : []), title: model.t(section.zh, section.en)) }
                                 label: { Label(model.t("檢查並開始操作", "Review and Start"), systemImage: "play.fill") }
                                 .controlSize(.large)
+                                .accessibilityIdentifier("mopanel.maintenance.\(command.rawValue).review")
                             Spacer()
                             Button(model.t("官方說明", "CLI Help")) { model.request(command, options: [.help]) }
                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))

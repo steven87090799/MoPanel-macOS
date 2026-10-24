@@ -60,8 +60,10 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-[Run 40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 已通過最新版 CLI 唯讀合約、包含 benchmark 的主程式／SwiftTerm／兩個 helper 編譯、57 個 Core 加 20 個 Process／Editor Mac XCTest，以及 ARM64／ad-hoc bundle gate。UI smoke 的 12 項檢查中 11 項通過，僅 `watch_ndjson_received` 為 false，因此尚未建立發行 ZIP。已保留完整 smoke JSON、stdout／stderr 與 App 自身視窗截圖，沒有以忽略錯誤的方式繼續打包。
+[Run 40073252380](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40073252380) 的原生擴充已通過 Debug 編譯，實際執行 124 個 Mac XCTest。24 個 Process／Editor／Streaming 全部通過；100 個 Core 中兩個 Startup inventory 案例出現4個失敗斷言，流程未繼續發行。後續已修復URL物件與canonical path比較差異，加入真Mac launchctl樣本，14項Startup Linux回歸通過；尚待Mac再次驗證。
 
-真實唯讀效能模式的程式已通過 Mac 編譯，實際三態測量因 smoke gate 中止而尚未執行。Linux Core 57 加 Process／Editor 20、Guardian 16，合計 93 個主要案例；這與上述 77 個 Mac XCTest 是不同範圍，不能相互替代。後續 run 會保留正在執行的驗證工作，避免新推送自動取消它。
+Homebrew 7.0.10 的七個固定唯讀命令通過，JSON有5個 installed casks、0個 outdated casks；沒有執行更新。9項 Python audit harness 有一項 Darwin timeout cleanup 的 EPERM 錯誤；後續採有界 poll/reap/probe 修正，擴充為15項且Linux通過，尚待真Mac重跑。工作流程已依 [GitHub shell 說明](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsshell) 改用明確 bash shell，確保 `-e -o pipefail` 讓經過 tee 保存的測試錯誤也會阻擋；發行報告另檢查 harness 結果必須為無略過的 OK。
 
-下一輪正常 CI 另會使用 `scripts/audit_platform.py` 保存四組固定、唯讀的 `launchctl` 公開介面輸出。這僅用於系統工具的格式驗證，不呼叫 enable、disable、bootstrap 或 bootout，也不讀取私有 BTM 資料庫。
+較早的 [run40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 已通過77個 Mac XCTest、基礎App ARM64 release與ad-hoc驗證，但UI smoke僅11/12通過。失敗的watch小量輸出問題已透過增量POSIX read修正，且新增兩個Mac串流回歸通過；尚待本輪其他失敗修正後重新執行UI與三態測量。
+
+`scripts/audit_platform.py` 已在真macOS執行四組固定、唯讀的 `launchctl` 公開介面探測。help與print-disabled exit0，對不存在fixture服務的print exit113。原始輸出保留於 `platform-contracts.json`，沒有呼叫 enable、disable、bootstrap或bootout，也未讀取私有BTM資料庫。

@@ -14,6 +14,7 @@ struct DashboardView: View {
                     if let collected = model.status?.collectedAt { Text(collected).font(.caption).foregroundStyle(.secondary) }
                     Spacer()
                     Button(model.t("單次快照", "Snapshot")) { Task { await model.takeSnapshot() } }.disabled(!model.canStart)
+                        .accessibilityIdentifier("mopanel.dashboard.snapshot")
                     Button(model.monitoring ? model.t("暫停", "Pause") : model.t("開始監控", "Start Monitoring")) {
                         if model.monitoring { model.pauseMonitoring() } else { model.resumeMonitoring() }
                     }.buttonStyle(.borderedProminent).disabled(model.installation == nil || model.hasRunningOperation)

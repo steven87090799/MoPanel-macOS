@@ -37,8 +37,8 @@
 | A02 | AI sessions、worktrees、閒置 AI CLI 的專用審查 [S1][S3] | CLI worktrees 是報告用途；Codex session/state 預設受保護 [C5][C6] | **未實作** | 需要新增工具整合、可恢復副本、索引一致性及 Git 唯一內容保護；不得直接刪目錄替代 |
 | S01 | App 清單、圖示、大小、搜尋、多選卸載 [S4] | `uninstall --list`、名稱參數及官方選取器 | **原生＋PTY／待驗收**；`UninstallView.swift` | 重名 App、cask 名稱歧義、特殊檔名與實際確認範圍的端到端測試 |
 | S02 | App 殘留、共享資料、個人資料與系統擴充的審查 [S4] | 官方卸載分析及確認；CLI 殘留計畫並非完整公開 JSON | **部分**；個人資料預選預設關閉，最終審查在 PTY | 原生逐項審查、共享資料安全、特殊卸載器 handoff；不能猜測所有權 |
-| S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／待 macOS CI**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；Sparkle／App Store 只有來源辨識與原 App handoff。18個Core與2個環境測試通過；未升級真實 App，非所有來源完整對等 |
-| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／待 macOS CI**；`StartupController.swift`、`StartupView.swift` | 已有有限中繼資料清單、可驗證 user LaunchAgent 啟用／停用與確認；未知身分禁止變更，其他項目使用正式系統設定入口。11個Core測試通過；CI用私有mock，不修改真launchd工作 |
+| S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／最新修復待 macOS CI**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle／App Store 只有來源辨識與原 App handoff。29個Core與2個環境測試在 Linux 通過；未升級真實 App，非所有來源完整對等 |
+| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／最新修復待 macOS CI**；`StartupController.swift`、`StartupView.swift` | 已有有限中繼資料清單、可驗證 user LaunchAgent 啟用／停用與確認；未知身分禁止變更，其他項目使用正式系統設定入口。14個Core測試在 Linux 通過，涵蓋目錄URL回歸與真Mac唯讀launchctl樣本；CI用私有mock，不修改真launchd工作 |
 | O01 | macOS 維護、任務結果與略過原因 [S5] | `optimize`、Dry Run、Whitelist；官方承認任務集合可能不同 [S2] | **PTY／待驗收**；`MaintenanceView.swift` | 逐項核對 1.17 GUI 任務；不能宣稱兩套預設維護流程完全相同 |
 | O02 | 管理員授權重用及工作結束後停止 [S5] | 官方 CLI sudo／Touch ID 流程 | **PTY／待驗收**；`ManagedProcess.swift`、`TerminalPanel.swift` | 真 Mac sudo、Touch ID、取消及授權過期；不保存密碼 |
 | D01 | 階層磁碟圖、搜尋、大小、Finder、重新掃描 [S6] | `analyze --json` | **原生／待驗收**；`AnalyzeView.swift` | 圖僅畫篩選後最大 30 個可測項目並明示；不等同官方全部細節、快取與視覺排列 |
@@ -57,7 +57,7 @@
 | H03 | WiFi Low Latency／AWDL 暫停與恢復 [S11] | 無 CLI 控制入口 | **未實作；現在範圍內** | 原狀保存、AirDrop 等影響提示、網路變動／睡眠／退出／失敗重試，不聲稱保證加速 |
 | V01 | 關機 Parallels VM 未用磁碟空間回收 [S3][S1] | 無等價正式命令 | **未實作** | 使用 Parallels 官方工具、驗證 VM 狀態與磁碟身分、不可中斷階段及真實回收量 |
 | X01 | Doctor、操作紀錄、權限及問題引導 [S2] | CLI `history --json`；GUI 狀態診斷需自建 | **部分新實作／待 macOS CI**；`HistoryView.swift`、`CLIProbe.swift`、`SystemToolsController.swift` | Doctor 只讀實際系統／電源／顯示器／磁碟中繼資料，可複製／匯出；FDA／安全設定未檢查就明示。不是官方完整診斷條件集合 |
-| X02 | 原生外觀、語言、深淺模式、快捷鍵、VoiceOver [S1][S8] | 無 CLI UI | **部分／待驗收**；原生 SwiftUI、繁中／英文、Liquid Glass | 十頁鍵盤與 VoiceOver 逐項實測。僅支援本任務指定兩種語言，不宣稱官方全部語系 |
+| X02 | 原生外觀、語言、深淺模式、快捷鍵、VoiceOver [S1][S8] | 無 CLI UI | **部分／待驗收**；原生 SwiftUI、繁中／英文、Liquid Glass | 全頁鍵盤與 VoiceOver 仍需逐項實測。僅支援本任務指定兩種語言，不宣稱官方全部語系 |
 
 ### CLI 特有入口依然保留
 
@@ -70,7 +70,7 @@
 | 領域 | 公開預覽差異摘要 | 本專案狀態 |
 |---|---|---|
 | Clean／開發／AI | 新增部分工具殘留與審查類別，調整部分年齡門檻及保留條件 | 未宣稱已對等；需逐規則核對 release 後的正式界線 |
-| Software | 更新辨識、來源與執行改進；App 資料清除等細部能力 | 更新模組尚未完成；不能從最新 Docs 推定 1.17 全部具備 |
+| Software | 更新辨識、來源與執行改進；App 資料清除等細部能力 | Homebrew 受限更新與來源 handoff 已實作，完整來源及 Preview 細部行為尚未對等；不能從最新 Docs 推定 1.17 全部具備 |
 | Analyze | 對比前一天的容量成長並指出變大的項目 | 未實作 |
 | 監測／介面 | 指標、配件通知、互動與可讀性改進 | 未進行與 Preview 的實機對照 |
 
@@ -85,14 +85,14 @@
 | 官方資料盤點 | 1.17 穩定、1.18 Preview、CLI V1.62.0 分開 | 公開文件及固定 CLI 原始碼已盤點；官方 GUI 未作二進位實測 |
 | CLI Adapter | argv、身分、來源、版本、help、JSON／NDJSON | 已有實際 XCTest；總數及最新 log 見 TEST_REPORT |
 | 子程序安全 | PTY、無密碼紀錄、取消、逾時、父程序消失 | Linux fixtures 已測；macOS libproc、App 強制退出、sudo 需各自證據 |
-| 原生 App 建置 | macOS 27 ARM64 SwiftUI／AppKit／Charts／SwiftTerm | 每批改動都需要真 Mac 結果；System Tools 新檔尚待該批 CI，不能沿用加入前的成功建置 |
+| 原生 App 建置 | macOS 27 ARM64 SwiftUI／AppKit／Charts／SwiftTerm | 最新公開 CI 已編譯新增模組的 debug App；該次 XCTest 仍有失敗，後續修復必須重新取得完整 release／smoke／封裝證據 |
 | App 包裝 | Mach-O ARM64、helper、codesign、ZIP 解壓再驗證 | 必須由成功 CI 產物證明，不由來源樹推定 |
 | UI 流程 | 所有真按鈕、返回、空白／失敗／取消、鍵盤、VoiceOver | 尚未全量完成；Smoke test 不等於完整人工流程驗收 |
 | 清理／卸載 | 同隔離資料集的預覽、確認、實際結果與保護 | 不對使用者個人資料測試；尚須可丟棄 VM／獨立測試帳號完整流程 |
 | 原生新增模組 | 每項功能行為、失敗恢復與來源安全 | System Tools 已有 7 項政策測試及安全 Mac smoke 入口；其他未實作項仍保留，沒有以開網頁算完成 |
 | 權限 | 無 FDA、拒絕 sudo、Touch ID、通知、輔助使用權限 | 需真 Mac 環境逐情境執行，CI mock 不能取代系統權限驗收 |
 | 硬體控制 | 支援／不支援機型、讀回、睡眠／崩潰恢復 | 尚未實作及實機驗收；不能用虛擬 runner 聲稱物理風扇／充電已驗證 |
-| 更新來源 | Sparkle、App Store、Homebrew、其他可支援來源 | 尚未實作；需真實隔離測試 App，不可更新使用者的工作 App 測試 |
+| 更新來源 | Sparkle、App Store、Homebrew、其他可支援來源 | 已有受限 Homebrew 更新與來源 handoff、Core／程序測試及真 Mac Homebrew 唯讀契約；未執行真 App 更新，Sparkle／App Store 不代管安裝，不能算跨來源全面驗收 |
 | 資源 | 閒置、監控、掃描的 CPU、RSS、背景退出 | 需真 Mac 三狀態量測與執行條件；不填假數值 |
 | 功能等同性 | 針對每個 ID，比較相同輸入、設定與結果 | 尚未完成；沒有官方 GUI 原始碼／公開規格的細節必須保留不確定性 |
 

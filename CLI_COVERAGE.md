@@ -25,7 +25,7 @@
 | `mo` | 設定中的官方主選單 | 內嵌 PTY | `.menu`。可進入破壞性操作，會先顯示風險確認；不自動傳送選項或同意 |
 | `mo status` | 總覽的官方互動監控 | PTY 備援 | `.status`；保留官方 TUI 的核心顯示切換與快捷鍵 |
 | `mo status --json` | 總覽單次更新 | 原生 JSON | `.json`、`MoleJSON.decodeStatus`；沒有資料的感測器顯示不可用 |
-| `mo status --watch` | 總覽即時監控開關 | 原生 NDJSON | `.watch`、`NDJSONFramer`；一個暖機中的子程序，離開頁面／視窗不活躍時停止 |
+| `mo status --watch` | 總覽即時監控開關 | 原生 NDJSON | `.watch`、`NDJSONFramer`；總覽與選單列共用一個子程序。預設離開頁面／視窗不活躍時停止；使用者另行啟用選單列監控時保留同一串流，暫停或退出 App 後停止 |
 | `mo status --interval DURATION` | 監控更新間隔 | 原生控制項 | `.intervalSeconds`；GUI 限制 1–3600 秒，送出正式 Go duration，例如 `2s` |
 | `--proc-cpu-alerts[=false]` | 高 CPU 程序提醒開關 | 原生控制項 | `.procCPUAlerts`；傳入 `--proc-cpu-alerts=true/false` |
 | `--proc-cpu-threshold PERCENT` | CPU 提醒門檻 | 原生控制項 | `.procCPUThreshold`；非負有限值，程序多核心 CPU 可超過 100% |

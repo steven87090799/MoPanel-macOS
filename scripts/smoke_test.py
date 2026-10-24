@@ -50,7 +50,15 @@ with tempfile.TemporaryDirectory(prefix="mopanel-smoke-") as temporary:
     report["process_exit_code"] = exit_code
     report["timed_out"] = timed_out
     report["screenshot_available"] = screenshot_path.is_file() and screenshot_path.stat().st_size > 0
-    report["scope"] = "Native window and explicit safe fixture routes; not real cleanup acceptance."
+    scopes = ["Native window, route-selection survival and adapter smoke with the explicit bundled CLI fixture"]
+    if report.get("system_tools"):
+        scopes.append("safe IOPM assertion and own overlay-window lifecycle probes")
+    if report.get("startup_mock"):
+        scopes.append("private Startup control-flow mock")
+    if report.get("native_ui"):
+        scopes.append("identified own-process AppKit accessibility button actions")
+    report["scope"] = "; ".join(scopes) + ". See individual checks for success or failure."
+    report["scope_limits"] = "Route selection does not prove every page rendered correctly. No complete physical-input or VoiceOver/TCC acceptance, real cleanup, app upgrade, launchctl mutation, disk ejection, screen-input interception or hardware-control validation."
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     if timed_out or exit_code != 0:
         raise RuntimeError(f"UI smoke process failed: exit={exit_code}, timeout={timed_out}; "

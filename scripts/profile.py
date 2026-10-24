@@ -215,7 +215,8 @@ def main():
               "fixture_only": real_cli is None, "read_only_enforced": real_cli is not None,
               "limitation": ("Official read-only CLI on a fresh 5000-file, 4096-byte/file flat corpus; repeated scans use warm OS filesystem caches. This is not cleanup or a representative full-disk workload. "
                              if real_cli is not None else "Synthetic fixtures measure GUI overhead, not real CLI workload costs. ")
-                            + "CPU is ps lifetime-average percent; peaks are observed sample maxima, not Instruments traces.",
+                            + "CPU is ps lifetime-average percent; peaks are observed sample maxima, not Instruments traces. "
+                            + "RSS is summed across the GUI and observed descendants, so shared pages may be counted more than once; it is not unique physical footprint or Activity Monitor memory pressure.",
               "modes": modes}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")

@@ -71,8 +71,21 @@ import MoPanelCore
             model.section = section
             try? await Task.sleep(for: .milliseconds(80))
         }
-        checks["all_navigation_routes_rendered"] = NSApp.windows.contains { $0.isVisible }
+        // This loop checks route selection and window survival, not pixel or
+        // accessibility correctness for every page. Button postconditions below
+        // provide stronger evidence for their explicitly named flows only.
+        checks["navigation_routes_selected_with_window_alive"] = NSApp.windows.contains { $0.isVisible }
         checks["no_real_engine_selected"] = model.installation?.source == .fixture
+        var nativeUIObject: Any = [:]
+        if let mainWindow = NSApp.windows.first(where: { $0.isVisible && !$0.isSheet && $0.styleMask.contains(.titled) && $0.contentView != nil }) {
+            let uiEvidence = await NativeUITestHarness.run(model: model, window: mainWindow)
+            checks["native_accessibility_button_flows"] = uiEvidence.passed
+            nativeUIObject = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(uiEvidence))) ?? [:]
+            failures.append(contentsOf: uiEvidence.errors)
+        } else {
+            checks["native_accessibility_button_flows"] = false
+            failures.append("No explicit own-process main window was available for native button tests.")
+        }
         let success = !checks.values.contains(false) && failures.isEmpty
         let encodedTools = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(toolsEvidence))) ?? [:]
         let encodedStartup = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(startupEvidence))) ?? [:]
@@ -81,7 +94,9 @@ import MoPanelCore
             "fixture_only": true, "checks": checks, "errors": failures,
             "system_tools": encodedTools,
             "startup_mock": encodedStartup,
-            "note": "Window/route and adapter smoke only. This does not verify every physical button, TCC permission, real cleanup, or hardware reading."
+            "native_ui": nativeUIObject,
+            "navigation_sections_selected": AppSection.allCases.map(\.rawValue),
+            "note": "Native window and route selection survival, adapter, safe system API probes, private Startup mock and explicitly identified own-process accessibility button actions. Route selection alone does not prove every page rendered correctly. This does not verify every physical interaction, TCC permission, real cleanup, app update or hardware control."
         ], success: success)
     }
 
