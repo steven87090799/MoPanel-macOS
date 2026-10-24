@@ -14,6 +14,14 @@
 
 版本來源：<https://github.com/tw93/Mole/releases/tag/V1.62.0>。盤點文件以 release 固定來源為基準，不能把 main 的新增功能冒充 release 已支援。
 
+## 目前 macOS 驗證範圍
+
+[run 40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)（commit `e4181f754ce4a9bdc3b28efc60d2100d49403ba8`）在 macOS 27.0.1／Xcode 27.1／Apple Swift 6.4 ARM64 通過 **140／140 XCTest**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），release 編譯、ARM64 與 ad-hoc bundle 完整性也通過。正式 App 啟動與視窗已通過，先前的初始 SIGSEGV 及 Publishing changes 警告本輪未再出現。
+
+本輪 bundled CLI fixture 的 UI smoke **19／20 檢查通過**，包含 status／apps／analyze／history 解碼、watch 接收與切頁停止；選取 13 個路由後視窗仍存活，不等於全頁渲染或完整按鈕驗收。失敗項為 AX 找不到 `mopanel.dashboard.snapshot`，觀察最多 169 個節點、0 個控制識別碼、0 次按鈕動作。整體 smoke 回報失敗，效能、後續 Guardian 驗收與 ZIP 發行仍受 gate 阻擋。
+
+140 個 XCTest 與 smoke 子檢查不合併計數。這次 GUI 使用合成 CLI fixture，不能與另行保存的官方 CLI 唯讀契約探測混為一談，也未驗證真實清理、卸載、瘦身、CLI 升降版或完整系統授權。
+
 ## 相容策略
 
 `MoPanelCore/MoleCompatibility` 檢查版本及命令 help 公開介面；`CLIProbe` 檢查執行檔、資源位置、來源與 fingerprint；每次結構化結果仍經由 `MoleJSON` 完整解碼。GUI 不修改已安裝 Mole 的原始碼。
@@ -42,7 +50,7 @@
 
 App Updates、Startup、System Tools、選單列與 App 結束要求不屬於 Mole CLI API。它們分別使用 Homebrew 公開 JSON／命令、Apple launchctl／ServiceManagement、IOKit／AppKit 與 SwiftUI。更新 Mole CLI 不會自動更新這些整合。
 
-CI 另保存 runner 的 Homebrew 唯讀介面與 launchctl 格式樣本；沒有執行真實 App 升級或修改真實啟動項目。Startup 的變更流程使用真暫存 plist＋注入 mock；不把 mock 證據冒充真 launchd 變更。原生硬體／權限與使用者機型驗收邊界見 `docs/GUI_PARITY.md`。
+CI 另保存 runner 的 Homebrew 唯讀介面與 launchctl 格式樣本；沒有執行真實 App 升級或修改真實啟動項目。本輪原生 smoke 已實際建立、讀回、釋放 IOPM system-idle assertion 並確認不存在；建立及關閉 1 個遮罩視窗但未呈現、未攔截輸入；Doctor 讀到 18 項中繼資料，未呼叫磁碟退出 API。Startup 使用真暫存 plist＋注入的私有 mock，啟用／停用讀回、取消及未知格式拒絕均通過，真 launchctl 變更與持續工作建立皆為 0。這些有限證據不代表完整原生 UI、實體風扇／電池／AWDL 或真 launchd 變更已驗收；詳細邊界見 `docs/GUI_PARITY.md`。
 
 ## 更新方法
 

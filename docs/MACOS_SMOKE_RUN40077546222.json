@@ -1,0 +1,155 @@
+{
+  "checks": {
+    "analyze_preserves_partial": true,
+    "app_inventory_decoded": true,
+    "fixture_cli_detected": true,
+    "fixture_resource_inside_app": true,
+    "history_decoded": true,
+    "native_accessibility_button_flows": false,
+    "native_assertion_created_and_released": true,
+    "native_clean_screen_windows_constructed_and_closed": true,
+    "native_doctor_metadata_read": true,
+    "native_tools_no_input_interception_or_ejection": true,
+    "navigation_routes_selected_with_window_alive": true,
+    "no_real_engine_selected": true,
+    "public_contracts_compatible": true,
+    "startup_mock_cancel_and_unknown_format": true,
+    "startup_mock_enable_disable_readback": true,
+    "startup_no_real_mutation_or_persistent_job": true,
+    "status_decoded": true,
+    "watch_ndjson_received": true,
+    "watch_stopped_on_navigation": true,
+    "window_created": true
+  },
+  "errors": [
+    "No unique enabled own-window accessibility control was exposed for mopanel.dashboard.snapshot."
+  ],
+  "fixture_only": true,
+  "native_ui": {
+    "accessibilityPermissionRequested": false,
+    "actions": [],
+    "checks": {
+      "exact_bundled_fixture_guard": true
+    },
+    "cleanupRequestedAfterFailure": true,
+    "directActionFallbackUsed": false,
+    "errors": [
+      "No unique enabled own-window accessibility control was exposed for mopanel.dashboard.snapshot."
+    ],
+    "fixtureOnly": true,
+    "maximumTreeNodesObserved": 169,
+    "mechanism": "AppKit NSAccessibilityProtocol on own-window objects",
+    "observedControlIdentifiers": [],
+    "ownProcessOnly": true,
+    "passed": false,
+    "physicalInputInjected": false,
+    "routeSetupUsesModelState": true
+  },
+  "navigation_sections_selected": [
+    "dashboard",
+    "clean",
+    "uninstall",
+    "appUpdates",
+    "startup",
+    "optimize",
+    "analyze",
+    "purge",
+    "installer",
+    "slim",
+    "history",
+    "tools",
+    "settings"
+  ],
+  "note": "Native window and route selection survival, adapter, safe system API probes, private Startup mock and explicitly identified own-process accessibility button actions. Route selection alone does not prove every page rendered correctly. This does not verify every physical interaction, TCC permission, real cleanup, app update or hardware control.",
+  "startup_mock": {
+    "cancelledReviewDidNotMutate": true,
+    "disableVerifiedWithMock": true,
+    "enableVerifiedWithMock": true,
+    "errors": [],
+    "inventoryCount": 1,
+    "mutationArguments": [
+      [
+        "enable",
+        "gui/501/org.mopanel.fixture.startup"
+      ],
+      [
+        "bootstrap",
+        "gui/501",
+        "/var/folders/5n/5t77mfb93jd7q8v9s6f0dn0m0000gn/T/MoPanelStartupSmoke-4FC82912-E4CF-46A7-B79B-F32A6A6D684A/org.mopanel.fixture.startup.plist"
+      ],
+      [
+        "disable",
+        "gui/501/org.mopanel.fixture.startup"
+      ],
+      [
+        "bootout",
+        "gui/501/org.mopanel.fixture.startup"
+      ]
+    ],
+    "persistentJobsCreated": 0,
+    "realLaunchctlMutations": 0,
+    "unknownFormatDidNotMutate": true
+  },
+  "success": false,
+  "system_tools": {
+    "assertionAbsentAfterRelease": true,
+    "assertionCreated": true,
+    "assertionReadableBeforeRelease": true,
+    "assertionReleaseCode": 0,
+    "doctorEntryCount": 18,
+    "ejectWasCalled": false,
+    "errors": [],
+    "inputWasIntercepted": false,
+    "overlayWasPresented": false,
+    "overlayWindowsClosed": 1,
+    "overlayWindowsCreated": 1,
+    "platform": "Version 27.0.1 (Build 26A434)",
+    "screenCount": 1
+  },
+  "window_created": true,
+  "app_reported_success": false,
+  "process_exit_code": 1,
+  "timed_out": false,
+  "sample_diagnostic": {
+    "attempted": false,
+    "reason": "not_needed"
+  },
+  "child_pid": 11172,
+  "elapsed_seconds": 22.345,
+  "test_deadline_seconds": 45,
+  "diagnostic_time_is_not_extra_test_time": true,
+  "executable": "MoPanel.app/Contents/MacOS/MoPanel",
+  "screenshot_available": true,
+  "scope": "Native window, route-selection survival and adapter smoke with the explicit bundled CLI fixture; safe IOPM assertion and own overlay-window lifecycle probes; private Startup control-flow mock; identified own-process AppKit accessibility button actions. See individual checks for success or failure.",
+  "scope_limits": "Route selection does not prove every page rendered correctly. No complete physical-input or VoiceOver/TCC acceptance, real cleanup, app upgrade, launchctl mutation, disk ejection, screen-input interception or hardware-control validation.",
+  "debug_copy_diagnostic": {
+    "attempted": true,
+    "original_smoke_still_failed": true,
+    "maximum_seconds": 60,
+    "debug_copy_distributed": false,
+    "host_security_settings_changed": false,
+    "original_sha256_before": {
+      "Contents/MacOS/MoPanel": "775a209726f970ad3bef0f42b5d116b813d1b93224c15df820d59ef0ca344a79",
+      "Contents/_CodeSignature/CodeResources": "cd1c51ecde77179b52dd763da6d094a597c9e6acac40c73701f4986dd8230c4a",
+      "Contents/Helpers/MoPanelGuardian": "fb442e2ceeedadd13d2dba562a4f8fe27e2d34987acd966e45b5af50caf49e70",
+      "Contents/Helpers/MoPanelEditor": "ffd0fa0f064021d0a93a4c01c730cbf687ba6d529de2148819fefcceeb7d1982"
+    },
+    "copy_sign_exit_code": 0,
+    "debugger": {
+      "status": "debugger_exited",
+      "exit_code": 1,
+      "guardian_reaped": true,
+      "log": "smoke-debug-lldb.log",
+      "guardian_timeout_ms": 39000
+    },
+    "status": "diagnostic_finished_not_acceptance",
+    "original_sha256_after": {
+      "Contents/MacOS/MoPanel": "775a209726f970ad3bef0f42b5d116b813d1b93224c15df820d59ef0ca344a79",
+      "Contents/_CodeSignature/CodeResources": "cd1c51ecde77179b52dd763da6d094a597c9e6acac40c73701f4986dd8230c4a",
+      "Contents/Helpers/MoPanelGuardian": "fb442e2ceeedadd13d2dba562a4f8fe27e2d34987acd966e45b5af50caf49e70",
+      "Contents/Helpers/MoPanelEditor": "ffd0fa0f064021d0a93a4c01c730cbf687ba6d529de2148819fefcceeb7d1982"
+    },
+    "original_files_unchanged": true,
+    "elapsed_seconds": 24.807
+  }
+}

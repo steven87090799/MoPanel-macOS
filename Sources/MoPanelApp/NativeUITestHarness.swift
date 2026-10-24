@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import AppKit
 import Foundation
+import ObjectiveC
 import MoPanelCore
 
 struct NativeUIActionEvidence: Codable {
@@ -24,11 +25,16 @@ struct NativeUIReport: Codable {
     let checks: [String: Bool]
     let actions: [NativeUIActionEvidence]
     let maximumTreeNodesObserved: Int
+    let maximumProtocolNodesObserved: Int
+    let maximumSelectorOnlyNodesObserved: Int
+    let observedElementClasses: [String]
+    let maximumUnsupportedChildrenObserved: Int
+    let observedUnsupportedChildTypes: [String]
     let observedControlIdentifiers: [String]
     let errors: [String]
 }
 
-/// Uses the public, in-process AppKit accessibility protocol. This is not an
+/// Uses public, in-process AppKit accessibility interfaces. This is not an
 /// external AXUIElement client, mouse/keyboard injection or a TCC workaround.
 /// An accepted accessibility press is always checked against its real effect.
 @MainActor enum NativeUITestHarness {
@@ -79,6 +85,163 @@ private enum NativeUIFailure: LocalizedError {
     }
 }
 
+/// AppKit permits role-specific accessibility protocols without conformance to
+/// the entire NSAccessibilityProtocol. SwiftUI virtual elements can therefore
+/// expose public AX selectors without passing that broader protocol cast. Keep
+/// those objects in the same own-window tree instead of silently dropping them.
+/// Only documented AppKit selectors/legacy attributes are queried. In particular
+/// a BOOL or NSRect result must never be read using NSObject.perform(_:).
+@MainActor private struct OwnAccessibilityNode {
+    let object: NSObject
+    private var direct: (any NSAccessibilityProtocol)? { object as? any NSAccessibilityProtocol }
+    var hasProtocolConformance: Bool { direct != nil }
+    var hasAccessibilitySelectors: Bool {
+        ["accessibilityChildren", "accessibilityRole", "accessibilityAttributeValue:"]
+            .contains { object.responds(to: NSSelectorFromString($0)) }
+    }
+    var identifierAccessorStatus: String {
+        if direct != nil { return "protocol" }
+        let selector = NSSelectorFromString("accessibilityIdentifier")
+        guard object.responds(to: selector) else { return "absent" }
+        return implementation(selector, result: .object) == nil ? "unsupported-abi" : "compatible"
+    }
+    private typealias ObjectGetter = @convention(c) (AnyObject, Selector) -> Unmanaged<AnyObject>?
+    private typealias ObjectAttributeGetter = @convention(c) (AnyObject, Selector, AnyObject) -> Unmanaged<AnyObject>?
+    private typealias BooleanGetter = @convention(c) (AnyObject, Selector) -> Bool
+    private typealias CharBooleanGetter = @convention(c) (AnyObject, Selector) -> Int8
+    private typealias RectGetter = @convention(c) (AnyObject, Selector) -> NSRect
+    private typealias SelectorPermission = @convention(c) (AnyObject, Selector, Selector) -> Bool
+    private typealias CharSelectorPermission = @convention(c) (AnyObject, Selector, Selector) -> Int8
+
+    private enum ResultKind { case object, boolean, rect }
+    private func implementation(_ selector: Selector, result: ResultKind, arguments: [String] = []) -> (IMP, String)? {
+        guard object.responds(to: selector), let type = object_getClass(object),
+              let method = class_getInstanceMethod(type, selector),
+              method_getNumberOfArguments(method) == UInt32(arguments.count + 2) else { return nil }
+        func encoding(_ index: UInt32?) -> String? {
+            var buffer = [CChar](repeating: 0, count: 256)
+            if let index { method_getArgumentType(method, index, &buffer, buffer.count) }
+            else { method_getReturnType(method, &buffer, buffer.count) }
+            guard buffer.last == 0 else { return nil }
+            return String(cString: buffer).drop(while: { "rnNoORV".contains($0) }).description
+        }
+        func isObject(_ value: String) -> Bool { value == "@" || value.hasPrefix("@\"") }
+        guard let resultEncoding = encoding(nil), let receiver = encoding(0), isObject(receiver), encoding(1) == ":" else { return nil }
+        for (index, expected) in arguments.enumerated() {
+            guard let value = encoding(UInt32(index + 2)), expected == "@" ? isObject(value) : value == expected else { return nil }
+        }
+        switch result {
+        case .object: guard isObject(resultEncoding) else { return nil }
+        case .boolean: guard ["B", "c"].contains(resultEncoding) else { return nil }
+        case .rect: guard resultEncoding == String(cString: NSValue(rect: .zero).objCType) else { return nil }
+        }
+        return (method_getImplementation(method), resultEncoding)
+    }
+
+    private func objectValue(_ name: String) -> AnyObject? {
+        let selector = NSSelectorFromString(name)
+        guard let (implementation, _) = implementation(selector, result: .object) else { return nil }
+        let getter = unsafeBitCast(implementation, to: ObjectGetter.self)
+        return getter(object, selector)?.takeUnretainedValue()
+    }
+    private func booleanValue(_ name: String) -> Bool? {
+        let selector = NSSelectorFromString(name)
+        guard let (implementation, encoding) = implementation(selector, result: .boolean) else { return nil }
+        if encoding == "c" { return unsafeBitCast(implementation, to: CharBooleanGetter.self)(object, selector) != 0 }
+        return unsafeBitCast(implementation, to: BooleanGetter.self)(object, selector)
+    }
+    private func legacyAttribute(_ name: String) -> AnyObject? {
+        // Old AppKit objects can reject unknown attributes. Query only an
+        // attribute they advertise; never enumerate or read labels/values.
+        guard let supported = objectValue("accessibilityAttributeNames") as? [String], supported.contains(name) else { return nil }
+        let selector = NSSelectorFromString("accessibilityAttributeValue:")
+        guard let (implementation, _) = implementation(selector, result: .object, arguments: ["@"]) else { return nil }
+        let getter = unsafeBitCast(implementation, to: ObjectAttributeGetter.self)
+        return getter(object, selector, name as NSString)?.takeUnretainedValue()
+    }
+    func accessibilityIdentifier() -> String? {
+        direct?.accessibilityIdentifier() ?? objectValue("accessibilityIdentifier") as? String ?? legacyAttribute("AXIdentifier") as? String
+    }
+    func accessibilityRole() -> String? {
+        direct?.accessibilityRole()?.rawValue ?? objectValue("accessibilityRole") as? String ?? legacyAttribute("AXRole") as? String
+    }
+    func accessibilityWindow() -> NSWindow? {
+        if let value = direct?.accessibilityWindow() as? NSWindow { return value }
+        if let value = objectValue("accessibilityWindow") as? NSWindow { return value }
+        if let value = legacyAttribute("AXWindow") as? NSWindow { return value }
+        if let view = object as? NSView { return view.window }
+        return object as? NSWindow
+    }
+    func belongs(to expected: NSWindow) -> Bool {
+        if let view = object as? NSView { return view.window === expected }
+        if let owner = accessibilityWindow() {
+            if owner === expected { return true }
+            // A sheet element may report its sheet parent as AXWindow. This
+            // alone is not ownership proof; require its public parent chain to
+            // reach the actual supplied sheet or a view in that sheet below.
+            guard expected.sheetParent === owner else { return false }
+        }
+        var visited = Set<ObjectIdentifier>([ObjectIdentifier(object)])
+        var current = self
+        for _ in 0..<40 {
+            let parent = current.direct?.accessibilityParent() as? NSObject
+                ?? current.objectValue("accessibilityParent") as? NSObject
+                ?? current.legacyAttribute("AXParent") as? NSObject
+            guard let parent, visited.insert(ObjectIdentifier(parent)).inserted else { return false }
+            if let window = parent as? NSWindow { return window === expected }
+            if let view = parent as? NSView { return view.window === expected }
+            if parent is NSApplication { return false }
+            current = OwnAccessibilityNode(object: parent)
+        }
+        return false
+    }
+    func accessibilityFrame() -> NSRect? {
+        if let direct { return direct.accessibilityFrame() }
+        let selector = NSSelectorFromString("accessibilityFrame")
+        if let (implementation, _) = implementation(selector, result: .rect) {
+            return unsafeBitCast(implementation, to: RectGetter.self)(object, selector)
+        }
+        guard let position = legacyAttribute("AXPosition") as? NSValue,
+              let size = legacyAttribute("AXSize") as? NSValue else { return nil }
+        return NSRect(origin: position.pointValue, size: size.sizeValue)
+    }
+    func isAccessibilityElement() -> Bool {
+        if let direct { return direct.isAccessibilityElement() }
+        if let value = booleanValue("isAccessibilityElement") { return value }
+        return booleanValue("accessibilityIsIgnored") == false
+    }
+    func enabledValue() -> Bool? {
+        if let direct { return direct.isAccessibilityEnabled() }
+        return booleanValue("isAccessibilityEnabled") ?? (legacyAttribute("AXEnabled") as? NSNumber)?.boolValue
+    }
+    func isAccessibilityEnabled() -> Bool { enabledValue() == true }
+    func accessibilityChildren() -> [Any] {
+        var children = direct?.accessibilityChildren() ?? objectValue("accessibilityChildren") as? [Any] ?? []
+        if let direct { children.append(contentsOf: direct.accessibilityChildrenInNavigationOrder() ?? []) }
+        else { children.append(contentsOf: objectValue("accessibilityChildrenInNavigationOrder") as? [Any] ?? []) }
+        children.append(contentsOf: objectValue("accessibilityVisibleChildren") as? [Any] ?? [])
+        children.append(contentsOf: legacyAttribute("AXChildren") as? [Any] ?? [])
+        return children
+    }
+    func accessibilityPerformPress() -> Bool {
+        let selector = NSSelectorFromString("accessibilityPerformPress")
+        guard object.responds(to: selector) else { return false }
+        if let direct {
+            guard direct.isAccessibilitySelectorAllowed(selector) else { return false }
+            return direct.accessibilityPerformPress()
+        }
+        let permission = NSSelectorFromString("isAccessibilitySelectorAllowed:")
+        if object.responds(to: permission) {
+            guard let (implementation, encoding) = implementation(permission, result: .boolean, arguments: [":"]) else { return false }
+            let allowed = encoding == "c"
+                ? unsafeBitCast(implementation, to: CharSelectorPermission.self)(object, permission, selector) != 0
+                : unsafeBitCast(implementation, to: SelectorPermission.self)(object, permission, selector)
+            guard allowed else { return false }
+        }
+        return booleanValue("accessibilityPerformPress") == true
+    }
+}
+
 @MainActor private final class OwnWindowRunner {
     private let model: AppModel
     private let window: NSWindow
@@ -88,11 +251,17 @@ private enum NativeUIFailure: LocalizedError {
     private var actions: [NativeUIActionEvidence] = []
     private var errors: [String] = []
     private var maximumTreeNodesObserved = 0
+    private var maximumProtocolNodesObserved = 0
+    private var maximumSelectorOnlyNodesObserved = 0
+    private var observedElementClasses = Set<String>()
+    private var maximumUnsupportedChildrenObserved = 0
+    private var observedUnsupportedChildTypes = Set<String>()
     private var observedIdentifiers = Set<String>()
     private var cleanupRequested = false
     private var activeControl: NativeUIControl?
     private var phaseBreadcrumbs = 0
     private var nodeBreadcrumbs = 0
+    private var nodeDiagnostics = 0
 
     init(model: AppModel, window: NSWindow) { self.model = model; self.window = window }
 
@@ -231,10 +400,15 @@ private enum NativeUIFailure: LocalizedError {
         }
         breadcrumb("run.report")
         return NativeUIReport(passed: errors.isEmpty && checks["fixture_guard_retained_after_all_actions"] == true && checks.values.allSatisfy { $0 },
-            mechanism: "AppKit NSAccessibilityProtocol on own-window objects", fixtureOnly: contextWasValidated,
+            mechanism: "AppKit own-window accessibility tree, protocol/public selector accessors and accessibilityPerformPress", fixtureOnly: contextWasValidated,
             ownProcessOnly: true, physicalInputInjected: false, accessibilityPermissionRequested: false,
             routeSetupUsesModelState: true, directActionFallbackUsed: false, cleanupRequestedAfterFailure: cleanupRequested,
             checks: checks, actions: actions, maximumTreeNodesObserved: maximumTreeNodesObserved,
+            maximumProtocolNodesObserved: maximumProtocolNodesObserved,
+            maximumSelectorOnlyNodesObserved: maximumSelectorOnlyNodesObserved,
+            observedElementClasses: observedElementClasses.sorted(),
+            maximumUnsupportedChildrenObserved: maximumUnsupportedChildrenObserved,
+            observedUnsupportedChildTypes: observedUnsupportedChildTypes.sorted(),
             observedControlIdentifiers: observedIdentifiers.sorted(), errors: errors)
     }
 
@@ -303,11 +477,10 @@ private enum NativeUIFailure: LocalizedError {
         breadcrumb("press.find.end")
         try validateAction(control)
         breadcrumb("press.role.begin")
-        let role = element.accessibilityRole()?.rawValue ?? ""
+        let role = element.accessibilityRole() ?? ""
         breadcrumb("press.role.end", role: role)
         let targetWindow = try scopeWindow(for: control)
-        guard let owned = element.accessibilityWindow() as? NSWindow, owned === targetWindow,
-              control.allowedRoles.contains(role), element.isAccessibilityEnabled() else {
+        guard element.belongs(to: targetWindow), control.allowedRoles.contains(role), element.isAccessibilityEnabled() else {
             throw NativeUIFailure.unavailableControl(control.rawValue)
         }
         breadcrumb("press.perform.begin", role: role)
@@ -332,7 +505,7 @@ private enum NativeUIFailure: LocalizedError {
         return window
     }
 
-    private func find(_ control: NativeUIControl, enabled: Bool) async throws -> any NSAccessibilityProtocol {
+    private func find(_ control: NativeUIControl, enabled: Bool) async throws -> OwnAccessibilityNode {
         activeControl = control
         breadcrumb("find.begin")
         let local = ContinuousClock.now.advanced(by: .seconds(2))
@@ -343,7 +516,7 @@ private enum NativeUIFailure: LocalizedError {
                 guard matches.count <= 1 else { throw NativeUIFailure.duplicateControl(control.rawValue) }
                 if let match = matches.first {
                     breadcrumb("find.enabled.begin")
-                    let actualEnabled = match.isAccessibilityEnabled()
+                    let actualEnabled = match.enabledValue()
                     breadcrumb("find.enabled.end")
                     if actualEnabled == enabled { breadcrumb("find.end"); return match }
                 }
@@ -353,39 +526,62 @@ private enum NativeUIFailure: LocalizedError {
         } while true
     }
 
-    private func matches(_ control: NativeUIControl, in targetWindow: NSWindow) throws -> [any NSAccessibilityProtocol] {
+    private func matches(_ control: NativeUIControl, in targetWindow: NSWindow) throws -> [OwnAccessibilityNode] {
         guard let content = targetWindow.contentView else { throw NativeUIFailure.missingWindow }
         breadcrumb("tree.layout.begin", node: 0)
         content.layoutSubtreeIfNeeded()
         breadcrumb("tree.layout.end", node: 0)
-        var queue: [(NSObject, Int)] = [(content, 0)]
+        // The AX hierarchy can skip the content view and expose virtual SwiftUI
+        // children through its NSWindow. Include both legitimate owned roots.
+        var queue: [(NSObject, Int)] = [(targetWindow, 0), (content, 0)]
         var index = 0
         var visited = Set<ObjectIdentifier>()
-        var result: [any NSAccessibilityProtocol] = []
+        var result: [OwnAccessibilityNode] = []
+        var protocolNodes = 0, selectorOnlyNodes = 0
+        var unsupportedChildren = 0
+        func enqueue(_ children: [Any], depth: Int) throws {
+            guard children.count <= 4_096, queue.count + children.count <= 16_384 else { throw NativeUIFailure.treeLimit }
+            for child in children {
+                if let child = child as? NSObject { queue.append((child, depth)) }
+                else {
+                    unsupportedChildren += 1
+                    if observedUnsupportedChildTypes.count < 32 {
+                        let name = String(String(reflecting: type(of: child)).filter { $0.isASCII && ($0.isLetter || $0.isNumber || "._<>".contains($0)) }.prefix(140))
+                        observedUnsupportedChildTypes.insert(name)
+                    }
+                }
+            }
+        }
+        try enqueue(NSAccessibility.unignoredChildren(from: [content]), depth: 1)
         while index < queue.count {
             let (object, depth) = queue[index]; index += 1
             guard visited.insert(ObjectIdentifier(object)).inserted else { continue }
             guard visited.count <= 4_096, depth <= 40, queue.count <= 16_384 else { throw NativeUIFailure.treeLimit }
-            if let accessibility = object as? any NSAccessibilityProtocol {
+            let accessibility = OwnAccessibilityNode(object: object)
+            if accessibility.hasProtocolConformance || accessibility.hasAccessibilitySelectors {
+                if accessibility.hasProtocolConformance { protocolNodes += 1 } else { selectorOnlyNodes += 1 }
                 breadcrumb("tree.identifier.begin", node: visited.count)
                 let identifier = accessibility.accessibilityIdentifier()
+                let role = accessibility.accessibilityRole()
                 breadcrumb("tree.identifier.end", node: visited.count)
                 if let identifier, NativeUIControl(rawValue: identifier) != nil { observedIdentifiers.insert(identifier) }
                 if identifier == control.rawValue,
-                   let role = accessibility.accessibilityRole()?.rawValue, control.allowedRoles.contains(role),
+                   let role, control.allowedRoles.contains(role),
                    accessibility.isAccessibilityElement(),
-                   let owner = accessibility.accessibilityWindow() as? NSWindow, owner === targetWindow {
-                    let frame = accessibility.accessibilityFrame()
+                   accessibility.belongs(to: targetWindow),
+                   let frame = accessibility.accessibilityFrame() {
                     let hiddenView = (object as? NSView)?.isHiddenOrHasHiddenAncestor ?? false
                     if !hiddenView, targetWindow.isVisible, frame.width > 0, frame.height > 0,
                        frame.intersects(targetWindow.frame) { result.append(accessibility) }
                 }
                 breadcrumb("tree.children.begin", node: visited.count)
-                let children = accessibility.accessibilityChildren() ?? []
+                let children = accessibility.accessibilityChildren()
                 breadcrumb("tree.children.end", node: visited.count)
-                for child in children {
-                    if let child = child as? NSObject { queue.append((child, depth + 1)) }
-                }
+                guard children.count <= 4_096 else { throw NativeUIFailure.treeLimit }
+                diagnoseNode(accessibility, identifier: identifier, role: role, childCount: children.count, targetWindow: targetWindow)
+                try enqueue(children, depth: depth + 1)
+                let unignored = NSAccessibility.unignoredChildren(from: children)
+                try enqueue(unignored, depth: depth + 1)
             }
             // Public NSView traversal handles an ignored hosting wrapper. It
             // never searches outside the explicitly owned window/content tree.
@@ -394,8 +590,28 @@ private enum NativeUIFailure: LocalizedError {
             }
         }
         maximumTreeNodesObserved = max(maximumTreeNodesObserved, visited.count)
+        maximumProtocolNodesObserved = max(maximumProtocolNodesObserved, protocolNodes)
+        maximumSelectorOnlyNodesObserved = max(maximumSelectorOnlyNodesObserved, selectorOnlyNodes)
+        maximumUnsupportedChildrenObserved = max(maximumUnsupportedChildrenObserved, unsupportedChildren)
         breadcrumb("tree.end", node: visited.count)
         return result
+    }
+
+    private func diagnoseNode(_ node: OwnAccessibilityNode, identifier: String?, role: String?, childCount: Int, targetWindow: NSWindow) {
+        guard Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"] else { return }
+        let name = String(NSStringFromClass(type(of: node.object)).filter { $0.isASCII && ($0.isLetter || $0.isNumber || "._<>".contains($0)) }.prefix(140))
+        if observedElementClasses.count < 48 { observedElementClasses.insert(name) }
+        guard nodeDiagnostics < 256 else { return }
+        nodeDiagnostics += 1
+        let roles = ["AXButton", "AXCheckBox", "AXSwitch", "AXGroup", "AXWindow", "AXStaticText", "AXScrollArea", "AXSplitGroup", "AXOutline", "AXRow", "AXTextField", "AXUnknown"]
+        let safeRole = role.map { roles.contains($0) ? $0 : "other" } ?? "none"
+        let safeIdentifier = identifier.flatMap(NativeUIControl.init(rawValue:))?.rawValue ?? (identifier == nil ? "none" : "other")
+        let owner = node.accessibilityWindow()
+        let ownership = node.belongs(to: targetWindow) ? "owned" : owner.map { _ in "other" } ?? "unknown"
+        let enabled = node.enabledValue().map { $0 ? "true" : "false" } ?? "unknown"
+        let frame = node.accessibilityFrame().map { $0.width > 0 && $0.height > 0 && $0.intersects(targetWindow.frame) ? "visible" : "empty-or-outside" } ?? "unknown"
+        fputs("[MoPanelNativeUI] node class=\(name) protocol=\(node.hasProtocolConformance) role=\(safeRole) id=\(safeIdentifier) idABI=\(node.identifierAccessorStatus) element=\(node.isAccessibilityElement()) enabled=\(enabled) window=\(ownership) frame=\(frame) children=\(childCount)\n", stderr)
+        fflush(stderr)
     }
 
     /// Diagnostics are restricted to this explicit fixture launch and fixed

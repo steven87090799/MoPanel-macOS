@@ -58,12 +58,12 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 ## 公開 GitHub Actions 建置狀態
 
-公開repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 使用免費標準`xcode-27` runner，實際image20261022.0305.3、macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。GitHub API token僅用於官方release metadata的同host請求，不跟隨跨host redirect；binary與checksum下載無授權header。
+公開repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS)使用免費標準`xcode-27` ARM64 runner，實際image20261022.0305.3、macOS27.0.1、Xcode27.1、Apple Swift6.4。API token只送同host官方release metadata請求；binary與checksum下載無授權header。
 
-最新[run40076975513](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076975513)通過140個Mac XCTest、App及兩個helpers release編譯、ARM64與ad-hoc完整性，並驗證三個正式executables沒有get-task-allow。Homebrew15、gate6、smoke driver5、crash辨識5與debug guard8案例全過。先前debug harness的Darwin路徑別名期望已修復。
+最新[run40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)通過140Mac XCTest、App及helpers release編譯、ARM64與ad-hoc完整性，正式executables沒有get-task-allow。Python／Bash的Homebrew15、gate6、driver5、crash辨識5、debug guard8也通過。
 
-正式UI仍於初始生命週期SIGSEGV，尚未detect或開始IOPM／Startup／AX；45秒期限未達。系統沒有產生可確認的自身crash report，所以採已授權的獨立debug-only App拷貝，由guardian管控LLDB固定fixture啟動與backtrace。診斷30.557秒完成，取得main-thread scene graph重入stack及5,139次publishing-during-update警告。正式App四檔SHA前後一致，無主機安全設定變更。診斷不能替代正式smoke；完整流程與證據見`SMOKE_DEBUG_DIAGNOSTICS.md`、`STARTUP_CRASH_EVIDENCE.json`及`STARTUP_STACK_TRACE.txt`。
+這次正式App不再崩潰，22.345秒完成safe smoke JSON及自己的視窗截圖，20項中19項通過：adapter／watch／路由存活、安全IOPM assertion與overlay生命週期／Doctor唯讀資料／Startup私有mock皆成功。唯一失敗是accessibility harness找不到dashboard snapshot控制項的唯一ID，尚未執行任何AX按壓。截圖中的可見按鈕不能代替真正操作驗收；沒有直接action fallback。
 
-兩個獨立gate保存XCTest成功與UI失敗，最後非零退出，未進效能、後續guardian Python驗收、baseline probe或ZIP。尚無可交付App ZIP。修後必須重過完整流程，不能因debugger成功啟動或看到stack就宣稱App驗收成功。
+兩個獨立gate保留XCTest成功與smoke失敗，仍非零退出，效能、guardian Python、baseline probe和ZIP尚未執行。隔離debug診斷24.807秒、正式四檔hash不變，無主機安全設定變更。前一輪scene graph重入stack保留為修前證據；本輪正式與debug log皆0同類warning。下一輪仍須完整通過AX及其後所有門檻。
 
 `scripts/audit_platform.py` 已在真macOS執行四組固定、唯讀的 `launchctl` 公開介面探測。help與print-disabled exit0，對不存在fixture服務的print exit113。原始輸出保留於 `platform-contracts.json`，沒有呼叫 enable、disable、bootstrap或bootout，也未讀取私有BTM資料庫。

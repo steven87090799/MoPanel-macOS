@@ -15,6 +15,23 @@ from debug_smoke_failure import diagnose
 SMOKE_DEADLINE_SECONDS = 45
 
 
+def needs_startup_debug(outcome, report):
+    """A complete logical-failure report does not benefit from a second launch."""
+    code = outcome.get("process_exit_code")
+    if outcome.get("timed_out") is True or (type(code) is int and code < 0):
+        return True
+    if report.get("evidence_missing") is True or "invalid_report" in report:
+        return True
+    if any(type(report.get(field)) is not bool for field in ("success", "window_created", "fixture_only")):
+        return True
+    checks, errors = report.get("checks"), report.get("errors")
+    if (not isinstance(checks, dict) or not checks
+            or any(type(value) is not bool for value in checks.values())
+            or not isinstance(errors, list) or any(not isinstance(value, str) for value in errors)):
+        return True
+    return False
+
+
 def bounded_tail(path, limit=3000):
     try:
         with path.open("rb") as stream:
@@ -146,10 +163,14 @@ def main():
                   or any(report.get(field) is not True for field in ("success", "window_created", "fixture_only"))
                   or report.get("checks", {}).get("fixture_resource_inside_app") is not True)
         if failed:
-            try:
-                report["debug_copy_diagnostic"] = diagnose(args.app, args.output.parent.resolve(), environment, failed=True)
-            except Exception as error:
-                report["debug_copy_diagnostic"] = {"status": "diagnostic_exception", "error_type": type(error).__name__}
+            if needs_startup_debug(outcome, report):
+                try:
+                    report["debug_copy_diagnostic"] = diagnose(args.app, args.output.parent.resolve(), environment, failed=True)
+                except Exception as error:
+                    report["debug_copy_diagnostic"] = {"status": "diagnostic_exception", "error_type": type(error).__name__}
+            else:
+                report["debug_copy_diagnostic"] = {"attempted": False,
+                    "status": "complete_app_failure_evidence_available", "original_smoke_still_failed": True}
             report["success"] = False
             args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
         if outcome["timed_out"] or outcome["process_exit_code"] != 0:

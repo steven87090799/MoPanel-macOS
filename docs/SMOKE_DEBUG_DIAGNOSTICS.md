@@ -1,6 +1,6 @@
 # UI 啟動失敗的隔離診斷
 
-這個流程只用於明確的 macOS GitHub Actions 測試，而且必須先有正式 release bundle 的 smoke 失敗。它不能改變原本的驗收結果，也不產生可發行的替代 App。
+這個流程只用於明確的 macOS GitHub Actions 測試，而且必須先有正式 release bundle 的 smoke 失敗。額外LLDB僅限signal崩潰、逾時、App報告缺失或格式無效；已產生完整有效JSON的邏輯檢查失敗直接保存失敗證據，不重跑拷貝。這不改變原本的驗收結果，也不產生可發行的替代 App。
 
 正式 smoke 維持 45 秒期限，保存原始退出訊號、stdout、stderr、JSON。逾時時可對仍存活的自身子程序取樣；已崩潰時僅收集身分與時間吻合的自身 crash report。若 runner 沒有產生這些報告，另執行一次最長 60 秒的隔離診斷：
 

@@ -4,11 +4,15 @@
 
 ## Public API and ownership boundary
 
-The harness traverses `accessibilityChildren()` plus public `NSView.subviews` beneath one explicitly supplied `NSWindow.contentView`. For modal actions it only traverses that window's currently attached sheet. It finds a stable SwiftUI `accessibilityIdentifier`, requires a unique appropriate accessibility role, enabled state, nonzero visible frame and the exact owning window, then invokes `accessibilityPerformPress()`.
+The harness starts with one explicitly supplied `NSWindow` and its content view. It traverses the public accessibility children, navigation-order children, visible children and `NSAccessibility.unignoredChildren(from:)`, with `NSView.subviews` for ignored hosting containers. For modal actions it only traverses that window's currently attached sheet. It finds a stable SwiftUI `accessibilityIdentifier`, requires a unique appropriate accessibility role, a known enabled state, a nonzero visible frame and proof of the exact owning window, then invokes `accessibilityPerformPress()`.
+
+AppKit permits role-specific accessibility protocols without requiring the entire `NSAccessibilityProtocol`. The adapter therefore prefers that complete protocol when present but also accepts an object's documented public selectors. For selector-only objects it verifies the Objective-C method's argument count, receiver/selector/argument encodings and result encoding before using a correctly typed implementation pointer. Object results, BOOL (`B` or `c`) results and NSRect results use separate ABI-correct calls. It never interprets a BOOL or struct as `Unmanaged<AnyObject>`, uses no private selector, and never invokes a selector with an unknown signature. The public legacy attribute getter is a compatibility read path only: a fixed attribute must first appear in `accessibilityAttributeNames`, avoiding unsupported-attribute exceptions. An actual action still requires the Boolean-returning public `accessibilityPerformPress()`; there is no action fallback to a model method or legacy unverified action.
+
+Window ownership is normally the returned NSWindow or an NSView's real window. A sheet element that reports its sheet parent still has to prove that its bounded public accessibility-parent chain reaches the actual sheet or an NSView in that sheet. A parent window alone is insufficient. Unknown frame, role, enabled state or ownership is rejected.
 
 Apple documents the press result as indicating that an action was triggered, **not that the action succeeded**. Every press is followed by a separate bounded postcondition: a new operation activity UUID and exact command, decoded fixture data, modal state, or subprocess cancellation/result. A missing element, ambiguous identifier, unsupported accessibility tree, rejected press, failed outcome or timeout fails the test. It never calls the model action directly as a substitute for a failed UI interaction.
 
-The harness does not use `AXUIElement`, `CGEvent`, desktop screenshots, global event injection, permission requests, private selectors, Objective-C method swizzling or undocumented accessibility switches. Its tree traversal has depth, node and queue limits. Diagnostics expose only known control identifiers, roles and counts; they do not dump arbitrary accessibility text or values.
+The harness does not use `AXUIElement`, `CGEvent`, desktop screenshots, global event injection, permission requests, private selectors, Objective-C method swizzling or undocumented accessibility switches. Its tree traversal has depth, node and queue limits. Bounded diagnostics expose only known control identifiers, class/type names, fixed role/ownership/frame/ABI flags and counts; they do not dump labels, values, paths, terminal text or arbitrary accessibility identifiers. Children that are not supported object types are counted and reported by type, not silently treated as controls.
 
 ## Fixture enforcement
 
@@ -57,6 +61,8 @@ let report = await NativeUITestHarness.run(model: model, window: mainWindow)
 
 The caller must pass the actual MoPanel content window, not select a different application by title. `NativeUIReport` is Codable and records overall `passed`, per-outcome `checks`, per-press `actions`, known identifiers observed, tree node count, safety/scope flags and errors. On failure, it requests cancellation of owned fixture work as teardown; that direct cancellation is explicitly recorded and never counted as a successful Stop-button test.
 
+Run `40077546222` established that the real app launches and the other 19 smoke checks pass, including the live watch and safe native API probes. Its Screenshot shows the Snapshot button, but the original protocol-only traversal observed 169 nodes, no control identifiers and zero accepted actions. This is a failed native-button test, not a missing visible button and not a successful automation run. The public-selector/window-root changes described above address that traversal assumption and add diagnostics; their successful macOS compilation and actual press outcomes remain pending the next CI run. No control action, fixture guard, postcondition or watchdog has been weakened.
+
 The runner has a 20-second whole-sequence deadline, two-second element lookup deadlines and three-second normal outcome deadlines (five seconds for the intentionally delayed overview). The usual successful path contains one completed three-second delay. These are failure bounds, not retries that re-execute an action. Keep the outer smoke watchdog; change it only based on measured CI timing.
 
 Linux Swift syntax parsing and `bash -n` pass. `docs/NATIVE_UI_FIXTURE_TEST_OUTPUT.txt` records actual mock script JSON/no-change outputs and process-group interrupt tests. Those checks are **not macOS compilation or UI interaction evidence**. The macOS CI smoke report is the authority for whether the public accessibility bridge actually exposes and operates these controls. Until a run passes, the correct status is **implemented; native UI action verification pending**.
@@ -68,6 +74,10 @@ If SwiftUI does not expose a usable own-process accessibility tree on the tested
 Inspected 2026-10-24:
 
 - [NSAccessibilityProtocol](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol)
+- [NSAccessibilityElementProtocol](https://developer.apple.com/documentation/appkit/nsaccessibilityelementprotocol)
+- [NSAccessibilityButton](https://developer.apple.com/documentation/appkit/nsaccessibilitybutton)
+- [unignoredChildren(from:)](https://developer.apple.com/documentation/appkit/nsaccessibility-swift.struct/unignoredchildren(from:))
+- [Legacy NSAccessibility interface](https://developer.apple.com/documentation/appkit/nsaccessibility)
 - [accessibilityChildren()](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol/accessibilitychildren())
 - [accessibilityIdentifier()](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol/accessibilityidentifier())
 - [accessibilityWindow()](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol/accessibilitywindow())

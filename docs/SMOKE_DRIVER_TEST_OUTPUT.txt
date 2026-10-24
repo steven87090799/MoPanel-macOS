@@ -1,10 +1,13 @@
+test_complete_logical_failure_skips_debug_copy_only (__main__.SmokeDriverTests.test_complete_logical_failure_skips_debug_copy_only) ... ok
 test_crash_diagnostic_failure_preserves_original_signal (__main__.SmokeDriverTests.test_crash_diagnostic_failure_preserves_original_signal) ... ok
+test_main_still_fails_and_saves_failure_when_debug_copy_is_skipped (__main__.SmokeDriverTests.test_main_still_fails_and_saves_failure_when_debug_copy_is_skipped) ... ok
 test_nonzero_exit_retains_logs_without_sampling (__main__.SmokeDriverTests.test_nonzero_exit_retains_logs_without_sampling) ... ok
 test_progress_survives_timeout_and_diagnostic_error_cannot_mask_it (__main__.SmokeDriverTests.test_progress_survives_timeout_and_diagnostic_error_cannot_mask_it) ... ok
 test_sampler_never_runs_after_owned_child_exited (__main__.SmokeDriverTests.test_sampler_never_runs_after_owned_child_exited) ... ok
 test_sampler_permission_failure_is_recorded_without_elevation (__main__.SmokeDriverTests.test_sampler_permission_failure_is_recorded_without_elevation) ... ok
+test_signal_timeout_missing_and_invalid_reports_still_need_debug (__main__.SmokeDriverTests.test_signal_timeout_missing_and_invalid_reports_still_need_debug) ... ok
 
 ----------------------------------------------------------------------
-Ran 5 tests in 0.257s
+Ran 8 tests in 0.273s
 
 OK
