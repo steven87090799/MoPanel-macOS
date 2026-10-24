@@ -1,0 +1,9 @@
+Usage: mo optimize [OPTIONS]
+
+Refresh system caches and services, repair safe maintenance issues.
+
+Options:
+  --dry-run         Preview optimization without making changes
+  --whitelist       Manage protected items
+  --debug           Show detailed operation logs
+  -h, --help        Show this help message

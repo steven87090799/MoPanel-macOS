@@ -1,0 +1,179 @@
+{
+  "scope": "Syntax parse only; imports/types/macOS APIs are not typechecked. No macOS App was compiled.",
+  "swift": "Swift version 6.4.1 (swift-6.4.1-RELEASE)\nTarget: x86_64-unknown-linux-gnu",
+  "host": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "architecture": "x86_64",
+  "recorded_at": "2026-10-24T06:39:16.757940+00:00",
+  "files_checked": 28,
+  "passed_count": 28,
+  "results": [
+    {
+      "file": "Package.swift",
+      "sha256": "fd37eebcae69a465ca434c3e12f4390b7552bbc80ed148385e0989d83d9fd85e",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/AnalyzeView.swift",
+      "sha256": "2616a97b15081b0c0a47dba1a7ab08bcd2694cd79e1bb715675e1ad2ddba8df6",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/AppModel.swift",
+      "sha256": "1af15016596b49edf6cdbaea1036920364cfbe0cbe8d9e60ee129fb28b4608db",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/AppResources.swift",
+      "sha256": "0ec3bb3a3f53d22a8dafccba541fb2afda13857916e2f9de9819bb3f1761744c",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/AppTypes.swift",
+      "sha256": "e2b862973f81af028c7dc53b8a0fd67da3e379bc9a81d3f1640c52ad18fd9a8b",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/CLIProbe.swift",
+      "sha256": "4db8c7a648c5c5ba35fb4a8b7f9bd2d6cd12e2af31acbecea9f5a7cf0d0bbf85",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/ContentView.swift",
+      "sha256": "0c089c74f8b4eb89bb9c0783f888f1cbcc62016c08631c0b4527e7d64b633160",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/DashboardView.swift",
+      "sha256": "b105a97b3adcc497e310a112e201337614656f786f169f0c56dbac62d7d2bdbd",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/HistoryView.swift",
+      "sha256": "6e626d6b2a8e341b557810f6cbe999150e712b6965febc0c3afb4eef0e5e5704",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/MaintenanceView.swift",
+      "sha256": "719c32fcaa8ff87926785537730a5d8bf3c3496ed31c4a6f6192e89e6fd8330c",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/MoPanelApp.swift",
+      "sha256": "bbeef7302f26d54ab56718d79a020f7a56b7fb33dd9ef8132a4436591ffabd39",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/OperationExport.swift",
+      "sha256": "f1b4229492a60afacd4a039113b48683c9a3d5d116331f1a19a4708e08c25716",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/SettingsView.swift",
+      "sha256": "f0ede6c85868c3892e90d68da34cac4e3a5f46b68960309040c461ddca597138",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/SmokeHarness.swift",
+      "sha256": "9edf59c70a599fcb61297e7cf5d118d0a38089d0f2907caf5f4c623a62350cb9",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelApp/UninstallView.swift",
+      "sha256": "be07a4b06789860f2b077254f255add2910d4562c931620f341cd91359ed8955",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelCore/Compatibility.swift",
+      "sha256": "6ea177cf5335c3c6f01cabde2c78cab5875ab2dc483cb6a95c544da037632225",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelCore/MoleCommand.swift",
+      "sha256": "1e67862d7c9339aac609676c642bde99520b310036b032884525167bfba3c749",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelCore/MoleDiscovery.swift",
+      "sha256": "30ac9f2f916c2f0524a6745243f6f827218011d2813041208aad61b05d543c3c",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelCore/MoleModels.swift",
+      "sha256": "4943a36ad700bc1d3e3fbac8c9e9c0521d718250e8bc4bdb5d0f91c005415cf5",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelEditor/main.swift",
+      "sha256": "f8ff8fb17656feaa51c5d23c0b1ae57630f43399b3421247607dbe64ec1ab6a6",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelProcess/ManagedProcess.swift",
+      "sha256": "6fdcc8b2d2dcd51a9b8315eee4a27cc5fe85a748368145e23cc07fafe28f21e6",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelProcess/PurgePathsDocument.swift",
+      "sha256": "8dbedfa9c1e1412c20c28d94341542e92b67ea363aba58db63ae736983cba457",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Sources/MoPanelTerminal/TerminalPanel.swift",
+      "sha256": "1b3a1ce0af54684cb29e3861eaae7b29c11bdc721babbcfea6b5f4c7cfe017d8",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Tests/MoPanelCoreTests/DiscoveryTests.swift",
+      "sha256": "ac13a06eca654b037c8d9721135662789a0c2180e4ce9318ee553b60f421d310",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Tests/MoPanelCoreTests/MoleCoreTests.swift",
+      "sha256": "8a47ed86d559c3a56c5ae767d6ff0b6f56ef8ba70fb2accc6d8b9038ff4ed6b3",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Tests/MoPanelProcessTests/ManagedProcessTests.swift",
+      "sha256": "602f1b7027beb9ac585d2c3b35390c334454f09daebdf789d5c68ae77e77f894",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "Tests/MoPanelProcessTests/PurgePathsDocumentTests.swift",
+      "sha256": "86b1bdaffd9d3c35c9f8303ab622259f8c7f2b391fc08fc9375539d18b0485ae",
+      "passed": true,
+      "diagnostics": ""
+    },
+    {
+      "file": "scripts/create_icon.swift",
+      "sha256": "82f34880a269474fed8cb5c413a1984b2391e4622c782108ac1ad98e4757157b",
+      "passed": true,
+      "diagnostics": ""
+    }
+  ]
+}

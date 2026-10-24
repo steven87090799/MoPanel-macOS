@@ -1,0 +1,8 @@
+Usage: mo history [OPTIONS]
+
+Review recent Mole operation and deletion activity.
+
+Options:
+  --json           Output history as JSON
+  --limit N        Show the most recent N entries, 1-200
+  -h, --help       Show this help message

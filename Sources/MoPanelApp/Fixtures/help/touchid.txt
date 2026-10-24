@@ -1,0 +1,14 @@
+Usage: mo touchid [COMMAND]
+
+Configure Touch ID for sudo authentication.
+
+Commands:
+  enable            Enable Touch ID for sudo
+  disable           Disable Touch ID for sudo
+  status            Show current Touch ID status
+
+Options:
+  --dry-run         Preview Touch ID changes without modifying sudo config
+  -h, --help        Show this help message
+
+If no command is provided, an interactive menu is shown.

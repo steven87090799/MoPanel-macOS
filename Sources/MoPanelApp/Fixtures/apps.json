@@ -1,0 +1,5 @@
+[
+  {"name":"Text Edit","bundle_id":"org.example.fixture.text","source":"App","uninstall_name":"Text Edit","path":"/Applications/Text Edit.app","size":"25MB"},
+  {"name":"程式 🐈","bundle_id":"org.example.fixture.unicode","source":"App","uninstall_name":"程式 🐈","path":"/Applications/程式 🐈.app","size":"128KB"},
+  {"name":"Cask Alias","bundle_id":"org.example.fixture.cask","source":"Homebrew","uninstall_name":"cask-alias","path":"/Applications/Cask Alias.app","size":"~50MB"}
+]

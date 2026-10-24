@@ -1,0 +1,13 @@
+Mole Purge, Clean old project build artifacts
+
+Usage: mo purge [options]
+
+Options:
+  --paths         Edit custom scan directories
+  --dry-run       Preview purge actions without making changes
+  --include-empty Show zero-size project artifact directories
+  --yes           Confirm unattended cleanup of eligible artifacts
+  --debug         Enable debug logging
+  -h, --help      Show this help message
+
+Default Paths:

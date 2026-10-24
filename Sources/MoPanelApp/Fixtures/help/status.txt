@@ -1,0 +1,18 @@
+Usage: mo status [OPTIONS]
+
+Monitor system health. Without options it opens the interactive dashboard, and
+switches to a single JSON snapshot when stdout is not a terminal.
+
+Options:
+  --json                          Output one metrics snapshot as JSON
+  --watch                         Stream snapshots as newline-delimited JSON
+  --interval DURATION             With --watch, collection interval (default 1s)
+  --proc-cpu-alerts               Enable high-CPU process alerts (default true)
+  --proc-cpu-threshold PERCENT    Alert above this CPU percent (default 100)
+  --proc-cpu-window DURATION      Time above the threshold before alerting (default 5m)
+  -h, --help                      Show this help message
+
+Examples:
+  mo status                       Interactive dashboard
+  mo status --json                One machine-readable snapshot
+  mo status --watch --interval 2s Continuous NDJSON stream

@@ -1,0 +1,7 @@
+Usage: mo remove [--dry-run]
+
+Remove Mole from this Mac. Operation logs in ~/Library/Logs/mole are kept.
+
+Options:
+  -n, --dry-run     Preview Mole removal
+  -h, --help        Show this help message

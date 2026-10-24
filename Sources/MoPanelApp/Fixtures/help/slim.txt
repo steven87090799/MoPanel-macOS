@@ -1,0 +1,11 @@
+Usage: mo slim [OPTIONS]
+
+Remove the Intel code from universal apps on Apple Silicon.
+Each app is slimmed on a copy that must pass code signing and Gatekeeper
+checks before it replaces the original, which moves to the Trash.
+App updates bring the Intel code back.
+
+Options:
+  --dry-run, -n     List apps and reclaimable space without changes
+  --debug           Show why apps were skipped
+  -h, --help        Show this help message

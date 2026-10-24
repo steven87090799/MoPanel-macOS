@@ -1,0 +1,46 @@
+{
+  "logs": {"operations": "/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelCoreTests/Fixtures/operations.log", "deletions": "/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelCoreTests/Fixtures/deletions.log"},
+  "limit": 200,
+  "sessions": [
+    {
+      "command": "purge",
+      "run_id": "",
+      "attribution": "command",
+      "started_at": "2026-10-24 08:01:00",
+      "ended_at": "",
+      "items": 0,
+      "size": "0B",
+      "operation_count": 1,
+      "failed_tasks": 0,
+      "actions": {"removed": 0, "trashed": 0, "skipped": 1, "failed": 0, "rebuilt": 0, "other": 0}
+    },
+    {
+      "command": "clean",
+      "run_id": "",
+      "attribution": "command",
+      "started_at": "2026-10-24 08:00:00",
+      "ended_at": "2026-10-24 08:00:05",
+      "items": 2,
+      "size": "6KB",
+      "operation_count": 4,
+      "failed_tasks": 0,
+      "actions": {"removed": 1, "trashed": 1, "skipped": 1, "failed": 1, "rebuilt": 0, "other": 0}
+    }
+  ],
+  "deletions": [
+    {
+      "timestamp": "2026-10-24T08:00:04+0000",
+      "mode": "permanent",
+      "status": "permission denied",
+      "size_kb": null,
+      "path": "/tmp/denied"
+    },
+    {
+      "timestamp": "2026-10-24T08:00:02+0000",
+      "mode": "trash",
+      "status": "ok",
+      "size_kb": 4,
+      "path": "/tmp/Fixture.app"
+    }
+  ]
+}

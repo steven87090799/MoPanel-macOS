@@ -1,0 +1,1 @@
+Synthetic TEST-ONLY fixtures. Loaded only when MoPanel is launched with --smoke-test or --benchmark. Never used for real dashboard data. help/ contains unmodified GPL-3.0 official Mole V1.62.0 help output; see THIRD_PARTY_NOTICES.md.

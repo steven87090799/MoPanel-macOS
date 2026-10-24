@@ -1,0 +1,10 @@
+Usage: mo clean [OPTIONS]
+
+Clean up disk space by removing caches, logs, temporary files, and app leftovers from already-uninstalled apps.
+
+Options:
+  --dry-run, -n     Preview cleanup without making changes
+  --external PATH   Clean OS metadata from a mounted external volume
+  --whitelist       Manage protected paths
+  --debug           Show detailed operation logs
+  -h, --help        Show this help message

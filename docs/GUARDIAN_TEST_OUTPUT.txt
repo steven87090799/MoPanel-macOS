@@ -1,0 +1,21 @@
+test_cancel_and_descendant_cleanup (__main__.GuardianTests.test_cancel_and_descendant_cleanup) ... ok
+test_capture_has_no_interactive_stdin (__main__.GuardianTests.test_capture_has_no_interactive_stdin) ... ok
+test_cooperative_cancel_waits_for_atomic_boundary (__main__.GuardianTests.test_cooperative_cancel_waits_for_atomic_boundary) ... ok
+test_detached_descendant_observed_and_cleaned (__main__.GuardianTests.test_detached_descendant_observed_and_cleaned) ... ok
+test_exact_arguments_and_special_names (__main__.GuardianTests.test_exact_arguments_and_special_names) ... ok
+test_executable_not_found (__main__.GuardianTests.test_executable_not_found) ... ok
+test_exit_status_and_stderr (__main__.GuardianTests.test_exit_status_and_stderr) ... ok
+test_large_output_is_complete (__main__.GuardianTests.test_large_output_is_complete) ... ok
+test_malformed_control_is_fail_closed (__main__.GuardianTests.test_malformed_control_is_fail_closed) ... ok
+test_parent_death_pipe_eof (__main__.GuardianTests.test_parent_death_pipe_eof) ... ok
+test_password_echo_is_not_returned (__main__.GuardianTests.test_password_echo_is_not_returned) ... ok
+test_permission_denied (__main__.GuardianTests.test_permission_denied) ... ok
+test_pty_input_and_resize (__main__.GuardianTests.test_pty_input_and_resize) ... ok
+test_pty_is_controlling_terminal (__main__.GuardianTests.test_pty_is_controlling_terminal) ... ok
+test_pty_large_output_is_complete (__main__.GuardianTests.test_pty_large_output_is_complete) ... ok
+test_timeout_kills_ignoring_child (__main__.GuardianTests.test_timeout_kills_ignoring_child) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 4.946s
+
+OK

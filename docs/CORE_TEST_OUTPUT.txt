@@ -1,0 +1,151 @@
+[0/1] Planning build
+Building for debugging...
+[0/19] Write sources
+[1/19] Copying Fixtures
+[2/19] Write sources
+[4/19] Compiling MoPanelGuardian main.c
+[5/20] Write Objects.LinkFileList
+[6/20] Write swift-version--692D7D6F1AAC6E0F.txt
+[7/23] Linking MoPanelGuardian
+[9/23] Emitting module MoPanelCoreTests
+[10/23] Compiling MoPanelCoreTests MoleCoreTests.swift
+[11/24] Wrapping AST for MoPanelCoreTests for debugging
+[13/24] Emitting module MoPanelProcess
+[14/24] Compiling MoPanelProcess ManagedProcess.swift
+[15/25] Wrapping AST for MoPanelProcess for debugging
+[17/27] Compiling MoPanelProcessTests ManagedProcessTests.swift
+[18/27] Emitting module MoPanelProcessTests
+[19/28] /workspace/scratch/295743c3c15b/MoPanel/.build-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[20/28] Write sources
+[21/28] Wrapping AST for MoPanelProcessTests for debugging
+[23/32] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[24/32] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[25/32] Emitting module MoPanelPackageDiscoveredTests
+[26/32] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[27/33] /workspace/scratch/295743c3c15b/MoPanel/.build-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[28/33] Write sources
+[29/33] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[31/35] Compiling MoPanelPackageTests runner.swift
+[32/35] Emitting module MoPanelPackageTests
+[33/35] Write Objects.LinkFileList
+[34/35] Linking MoPanelPackageTests.xctest
+Build complete! (3.10s)
+Test Suite 'All tests' started at 2026-10-24 14:24:07.124
+Test Suite 'debug.xctest' started at 2026-10-24 14:24:07.125
+Test Suite 'ManagedProcessTests' started at 2026-10-24 14:24:07.125
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' started at 2026-10-24 14:24:07.125
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testCaptureCannotAnswerConfirmation : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' skipped (0.003 seconds)
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' started at 2026-10-24 14:24:07.129
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testExactArgumentsWithoutInterpolation : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' skipped (0.04 seconds)
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' started at 2026-10-24 14:24:07.169
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testInvalidNULArgumentRejected : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' skipped (0.003 seconds)
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' started at 2026-10-24 14:24:07.173
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testMissingCLIIsExplicitFailure : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' skipped (0.002 seconds)
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' started at 2026-10-24 14:24:07.175
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' started at 2026-10-24 14:24:07.176
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testOutputLimitStopsCommand : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' skipped (0.002 seconds)
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' started at 2026-10-24 14:24:07.178
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' skipped (0.001 seconds)
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' started at 2026-10-24 14:24:07.179
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testPermissionDeniedExecutable : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' skipped (0.007 seconds)
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' started at 2026-10-24 14:24:07.186
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' passed (0.002 seconds)
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' started at 2026-10-24 14:24:07.188
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testStdoutStderrAndExitCode : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' skipped (0.001 seconds)
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' started at 2026-10-24 14:24:07.189
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testStreamDoesNotAccumulateSnapshots : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' skipped (0.001 seconds)
+Test Case 'ManagedProcessTests.testTaskCancellation' started at 2026-10-24 14:24:07.190
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testTaskCancellation : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testTaskCancellation' skipped (0.001 seconds)
+Test Case 'ManagedProcessTests.testTimeout' started at 2026-10-24 14:24:07.190
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testTimeout : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testTimeout' skipped (0.001 seconds)
+Test Case 'ManagedProcessTests.testUserCancellation' started at 2026-10-24 14:24:07.191
+/workspace/scratch/295743c3c15b/MoPanel/Tests/MoPanelProcessTests/ManagedProcessTests.swift:11: ManagedProcessTests.testUserCancellation : Test skipped - Build MoPanelGuardian first, or set MOPANEL_GUARDIAN to the built helper.
+Test Case 'ManagedProcessTests.testUserCancellation' skipped (0.001 seconds)
+Test Suite 'ManagedProcessTests' passed at 2026-10-24 14:24:07.192
+	 Executed 14 tests, with 12 tests skipped and 0 failures (0 unexpected) in 0.066 (0.066) seconds
+Test Suite 'MoleCoreTests' started at 2026-10-24 14:24:07.192
+Test Case 'MoleCoreTests.testAddedJSONFieldsAreForwardCompatible' started at 2026-10-24 14:24:07.192
+Test Case 'MoleCoreTests.testAddedJSONFieldsAreForwardCompatible' passed (0.004 seconds)
+Test Case 'MoleCoreTests.testAnalyzeInteractiveModeIsDestructiveCapable' started at 2026-10-24 14:24:07.196
+Test Case 'MoleCoreTests.testAnalyzeInteractiveModeIsDestructiveCapable' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testAnalyzeInvalidTotalAndRelativePathFailClosed' started at 2026-10-24 14:24:07.197
+Test Case 'MoleCoreTests.testAnalyzeInvalidTotalAndRelativePathFailClosed' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testAnalyzeLargeListDoesNotTruncateEntries' started at 2026-10-24 14:24:07.198
+Test Case 'MoleCoreTests.testAnalyzeLargeListDoesNotTruncateEntries' passed (1.41 seconds)
+Test Case 'MoleCoreTests.testAnalyzeNewScanStatusFailsClosed' started at 2026-10-24 14:24:08.608
+Test Case 'MoleCoreTests.testAnalyzeNewScanStatusFailsClosed' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testAnalyzePartialUnavailableAndLargeIntegers' started at 2026-10-24 14:24:08.609
+Test Case 'MoleCoreTests.testAnalyzePartialUnavailableAndLargeIntegers' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testAppInventoryIsAuthoritativeAndUnicodeSurvives' started at 2026-10-24 14:24:08.609
+Test Case 'MoleCoreTests.testAppInventoryIsAuthoritativeAndUnicodeSurvives' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testCaskAliasCannotPretendToBeExactPathSelection' started at 2026-10-24 14:24:08.610
+Test Case 'MoleCoreTests.testCaskAliasCannotPretendToBeExactPathSelection' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testChangedHelpBlocksAffectedCommand' started at 2026-10-24 14:24:08.611
+Test Case 'MoleCoreTests.testChangedHelpBlocksAffectedCommand' passed (0.005 seconds)
+Test Case 'MoleCoreTests.testCommandArgumentsPreserveShellMetacharactersLiterally' started at 2026-10-24 14:24:08.617
+Test Case 'MoleCoreTests.testCommandArgumentsPreserveShellMetacharactersLiterally' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testConfigFlagsCannotMasqueradeAsDryRun' started at 2026-10-24 14:24:08.617
+Test Case 'MoleCoreTests.testConfigFlagsCannotMasqueradeAsDryRun' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testDuplicateAppNamesRequireOfficialSelector' started at 2026-10-24 14:24:08.619
+Test Case 'MoleCoreTests.testDuplicateAppNamesRequireOfficialSelector' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testExternalVolumeAndHistoryBounds' started at 2026-10-24 14:24:08.620
+Test Case 'MoleCoreTests.testExternalVolumeAndHistoryBounds' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testHistoryAmbiguousSessionIsNotAuthoritative' started at 2026-10-24 14:24:08.621
+Test Case 'MoleCoreTests.testHistoryAmbiguousSessionIsNotAuthoritative' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testMajorNightlyAndOldVersionsBlockMutation' started at 2026-10-24 14:24:08.622
+Test Case 'MoleCoreTests.testMajorNightlyAndOldVersionsBlockMutation' passed (0.004 seconds)
+Test Case 'MoleCoreTests.testMissingCLIIdentityDoesNotAuthorizeOperations' started at 2026-10-24 14:24:08.626
+Test Case 'MoleCoreTests.testMissingCLIIdentityDoesNotAuthorizeOperations' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testMissingRequiredStatusGroupFails' started at 2026-10-24 14:24:08.627
+Test Case 'MoleCoreTests.testMissingRequiredStatusGroupFails' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testNDJSONFramesAcrossUTF8ChunkBoundaries' started at 2026-10-24 14:24:08.628
+Test Case 'MoleCoreTests.testNDJSONFramesAcrossUTF8ChunkBoundaries' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testNDJSONRejectsTruncatedAndOversizeLines' started at 2026-10-24 14:24:08.629
+Test Case 'MoleCoreTests.testNDJSONRejectsTruncatedAndOversizeLines' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testNewStableEngineNegotiatesWithoutExactVersionPin' started at 2026-10-24 14:24:08.629
+Test Case 'MoleCoreTests.testNewStableEngineNegotiatesWithoutExactVersionPin' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testNoUsableCoreMetricsIsAnError' started at 2026-10-24 14:24:08.630
+Test Case 'MoleCoreTests.testNoUsableCoreMetricsIsAnError' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testOfficialHistoryOutputKeepsIncompleteAndLegacyAttribution' started at 2026-10-24 14:24:08.631
+Test Case 'MoleCoreTests.testOfficialHistoryOutputKeepsIncompleteAndLegacyAttribution' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testRequiredFlagsMatchAuditedUpstreamHelp' started at 2026-10-24 14:24:08.634
+Test Case 'MoleCoreTests.testRequiredFlagsMatchAuditedUpstreamHelp' passed (0.007 seconds)
+Test Case 'MoleCoreTests.testSettingsOperationsHaveCorrectRiskAndPreview' started at 2026-10-24 14:24:08.640
+Test Case 'MoleCoreTests.testSettingsOperationsHaveCorrectRiskAndPreview' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testStatusPreservesUnknownAndStaleData' started at 2026-10-24 14:24:08.641
+Test Case 'MoleCoreTests.testStatusPreservesUnknownAndStaleData' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testStatusUsesOfficialUnitsAndEstimatedPerCoreFlag' started at 2026-10-24 14:24:08.643
+Test Case 'MoleCoreTests.testStatusUsesOfficialUnitsAndEstimatedPerCoreFlag' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testStatusWatchDoesNotNeedPTYAndIntervalsAreBounded' started at 2026-10-24 14:24:08.645
+Test Case 'MoleCoreTests.testStatusWatchDoesNotNeedPTYAndIntervalsAreBounded' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testUninstallDefaultsPreservePersonalDataAndTrash' started at 2026-10-24 14:24:08.646
+Test Case 'MoleCoreTests.testUninstallDefaultsPreservePersonalDataAndTrash' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testUnsafeAppNameStillDisplaysButCannotBeSelectedDirectly' started at 2026-10-24 14:24:08.646
+Test Case 'MoleCoreTests.testUnsafeAppNameStillDisplaysButCannotBeSelectedDirectly' passed (0.101 seconds)
+Test Case 'MoleCoreTests.testUnsupportedWhitelistAndInjectionOptionsRejected' started at 2026-10-24 14:24:08.747
+Test Case 'MoleCoreTests.testUnsupportedWhitelistAndInjectionOptionsRejected' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testVersionParsingRequiresMoleIdentity' started at 2026-10-24 14:24:08.748
+Test Case 'MoleCoreTests.testVersionParsingRequiresMoleIdentity' passed (0.001 seconds)
+Test Suite 'MoleCoreTests' passed at 2026-10-24 14:24:08.749
+	 Executed 31 tests, with 0 failures (0 unexpected) in 1.556 (1.556) seconds
+Test Suite 'debug.xctest' passed at 2026-10-24 14:24:08.749
+	 Execuwarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+ted 45 tests, with 12 tests skipped and 0 failures (0 unexpected) in 1.622 (1.622) seconds
+Test Suite 'All tests' passed at 2026-10-24 14:24:08.749
+	 Executed 45 tests, with 12 tests skipped and 0 failures (0 unexpected) in 1.622 (1.622) seconds
+◇ Test run started.
+↳ Testing Library Version: 6.4.1 (804dc4530ef3666)
+↳ Target Platform: x86_64-unknown-linux-gnu
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

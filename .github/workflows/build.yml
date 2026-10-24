@@ -1,0 +1,63 @@
+name: macOS 27 ARM64 app and safe acceptance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mopanel-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Official ARM64 image, macOS 27 with Xcode 27; see docs/BUILD_ENVIRONMENT.md.
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - name: Check out MoPanel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify required Apple platform
+        run: |
+          test "$(uname -m)" = arm64
+          test "$(sw_vers -productVersion | cut -d. -f1)" -ge 27
+          xcodebuild -version
+          xcrun swift --version
+      - name: Ensure Apple's Metal resource compiler is available
+        run: |
+          mkdir -p build/reports
+          if ! xcrun --sdk macosx metal --version > build/reports/metal-toolchain.log 2>&1; then
+            xcodebuild -downloadComponent MetalToolchain 2>&1 | tee -a build/reports/metal-toolchain.log
+          fi
+          xcrun --sdk macosx metal --version 2>&1 | tee -a build/reports/metal-toolchain.log
+      - name: Prepare audited official Mole baseline
+        run: python3 scripts/prepare_mole_fixture.py --tag V1.62.0 --directory "$RUNNER_TEMP/mole-baseline"
+      - name: Validate current stable CLI contract
+        run: |
+          python3 scripts/prepare_mole_fixture.py --latest --directory "$RUNNER_TEMP/mole-current"
+          python3 scripts/audit_cli.py "$RUNNER_TEMP/mole-current/mo" --output build/reports/latest-cli-contract.json
+      - name: Compile, test, sign, launch, measure, and package
+        run: MOPANEL_AUDIT_CLI="$RUNNER_TEMP/mole-baseline/mo" bash scripts/build.sh
+      - name: Publish verified app ZIP
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: MoPanel-macOS27-arm64
+          path: |
+            build/releases/MoPanel-macOS27-arm64.zip
+            build/releases/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Preserve actual validation evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: MoPanel-validation-evidence
+          path: build/reports/
+          if-no-files-found: warn
+          retention-days: 30

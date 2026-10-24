@@ -1,0 +1,8 @@
+# ========== clean session started at 2026-10-24 08:00:00 ==========
+[2026-10-24 08:00:01] [clean] REMOVED /tmp/fixture cache (2KB)
+[2026-10-24 08:00:02] [clean] TRASHED /tmp/Fixture.app (4KB)
+[2026-10-24 08:00:03] [clean] SKIPPED /tmp/protected (whitelist)
+[2026-10-24 08:00:04] [clean] FAILED /tmp/denied (permission denied)
+# ========== clean session ended at 2026-10-24 08:00:05, 2 items, 6KB ==========
+# ========== purge session started at 2026-10-24 08:01:00 ==========
+[2026-10-24 08:01:01] [purge] SKIPPED /tmp/source (not an artifact)

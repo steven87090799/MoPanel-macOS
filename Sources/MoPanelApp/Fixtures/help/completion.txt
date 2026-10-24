@@ -1,0 +1,25 @@
+Usage: mole completion [bash|zsh|fish]
+
+Setup shell tab completion for mole and mo commands.
+
+Auto-install:
+  mole completion              # Auto-detect shell and install
+  mole completion --dry-run    # Preview config changes without writing files
+
+Manual install:
+  mole completion bash         # Generate bash completion script
+  mole completion zsh          # Generate zsh completion script
+  mole completion fish         # Generate fish completion script
+
+Examples:
+  # Auto-install (recommended)
+  mole completion
+
+  # Manual install - Bash
+  eval "$(mole completion bash)"
+
+  # Manual install - Zsh
+  eval "$(mole completion zsh)"
+
+  # Manual install - Fish
+  mole completion fish | source

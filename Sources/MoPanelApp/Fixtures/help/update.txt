@@ -1,0 +1,8 @@
+Usage: mo update [--force] [--nightly]
+
+Update Mole to the latest release.
+
+Options:
+  -f, --force       Force reinstall latest stable version
+  --nightly         Install latest unreleased main branch build
+  -h, --help        Show this help message

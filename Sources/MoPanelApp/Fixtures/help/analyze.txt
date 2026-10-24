@@ -1,0 +1,12 @@
+Usage: mo analyze [OPTIONS] [PATH]
+
+Explore disk usage. Without PATH, scans a machine-wide overview.
+
+Options:
+  --json          Output the analysis as JSON instead of the interactive TUI
+  -h, --help      Show this help message
+
+Examples:
+  mo analyze                 Machine-wide overview
+  mo analyze ~/Library       Scan one directory
+  mo analyze --json /Volumes Machine-readable output

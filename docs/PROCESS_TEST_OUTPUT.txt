@@ -1,0 +1,75 @@
+[0/1] Planning build
+Building for debugging...
+[0/3] Write sources
+[1/3] Write swift-version--692D7D6F1AAC6E0F.txt
+[3/5] Compiling MoPanelProcess ManagedProcess.swift
+[4/5] Emitting module MoPanelProcess
+[5/13] Wrapping AST for MoPanelProcess for debugging
+[7/16] Compiling MoPanelProcessTests PurgePathsDocumentTests.swift
+[8/16] Compiling MoPanelProcessTests ManagedProcessTests.swift
+[9/16] Emitting module MoPanelProcessTests
+[10/16] /tmp/mopanel-process-harness/.build-native/x86_64-unknown-linux-gnu/debug/MoPanelProcessHarnessPackageDiscoveredTests.derived/all-discovered-tests.swift
+[11/17] Write sources
+[13/20] Compiling MoPanelProcessHarnessPackageDiscoveredTests all-discovered-tests.swift
+[14/20] Compiling MoPanelProcessHarnessPackageDiscoveredTests MoPanelProcessTests.swift
+[15/20] Emitting module MoPanelProcessHarnessPackageDiscoveredTests
+[16/18] Write Objects.LinkFileList
+[17/18] Linking MoPanelProcessHarnessPackageTests.xctest
+Build complete! (1.95s)
+Test Suite 'All tests' started at 2026-10-24 14:29:17.230
+Test Suite 'debug.xctest' started at 2026-10-24 14:29:17.231
+Test Suite 'ManagedProcessTests' started at 2026-10-24 14:29:17.231
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' started at 2026-10-24 14:29:17.231
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' passed (0.006 seconds)
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' started at 2026-10-24 14:29:17.237
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' passed (0.006 seconds)
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' started at 2026-10-24 14:29:17.243
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' passed (0.101 seconds)
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' started at 2026-10-24 14:29:17.344
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' started at 2026-10-24 14:29:17.345
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' started at 2026-10-24 14:29:17.345
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' passed (0.013 seconds)
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' started at 2026-10-24 14:29:17.358
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' passed (0.153 seconds)
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' started at 2026-10-24 14:29:17.511
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' passed (0.102 seconds)
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' started at 2026-10-24 14:29:17.613
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' started at 2026-10-24 14:29:17.614
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' passed (0.005 seconds)
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' started at 2026-10-24 14:29:17.619
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' passed (0.005 seconds)
+Test Case 'ManagedProcessTests.testTaskCancellation' started at 2026-10-24 14:29:17.625
+Test Case 'ManagedProcessTests.testTaskCancellation' passed (0.082 seconds)
+Test Case 'ManagedProcessTests.testTimeout' started at 2026-10-24 14:29:17.707
+Test Case 'ManagedProcessTests.testTimeout' passed (2.116 seconds)
+Test Case 'ManagedProcessTests.testUserCancellation' started at 2026-10-24 14:29:19.823
+Test Case 'ManagedProcessTests.testUserCancellation' passed (0.094 seconds)
+Test Suite 'ManagedProcessTests' passed at 2026-10-24 14:29:19.917
+	 Executed 14 tests, with 0 failures (0 unexpected) in 2.686 (2.686) seconds
+Test Suite 'PurgePathsDocumentTests' started at 2026-10-24 14:29:19.917
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' started at 2026-10-24 14:29:19.917
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' passed (0.008 seconds)
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' started at 2026-10-24 14:29:19.925
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' passed (0.013 seconds)
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' started at 2026-10-24 14:29:19.938
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' passed (0.008 seconds)
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' started at 2026-10-24 14:29:19.947
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' passed (0.003 seconds)
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' started at 2026-10-24 14:29:19.949
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' passed (0.002 seconds)
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' started at 2026-10-24 14:29:19.951
+Test Case 'PurgePathsDocumentTestswarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+.testWrongFileRejected' passed (0.002 seconds)
+Test Suite 'PurgePathsDocumentTests' passed at 2026-10-24 14:29:19.953
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.036 (0.036) seconds
+Test Suite 'debug.xctest' passed at 2026-10-24 14:29:19.953
+	 Executed 20 tests, with 0 failures (0 unexpected) in 2.721 (2.721) seconds
+Test Suite 'All tests' passed at 2026-10-24 14:29:19.953
+	 Executed 20 tests, with 0 failures (0 unexpected) in 2.721 (2.721) seconds
+◇ Test run started.
+↳ Testing Library Version: 6.4.1 (804dc4530ef3666)
+↳ Target Platform: x86_64-unknown-linux-gnu
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
