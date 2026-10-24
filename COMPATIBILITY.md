@@ -16,17 +16,19 @@
 
 ## 目前 macOS 驗證範圍
 
-[run 40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)（commit `e4181f754ce4a9bdc3b28efc60d2100d49403ba8`）在 macOS 27.0.1／Xcode 27.1／Apple Swift 6.4 ARM64 通過 **140／140 XCTest**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），release 編譯、ARM64 與 ad-hoc bundle 完整性也通過。正式 App 啟動與視窗已通過，先前的初始 SIGSEGV 及 Publishing changes 警告本輪未再出現。
+[成功 run 40082801624](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082801624) 的建置提交為 `5e3d84a13e4a01caa1576f0d8585d92e18138955`。macOS 27.0.1／Xcode 27.1／Apple Swift 6.4 ARM64 實際通過 **177 個 XCTest**（144 Core、33 Process，0 失敗、0 略過）、**20／20 smoke**、14 種控制項的 **17 次實際 accessibility 按壓及效果檢查**，以及 **17 個 Guardian 整合測試**。四個獨立 SIG_DFL 管線回歸案例亦全部通過。
 
-本輪 bundled CLI fixture 的 UI smoke **19／20 檢查通過**，包含 status／apps／analyze／history 解碼、watch 接收與切頁停止；選取 13 個路由後視窗仍存活，不等於全頁渲染或完整按鈕驗收。失敗項為 AX 找不到 `mopanel.dashboard.snapshot`，觀察最多 169 個節點、0 個控制識別碼、0 次按鈕動作。整體 smoke 回報失敗，效能、後續 Guardian 驗收與 ZIP 發行仍受 gate 阻擋。
+官方基準及建置當下最新版均為 **Mole V1.62.0**；help、status、watch、analyze、history 的唯讀契約通過。GUI＋合成 CLI 與 GUI＋官方 CLI 的閒置、監控、掃描三模式效能各自留有實測報告。App 主程式與兩個 helper 均為 arm64；封裝前及 ZIP 解壓後通過 Apple codesign strict／deep，808 個 manifest 檔案的雜湊均吻合，真正 App ZIP 已產生。
 
-140 個 XCTest 與 smoke 子檢查不合併計數。這次 GUI 使用合成 CLI fixture，不能與另行保存的官方 CLI 唯讀契約探測混為一談，也未驗證真實清理、卸載、瘦身、CLI 升降版或完整系統授權。
+這些結果分列，不能重複加總。UI 按鈕驗證使用合成 CLI；14 路由選取存活不代表全頁、全按鈕或 VoiceOver 驗收。沒有執行使用者真實資料的清理、卸載、瘦身、App 更新、CLI 升降版或完整系統授權。CI 原始版本輸出回報 runner 既有 SIP Disabled；沒有修改 SIP，一般 SIP enabled 個人 Mac 的權限情境仍待實機驗證。此版為 ad-hoc 簽章，未公證，Gatekeeper assessment 實際 rejected。
+
+下載後完整核對與限制見 `TEST_REPORT.md`。其中 `Reports/` 指發行 ZIP 內的原始證據；較早 CI 失敗保留在 `docs/MACOS_*` 等歷史記錄，不代表此成功建置的狀態。本頁更新只記錄既有已驗證產物，沒有改動該 ZIP 或其程式來源。
 
 ## 相容策略
 
 `MoPanelCore/MoleCompatibility` 檢查版本及命令 help 公開介面；`CLIProbe` 檢查執行檔、資源位置、來源與 fingerprint；每次結構化結果仍經由 `MoleJSON` 完整解碼。GUI 不修改已安裝 Mole 的原始碼。
 
-- V1.62.0：來源盤點基準，仍需真實 macOS 驗收；不能把 synthetic parser test 寫成官方完整操作驗證。
+- V1.62.0：來源盤點、實際 macOS 唯讀契約、上述 GUI／程序及效能驗收已通過；破壞性流程使用隔離 fixture，不能宣稱已在個人資料上完成全部操作驗證。
 - 更新的穩定 1.x：逐命令檢查必要旗標，將相容公開介面標為「介面相容」。這不是對新版核心行為重新審核的保證；真實操作仍保留官方確認。
 - 新 major、比基準舊的版本、無法解析版本或身分：停止受影響的變更操作，要求更新相容性資料。
 - Nightly／dev：清理等變更操作停用。唯一的復原例外為來源及資源已確認的官方腳本安裝、數字版本仍是已知的 1.62.0 以上同 major、`update --help` 契約完整，且執行不含 `--nightly` 的 `mo update`。這條路徑仍需使用者確認，更新後重新偵測；不放行未知來源或新 major。

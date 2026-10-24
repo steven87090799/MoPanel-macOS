@@ -1,3 +1,5 @@
+> 最新成功產物：macOS [run 40082801624](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082801624)，來源 `5e3d84a13e4a01caa1576f0d8585d92e18138955`。177 XCTest、20／20 smoke、17 次實際按鈕及效果、Guardian 17、兩組三模式效能、ARM64／ad-hoc 簽章及 ZIP 解壓驗證均完成。下文較早失敗與進度是歷史紀錄；當版結果及限制見根目錄 `TEST_REPORT.md`，不是官方付費 GUI 全功能或完整權限驗收。
+
 # 建置環境與產物驗證
 
 ## 必要平台
