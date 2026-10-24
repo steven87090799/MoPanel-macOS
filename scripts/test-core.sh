@@ -3,7 +3,8 @@
 # Test first-party code without resolving UI packages. Requires XCTest.
 set -euo pipefail
 mopanel_root="$(cd "$(dirname "$0")/.." && pwd)"
-if ! printf 'import XCTest\n' | swiftc -typecheck - >/dev/null 2>&1; then
+if { [ "$(uname -s)" = Darwin ] && ! xcrun --find xctest >/dev/null 2>&1; } || \
+   { [ "$(uname -s)" != Darwin ] && ! printf 'import XCTest\n' | swiftc -typecheck - >/dev/null 2>&1; }; then
     printf 'XCTest is unavailable. Select full Xcode for this command with DEVELOPER_DIR, or run scripts/probe-monitoring.sh for bounded standalone checks.\n' >&2
     exit 2
 fi

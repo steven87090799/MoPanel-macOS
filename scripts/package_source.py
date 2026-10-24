@@ -14,7 +14,7 @@ output = args.output.resolve()
 if output.name == "MoPanel-macOS27-arm64.zip" or "source" not in output.name.lower():
     parser.error("A source-only ZIP must have 'source' in its name and cannot use the App release filename")
 directories = ("Sources", "Tests", "Resources", "scripts", "docs", "ThirdParty", ".github")
-documents = ("Package.swift", "Package.resolved", ".gitignore", "README.md", "CHANGELOG.md", "COMPATIBILITY.md",
+documents = ("Package.swift", "Package.resolved", "Brewfile", ".gitignore", "README.md", "CHANGELOG.md", "COMPATIBILITY.md",
              "CLI_COVERAGE.md", "TEST_REPORT.md", "LICENSE", "THIRD_PARTY_NOTICES.md")
 files = [root / name for name in documents if (root / name).is_file()]
 for name in directories:

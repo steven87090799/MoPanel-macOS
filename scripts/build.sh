@@ -103,7 +103,7 @@ done
 for source_dir in Sources Tests Resources scripts docs ThirdParty .github; do
     rsync -a --exclude '__pycache__' --exclude '.DS_Store' "$source_dir" "$package_path/Source/"
 done
-for source_file in Package.swift Package.resolved .gitignore README.md CHANGELOG.md COMPATIBILITY.md CLI_COVERAGE.md TEST_REPORT.md LICENSE THIRD_PARTY_NOTICES.md; do
+for source_file in Package.swift Package.resolved Brewfile .gitignore README.md CHANGELOG.md COMPATIBILITY.md CLI_COVERAGE.md TEST_REPORT.md LICENSE THIRD_PARTY_NOTICES.md; do
     if [[ -f "$source_file" ]]; then cp "$source_file" "$package_path/Source/"; fi
 done
 # Include the exact dependency sources and their original licenses alongside
