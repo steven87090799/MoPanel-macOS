@@ -7,14 +7,23 @@ No installer script, sudo, shell profile edit or cleanup is executed.
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import re
 import subprocess
 import urllib.request
+import urllib.parse
 
 
 def fetch(url):
     request = urllib.request.Request(url, headers={"User-Agent": "MoPanel-CI/0.1"})
+    # Hosted runners share unauthenticated API quotas. Use the workflow's
+    # read-only token only for the API host and never forward it on redirects.
+    token = os.environ.get("MOPANEL_GITHUB_TOKEN")
+    if urllib.parse.urlsplit(url).hostname == "api.github.com" and token:
+        request.add_unredirected_header("Authorization", "Bearer " + token)
+        request.add_header("Accept", "application/vnd.github+json")
+        request.add_header("X-GitHub-Api-Version", "2022-11-28")
     with urllib.request.urlopen(request, timeout=90) as response:
         return response.read()
 

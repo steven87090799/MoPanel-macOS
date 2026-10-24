@@ -1,4 +1,6 @@
 .build/
+.build-*/
+.guardian-test
 build/
 .swiftpm/
 .DS_Store

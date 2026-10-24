@@ -8,16 +8,19 @@
     "stable macOS release filtering",
     "changed Python helper syntax",
     "upstream-derived help contract accepts baseline and rejects missing option",
-    "changed release evidence writer syntax"
+    "changed release evidence writer syntax",
+    "CI token restricted to exact GitHub API host and excluded from redirected headers",
+    "CI public release requests work without token in isolated request fixtures"
   ],
   "recorded_at": "2026-10-24T06:39:16.757940+00:00",
   "host": "Linux-6.18.55-x86_64-with-glibc2.39",
   "source_sha256": {
     "scripts/audit_cli.py": "f5b1f3517d8b0540e8deef55ddd14507083f0adb132393da7cf910854767e966",
-    "scripts/prepare_mole_fixture.py": "4636761574550405c00169ce9a5786148662270d9c407e75cfc86985278dad8e",
+    "scripts/prepare_mole_fixture.py": "f6bd170fdc2a61f2b9a10abb861ff6a874d1aae7506b4c03da686ec8aea08b5b",
     "scripts/package_source.py": "1f63a79500b824b3754175c4d56e14b7e7a104afaa990214a6d3a804ea7a9ee2",
     "scripts/write_release_report.py": "f2d354f5a2065d3f33be2cd36c75b94bb8457ad0aa17848411875b0f8da1baf7",
     "scripts/build.sh": "4ed3fa8993538f7961478152d5efac326641438b4cb4e6ffefe9ad9c73d98b94",
     "scripts/verify-package.sh": "c2de346573687c060f6cf28f4b34cbc0a6bb78fde09805828b87ce32223a3a91"
-  }
+  },
+  "updated_at": "2026-10-24T06:48:48.381273+00:00"
 }

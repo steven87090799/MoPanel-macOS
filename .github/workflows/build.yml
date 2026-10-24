@@ -38,6 +38,8 @@ jobs:
       - name: Prepare audited official Mole baseline
         run: python3 scripts/prepare_mole_fixture.py --tag V1.62.0 --directory "$RUNNER_TEMP/mole-baseline"
       - name: Validate current stable CLI contract
+        env:
+          MOPANEL_GITHUB_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/prepare_mole_fixture.py --latest --directory "$RUNNER_TEMP/mole-current"
           python3 scripts/audit_cli.py "$RUNNER_TEMP/mole-current/mo" --output build/reports/latest-cli-contract.json
