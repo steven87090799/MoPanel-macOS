@@ -58,7 +58,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 來源：<https://github.com/exelban/stats>，研究版本 `7d3f70dcd6a07177d0a529a1b907021eef740158`，`SMC/smc.swift`。上游 MIT，`Copyright (c) 2019 Serhiy Mytrovtsiy`，完整授權隨附於 `ThirdParty/Stats-LICENSE.txt`。
 
-`Sources/MoPanelApp/NativeSystemReadings.swift` 的 SMC 封包結構、讀取協定與 M1 溫度 key 參考並改寫自該來源。MoPanel 只使用讀取 key 資訊及數值的命令，不包含 SMC 寫入、風扇控制、提權 helper 或 Stats App。記憶體壓力、單一 GPU 使用率、網路介面及 App 程序彙整由 MoPanel 透過 macOS 系統 API 自行實作。這是有限的感測補充，並非整合完整 Stats 模組。
+`Sources/MoPanelApp/NativeSystemReadings.swift` 的 SMC 封包結構、讀取協定與 M1 溫度 key 參考並改寫自該來源。`NativeNetworkReader.swift` 的 `NET_RT_IFLIST2` 網卡計數器讀取方式另參考並改寫自 `Modules/Net/readers.swift`，增加容量、訊息長度與計數器重設檢查。MoPanel 只使用讀取 key 資訊及數值的命令，不包含 SMC 寫入、風扇控制、提權 helper 或 Stats App。記憶體壓力、單一 GPU 使用率、網路介面中繼資料及 App 程序彙整由 MoPanel 透過 macOS 系統 API 自行實作。這是有限的感測補充，並非整合完整 Stats 模組。
 
 ## Apple 系統元件
 

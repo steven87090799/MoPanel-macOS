@@ -148,13 +148,13 @@ struct DashboardView: View {
         }.id("disk-details")
         GroupBox(model.t("網路介面", "Network Interfaces")) {
             VStack(alignment: .leading, spacing: 10) {
-                if s.network.isEmpty { unavailableRow() }
+                if model.networks.isEmpty { unavailableRow() }
                 else {
                     Picker(model.t("圖表介面", "Chart Interface"), selection: Binding(get: { model.networkChartChoice }, set: model.selectNetwork)) {
                         Text(model.t("自動選擇使用中的連線", "Automatic active connection")).tag("auto")
-                        ForEach(s.network) { network in Text(model.networkName(network.name)).tag(network.name) }
+                        ForEach(model.networks) { network in Text(model.networkName(network.name)).tag(network.name) }
                     }.pickerStyle(.menu)
-                    ForEach(s.network) { network in
+                    ForEach(model.networks) { network in
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(model.networkName(network.name)).font(.callout.weight(.medium))
@@ -239,7 +239,7 @@ struct DashboardView: View {
         let gpu = s.gpu.first.flatMap { model.gpuUsage($0) } ?? model.nativeHardware.gpuUsage
         let disk = s.disks.first(where: { $0.mount == "/" }) ?? s.disks.first
         let available = disk.flatMap { $0.total >= $0.used && $0.total > 0 ? $0.total - $0.used : nil }
-        let network = s.network.first { $0.name == model.selectedNetwork }
+        let network = model.networks.first { $0.name == model.selectedNetwork }
         return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             quickCard("GPU", value: DisplayFormat.percent(gpu), detail: positive(model.gpuTemperature, suffix: " °C"), target: "gpu-details", navigate: navigate)
             quickCard(model.t("可用空間", "Free Space"), value: DisplayFormat.storage(available), detail: disk.map { DisplayFormat.storage($0.total) + model.t(" 總容量", " total") } ?? "", target: "disk-details", navigate: navigate)
@@ -457,7 +457,7 @@ struct TrendCard: View {
         case .memory: return status.memory.total > 0 ? DisplayFormat.percent(status.memory.usedPercent) : "—"
         case .disk: return "↓ " + MonitorFormat.rate(status.diskIO?.readRate) + "   ↑ " + MonitorFormat.rate(status.diskIO?.writeRate)
         case .network:
-            let interface = status.network.first { $0.name == model.selectedNetwork }
+            let interface = model.networks.first { $0.name == model.selectedNetwork }
             return "↓ " + MonitorFormat.rate(interface?.rxRateMbs) + "   ↑ " + MonitorFormat.rate(interface?.txRateMbs)
         }
     }

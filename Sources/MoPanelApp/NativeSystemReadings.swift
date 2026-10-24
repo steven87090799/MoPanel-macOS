@@ -23,6 +23,8 @@ struct NativeHardwareReadings: Sendable {
 final class NativeSystemReadings: @unchecked Sendable {
     private let queue = DispatchQueue(label: "org.mopanel.native-readings", qos: .utility)
     private let processes = ApplicationUsageReader()
+    private let networks = NativeNetworkReader()
+    private var networkRates: [NetworkStatus] = []
     private(set) var applicationUsage: [ApplicationUsage] = []
     private var smc: ReadOnlySMC?
     private var lastCatalogRead = Date.distantPast
@@ -61,6 +63,7 @@ final class NativeSystemReadings: @unchecked Sendable {
         value.gpuUsage = gpuUtilization()
         applicationUsage = processes.read(apps: apps)
         readNetworkContext()
+        networkRates = networks.read()
         cached = value
         return value
     }
@@ -71,16 +74,17 @@ final class NativeSystemReadings: @unchecked Sendable {
         let applications: [ApplicationUsage]
         let names: [String: String]
         let primary: String?
+        let networks: [NetworkStatus]
     }
     func sample(apps: [ProcessApplicationIdentity]) async -> Snapshot {
         await withCheckedContinuation { continuation in
             queue.async {
                 let hardware = self.read(apps: apps)
-                continuation.resume(returning: Snapshot(hardware: hardware, collectedAt: self.lastRead, applications: self.applicationUsage, names: self.interfaceNames, primary: self.primaryInterface))
+                continuation.resume(returning: Snapshot(hardware: hardware, collectedAt: self.lastRead, applications: self.applicationUsage, names: self.interfaceNames, primary: self.primaryInterface, networks: self.networkRates))
             }
         }
     }
-    func close() { queue.async { self.smc = nil; self.processes.reset(); self.lastRead = .distantPast } }
+    func close() { queue.async { self.smc = nil; self.processes.reset(); self.networks.reset(); self.networkRates = []; self.lastRead = .distantPast } }
 
     private func averageTemperature(_ keys: [String]) -> Double? {
         let readings = keys.compactMap { smc?.value($0) }.filter { (1...130).contains($0) }

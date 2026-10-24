@@ -108,9 +108,9 @@ struct MenuBarPanel: View {
     }
 
     private func network(_ snapshot: StatusSnapshot) -> some View {
-        let network = snapshot.network.first(where: { $0.name == model.selectedNetwork }) ?? snapshot.network.first
+        let network = model.networks.first(where: { $0.name == model.selectedNetwork }) ?? model.networks.first
         return MonitorTile(title: model.t("網路", "Network"), symbol: "network", tint: MoPanelTheme.chartSecondary,
-                           badge: network?.name ?? "—", value: MonitorFormat.rate(network?.rxRateMbs),
+                           badge: network.map { model.networkName($0.name) } ?? "—", value: MonitorFormat.rate(network?.rxRateMbs),
                            detail: "↑ " + MonitorFormat.rate(network?.txRateMbs)) {
             MiniResourceTrend(values: model.trends.map { $0.networkInterfaces[model.selectedNetwork]?.rxRateMbs }, color: MoPanelTheme.chartSecondary)
         }

@@ -187,6 +187,9 @@ public struct NetworkStatus: Decodable, Identifiable, Sendable {
     public let txRateMbs: Double
     public let ip: String?
     public var id: String { name }
+    public init(name: String, rxRateMbs: Double, txRateMbs: Double, ip: String?) {
+        self.name = name; self.rxRateMbs = rxRateMbs; self.txRateMbs = txRateMbs; self.ip = ip
+    }
 }
 
 public struct NetworkHistory: Decodable, Sendable {

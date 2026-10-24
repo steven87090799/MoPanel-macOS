@@ -41,6 +41,7 @@ import MoPanelProcess
     @Published var applicationUsage: [ApplicationUsage] = []
     @Published var nativeCollectedAt: Date?
     @Published var nativeHardware = NativeHardwareReadings()
+    @Published var nativeNetworkRates: [NetworkStatus] = []
     @Published var networkInterfaceNames: [String: String] = [:]
     @Published var automaticNetworkSelection = true
     private let nativeReadings = NativeSystemReadings()
@@ -455,29 +456,35 @@ import MoPanelProcess
                 self.applicationUsage = sample.applications
                 self.networkInterfaceNames = sample.names
                 self.nativePrimaryInterface = sample.primary
-                if self.automaticNetworkSelection, let current = self.status {
-                    self.selectedNetwork = MonitorNetworkSelection.resolve(current.network, manual: nil, primary: sample.primary)
+                self.nativeNetworkRates = sample.networks
+                if self.automaticNetworkSelection {
+                    self.selectedNetwork = MonitorNetworkSelection.resolve(self.networks, manual: nil, primary: sample.primary)
                 }
             }
         }
         status = snapshot
-        selectedNetwork = MonitorNetworkSelection.resolve(snapshot.network,
+        selectedNetwork = MonitorNetworkSelection.resolve(networks,
             manual: automaticNetworkSelection ? nil : selectedNetwork, primary: nativePrimaryInterface)
-        let network = snapshot.network.first { $0.name == selectedNetwork }
+        let network = networks.first { $0.name == selectedNetwork }
         trends.append(TrendSample(date: Date(), cpu: snapshot.cpu.logicalCPU > 0 ? snapshot.cpu.usage : nil,
                                   memory: snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil,
                                   diskRead: snapshot.diskIO?.readRate, diskWrite: snapshot.diskIO?.writeRate,
                                   down: network?.rxRateMbs, up: network?.txRateMbs,
                                   gpu: snapshot.gpu.compactMap(\.usage).first { $0.isFinite && (0...100).contains($0) } ?? nativeHardware.gpuUsage,
-                                  networkInterfaces: Dictionary(snapshot.network.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })))
+                                  networkInterfaces: Dictionary(networks.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })))
         if trends.count > 120 { trends.removeFirst(trends.count - 120) }
     }
 
+    var networks: [NetworkStatus] {
+        var merged = Dictionary((status?.network ?? []).map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+        if !fixtureMode { for network in nativeNetworkRates { merged[network.name] = network } }
+        return merged.values.sorted { $0.name < $1.name }
+    }
     var networkChartChoice: String { automaticNetworkSelection ? "auto" : selectedNetwork }
     func selectNetwork(_ choice: String) {
         automaticNetworkSelection = choice == "auto"
-        if let status {
-            selectedNetwork = MonitorNetworkSelection.resolve(status.network, manual: choice == "auto" ? nil : choice,
+        if status != nil {
+            selectedNetwork = MonitorNetworkSelection.resolve(networks, manual: choice == "auto" ? nil : choice,
                                                               primary: nativePrimaryInterface)
         }
         if !isTestLaunch { UserDefaults.standard.set(automaticNetworkSelection, forKey: "automaticNetworkSelection") }
