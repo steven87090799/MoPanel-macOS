@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-24",
+  "timezone": "Asia/Taipei",
+  "verified_source_revision": "806b14dbd0657bdfe0b34b5ae2dc6a401696fa77",
+  "platform": {
+    "macos": "27.0.1",
+    "architecture": "arm64",
+    "hardware": "Apple M1 Pro"
+  },
+  "tools": {
+    "python": "3.15.0",
+    "github_cli": "2.103.2",
+    "go": "1.27.3",
+    "shellcheck": "0.11.0",
+    "mas": "7.0.0",
+    "git": "2.54.0 (Apple Git-157)",
+    "jq": "1.7.1-apple",
+    "ripgrep": "ripgrep 15.2.0",
+    "xcode": "27.1 (27A9275)",
+    "swift": "6.4",
+    "macos_sdk": "27.0",
+    "metal": "32023.921 (metalfe-32023.921.6)",
+    "xctrace": "27.1 (27A9275)",
+    "lldb": "2103.0.34.103"
+  },
+  "doctor": {
+    "exit_code": 0,
+    "missing_checks": 0
+  },
+  "brew_bundle_check": {
+    "exit_code": 0,
+    "dependencies_satisfied": true
+  },
+  "core_process_xctest": {
+    "passed": 185,
+    "failed": 0,
+    "duration_seconds": 39.702,
+    "log": "core-tests.log"
+  },
+  "python_tests": {
+    "passed": 56,
+    "failed": 0,
+    "scope": "9 profiler tests and 47 validation/driver/crash/debug/report/Homebrew harness tests; isolated data"
+  },
+  "app_release_compile": {
+    "status": "passed",
+    "log": "app-release-build.log",
+    "exit_code": 0,
+    "duration_seconds": 89.8,
+    "architecture": "arm64",
+    "configuration": "release",
+    "binary_sha256": "361d276e113d5a017bb347c68cf1383f4598ed67eea4d66799bd79f3b99870a3"
+  },
+  "evidence": {
+    "doctor-ready.log": {
+      "sha256": "6d1daf882f0edafec9394e56d06c51b9c7fda1a365eafb9924bb690bc3b0f695",
+      "storage": "local ignored build/reports/dev-environment"
+    },
+    "core-tests.log": {
+      "sha256": "af9f8c5578c8b8196993d4d1f3f7f561b540f10675f95f21c604ee2d58cbb87b",
+      "storage": "local ignored build/reports/dev-environment"
+    },
+    "app-release-build.log": {
+      "sha256": "4ba3dd0731b5c40b0ff95a101df2df56453ef9450739a5f5072fcfc906d178d5",
+      "storage": "local ignored build/reports/dev-environment"
+    },
+    "python315-tests.log": {
+      "sha256": "b6ad104dad6d9d6e005731f0c3bbea00cf574c6fd838fe2363a28109906a4188",
+      "storage": "local ignored build/reports/dev-environment"
+    },
+    "python315-harnesses.json": {
+      "sha256": "c6504aca77e1fda16bb1bc6ef1bbe7b3b7df4de585b4bb53ef81007463fae5a0",
+      "storage": "local ignored build/reports/dev-environment"
+    },
+    "brew-bundle-ready.log": {
+      "sha256": "e3aa6b1d9d806f790d5b84d5f94a4c7f44182bdc75226fc5086d038973df58ad",
+      "storage": "local ignored build/reports/dev-environment"
+    }
+  },
+  "scope_limits": [
+    "Full app compilation is not a packaged or installed app acceptance test.",
+    "No local fixture UI, signing or release ZIP verification was performed in this environment setup batch.",
+    "Instruments availability was checked, but no Leaks/Allocations/Energy trace or 1/8/24 hour soak was run.",
+    "No cleanup, uninstall, optimization, slimming or other user-data-changing Mole command was run."
+  ]
+}

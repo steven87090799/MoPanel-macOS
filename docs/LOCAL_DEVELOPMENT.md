@@ -31,3 +31,9 @@ bash scripts/dev-run.sh bash scripts/build.sh
 完整建置包含測試、fixture UI、短時間效能記錄、簽章及封裝。長時觀察另見 `PRODUCT_READINESS_AUDIT.md`。不要將工具安裝、單一 target 建置或 CI 的結果當成本機完整驗收。
 
 `.venv`、SwiftPM `.build`、`build/reports` 與安裝日誌不提交到 Git。套件的真實 revision 由 `Package.resolved` 固定。工具版本可用 doctor 與各工具的 version 指令確認。
+
+## 2026-10-24 本機驗證
+
+Xcode 27.1（27A9275）、macOS SDK 27.0、Swift 6.4 與 Metal Toolchain 已可執行，doctor 缺漏項目為 0，`brew bundle check` 通過。本機 185 項 Core／Process XCTest 與 56 項 Python 工具測試通過；完整 App 的 ARM64 release 編譯通過，耗時 89.80 秒。版本、來源 revision 與原始日誌雜湊見 [local-environment.json](audit-2026-10-24/local-environment.json)。
+
+這批驗證未執行本機 fixture UI、發行封裝、Instruments 追蹤或長時測試；相關接續步驟見 `PRODUCT_READINESS_AUDIT.md`。

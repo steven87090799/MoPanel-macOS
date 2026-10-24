@@ -71,12 +71,12 @@ A＝Mole CLI；B＝MoPanel 原生；C＝Stats 程式碼；D＝額外產品功能
 | 問題 | 影響／修正 | 證據與限制 |
 |---|---|---|
 | 串流 stderr 累積達上限會取消 watcher | `ManagedProcess.receive` 在不保留完整輸出的串流模式只留最多 16 KiB 尾端；捕獲模式的硬上限仍會取消異常輸出 | 對舊 `64b81eb` 的實際原始碼重現 exit130/truncated；相同有限輸出在修正後成功、131,082 bytes 全部交付，測試上限 2,048 bytes 尾端；見 before/after JSON |
-| 唯讀工作結束未恢復共用監控 | capture/preparation/一般作業退出後重新評估需求；仍先回收舊 child 才開新 watcher | Model 子集型別檢查通過；完整 App 生命週期回歸待 CI/實機 |
-| 設定重啟後遺失、需人工暫停重開 | `MonitoringPreferences` 驗證並保存 interval/alerts/threshold/window；有效 watch options 改變後安全重新啟動 | UserDefaults 隔離域往返與非法設定 probe 通過；新 XCTest 未在本機執行 |
+| 唯讀工作結束未恢復共用監控 | capture/preparation/一般作業退出後重新評估需求；仍先回收舊 child 才開新 watcher | 完整 App 本機編譯通過；完整生命週期實機回歸仍待驗收 |
+| 設定重啟後遺失、需人工暫停重開 | `MonitoringPreferences` 驗證並保存 interval/alerts/threshold/window；有效 watch options 改變後安全重新啟動 | UserDefaults 隔離域往返與非法設定 probe 通過；相關 XCTest 已包含在本機通過的 185 項測試 |
 | 睡眠／低耗電／只有選單列的需求沒有區分 | NSWorkspace sleep/wake 與系統電源通知；睡眠阻止需求、喚醒保留人工 pause；選單列間隔可調，低耗電至少 5 秒 | 純需求／頻率政策 probe 通過；真實睡眠、耗電與最佳秒數仍需量測 |
 | 每次顯示時間都建立多個 formatter | `StatusTimestampDisplay` 在 main actor 重用輸入與中英輸出 formatter；時區自動更新 | 2,000 次微型量測約 1.509 s → 0.132 s；不是 App CPU/RSS 或長時測試 |
-| 上輪藍牙顯示修改存在不能忽略 closure 參數的編譯錯誤 | `.map { _ in raw }` | baseline 本機編譯輸出實際指出此錯誤；已修正；完整 UI 編譯仍被本機工具缺漏阻擋 |
-| CLI 另開操作 sheet，資訊與原頁面分離 | 主頁面底部顯示人類可讀的狀態、活動進度條、完整指令、停止／關閉；確認也留在本頁；Mole 與 Homebrew 詳細輸出預設折疊 | 語法檢查與 Terminal target 建置通過；新增主視窗／展開收合不取消 child 的 19 次 AX 操作驗收待 CI |
+| 上輪藍牙顯示修改存在不能忽略 closure 參數的編譯錯誤 | `.map { _ in raw }` | baseline 本機編譯輸出實際指出此錯誤；修正後完整 App 本機 release 編譯通過 |
+| CLI 另開操作 sheet，資訊與原頁面分離 | 主頁面底部顯示人類可讀的狀態、活動進度條、完整指令、停止／關閉；確認也留在本頁；Mole 與 Homebrew 詳細輸出預設折疊 | 完整 App 本機 release 編譯通過；新增 19 次 AX 操作已納入 CI，完整流程已有成功 run；本機人工操作與視覺仍待驗收 |
 | 收合可能銷毀終端而取消 child | 原生終端持續掛載、AppKit isHidden 停止繪製；保留原本 500 行上限和所有鍵盤控制 | `MoPanelTerminal` 真正編譯通過；互動與繪圖行為仍待 App UI 驗收 |
 | 未尊重減少透明度／動態效果 | 共用玻璃表面加入不透明退化，側邊欄動畫遵從 Reduce Motion | 原始碼與語法檢查；深淺色、VoiceOver、Retina 視覺仍未驗收 |
 | 分支 push 與 PR 各跑一輪長 CI | push 限 main，PR 檢查照常；新 PR revision 取消過時的 PR run | workflow 內容檢查；未宣稱節省的實際 runner 分鐘數 |
@@ -127,9 +127,11 @@ Stats 的資訊覆蓋與成本不能只由 reader 函式判定。這輪只完成
 - `AppModel`＋`AppUpdatesController`＋共用型別＋CLIProbe 的子集：實際 Swift typecheck 通過；不等於全 App 編譯。
 - 獨立、有限的真原始碼 monitoring probe：5 組通過；舊程序原始碼的相同診斷案例確實失敗。
 - Python profiler：9 個隔離測試通過，包含 PID 重用、不得啟停被觀察 App、不得覆蓋既有證據與結果計算。
-- XCTest：本機缺少 XCTest，嘗試在編譯階段失敗，**沒有測試被執行**；新測試交由完整 Xcode／CI。
-- 全 App 預設建置：缺 Metal compiler；native build fallback 又缺 SwiftUI macro plugin。失敗原始 log 已保留在本地 `build/reports/product-audit/`，精簡結果見版本控制內 `audit-2026-10-24/validation.json`。
-- UI 19 次實際按壓、整合回歸、簽章、Release build、1/8/24 小時 soak、Instruments Allocations/Leaks/Energy：**本輪尚未通過／未執行**。
+- 安裝完整 Xcode 27.1／Metal 後，本機 Core／Process XCTest 實際執行 185 項、0 failures，耗時 39.702 秒；Python 工具驗證 56 項通過。
+- 完整 App 的本機 ARM64 release 編譯通過，耗時 89.80 秒，產物經 `file`／`lipo` 確認為 arm64。環境 doctor 0 缺漏、Homebrew 工具清單檢查通過；精簡證據見 [local-environment.json](audit-2026-10-24/local-environment.json)。
+- 安裝前缺 XCTest、Metal compiler、SwiftUI macro plugin 的失敗原始 log 仍保留於本地 `build/reports/product-audit/`；`audit-2026-10-24/validation.json` 是安裝前紀錄，不代表目前工具狀態。
+- 本輪分支 CI [run 40090538651](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40090538651) 已完成且 conclusion 為 success，對應來源 `e01892325c06f132c63f15ebab4265f6fd4f7723`。
+- 本機 fixture UI／發行封裝、完整人工 UI、1/8/24 小時 soak、Instruments Allocations/Leaks/Energy：**本次環境安裝批次未執行**。編譯成功不等於這些驗收已完成。
 
 | 資源指標 | 修復前 | 修復後 | 解讀 |
 |---|---|---|---|
@@ -141,8 +143,8 @@ Stats 的資訊覆蓋與成本不能只由 reader 函式判定。這輪只完成
 
 ## 接下來如何執行，避免一直等待
 
-1. PR 先完成完整 Xcode 的建置／XCTest／安全 fixture UI。Actions 尚未結束時可以直接結束聊天，之後查看同一個 PR；不需要讓 agent 連續輪詢。
-2. 若在本機執行，先安裝完整 Xcode 27 並使用該次命令的 `DEVELOPER_DIR`。`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer bash scripts/test-core.sh` 可只跑第一方 Core/Process；完整 App 使用既有 `bash scripts/build.sh`，需要 Metal compiler。不要以更動系統安全設定來繞過工具缺漏。
+1. 本輪分支已有成功的完整 CI run。本機開發環境也已可用；Actions 新 run 尚未結束時可以直接結束聊天，之後查看同一個 PR，不需要讓 agent 連續輪詢。
+2. 本機使用 `bash scripts/dev-run.sh bash scripts/doctor-environment.sh` 檢查環境。`bash scripts/dev-run.sh bash scripts/test-core.sh` 可只跑第一方 Core/Process；完整 fixture UI／簽章／封裝使用 `bash scripts/dev-run.sh bash scripts/build.sh`。安裝與環境用法見 `LOCAL_DEVELOPMENT.md`。
 3. 取得本分支的新 App，依序人工檢查：同頁清理預覽 → 顯示實際指令 → 展開／收合詳細資訊 → 原有方向／選擇／確認可用 → 停止 → 結果 → 關閉。再看淺／深色、減少透明度、減少動態效果、窄視窗與 VoiceOver。
 4. 再開始長時測試。先自行把新版 App 切到指定情境，確認其 PID，執行下列被動觀察；它只觀察既有 App，不啟動清理、不切換設定、不停止 App。資料串流寫磁碟，只在記憶體保留統計值。要測 8/24 小時，將 duration 改成 28800/86400，使用新輸出檔名。
 
@@ -165,8 +167,8 @@ python3 scripts/profile.py --observe-pid YOUR_MOPANEL_PID \
 7. 是否修復 CPU／記憶體浪費：修了 formatter 重建與串流保留問題，證據範圍如上；整個 App 的實測目標尚未證明。
 8. 是否仍有未驗證 leak／瓶頸：**有**，特別是長時 SwiftUI/Charts/SwiftTerm、完整掃描與硬體來源成本。
 9. Mole 是否獨立且可更新：是，架構與本輪修改維持外部原版 CLI；未驗證所有未來版本。
-10. 是否所有實際執行測試都通過：**否**，有環境建置失敗及舊版問題重現；修正後短 probe/Python/子集建置通過，不能掩蓋完整建置待驗證。
+10. 是否所有實際執行測試都通過：修正及工具安裝後，本機 185 項 XCTest、56 項 Python 與完整 App release 編譯通過；安裝前失敗和舊版問題重現仍保留為歷史證據。完整人工 UI／長時效能仍待驗收。
 11. 是否適合正式長時間常駐：**尚未驗收**。
-12. 尚未完成／未測項目：全檔人工逐行審查、逐控制項來源及測試、Stats provider、完整原生候選、選單列自訂／生命週期、官方功能差距、硬體／權限實機、完整 UI／Release／長時性能驗收。
+12. 尚未完成／未測項目：全檔人工逐行審查、逐控制項來源及測試、Stats provider、完整原生候選、選單列自訂／生命週期、官方功能差距、硬體／權限實機、本機完整 UI／發行封裝／長時性能驗收。
 
-下一輪優先順序：修復本 PR CI 的實際失敗 → 完成逐控制項人工來源追蹤與安全路徑審查 → 用同一硬體量測 Mole 與原生 provider 再決定 Stats 模組整合 → 補齊原生候選／選單列能力 → 1/8/24 小時及 Instruments 驗收。高權限寫入功能維持不支援，直到能提供窄授權及完整還原證據。
+下一輪優先順序：完成本機 fixture UI／封裝與逐控制項人工來源追蹤、安全路徑審查 → 用同一硬體量測 Mole 與原生 provider 再決定 Stats 模組整合 → 補齊原生候選／選單列能力 → 1/8/24 小時及 Instruments 驗收。高權限寫入功能維持不支援，直到能提供窄授權及完整還原證據。
