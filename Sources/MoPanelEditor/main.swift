@@ -128,7 +128,17 @@ import MoPanelProcess
     }
 }
 
-let application = NSApplication.shared
-let delegate = EditorDelegate()
-application.delegate = delegate
-application.run()
+// A synchronous executable starts on the main thread, but Swift 5 language
+// mode does not infer MainActor for top-level main.swift code. Establish that
+// isolation explicitly before constructing AppKit objects; do not dispatch an
+// async task that would depend on a run loop we have not started yet.
+MainActor.assumeIsolated {
+    let application = NSApplication.shared
+    let delegate = EditorDelegate()
+    application.delegate = delegate
+    // NSApplication.delegate is weak. Keep this delegate alive for the entire
+    // synchronous AppKit event loop, including optimized release builds.
+    withExtendedLifetime(delegate) {
+        application.run()
+    }
+}
