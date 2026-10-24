@@ -23,7 +23,7 @@ struct MaintenanceView: View {
                 GlassEffectContainer(spacing: 18) {
                     GlassCard {
                         Label(model.t("先看結果，再決定", "Preview before making changes"), systemImage: "eye").font(.title3.bold())
-                        Text(model.t("預覽由官方 Mole 執行，完整項目、路徑、容量、保護狀態與略過原因會顯示在內嵌互動介面。", "Mole performs the preview. Its embedded interface shows eligible items, paths, sizes, protection status and skip reasons."))
+                        Text(model.t("預覽由官方 Mole 執行，介面保留它實際提供的項目、容量、保護狀態與原因。部分路徑或略過原因需開啟下方「詳細診斷（--debug）」；官方未提供的明細不會補造。", "Mole performs the preview. The interface preserves the items, sizes, protection status and reasons it actually reports. Some paths or skip reasons require Detailed Diagnostics (--debug) below; missing details are not invented."))
                             .foregroundStyle(.secondary)
                         HStack {
                             Button { model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en)) }

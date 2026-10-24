@@ -207,7 +207,7 @@ int main(int argc, char **argv) {
     if (interactive) { (void)nonblocking(terminal_master); (void)nonblocking(STDOUT_FILENO); }
     unsigned char control[FRAME_LIMIT + 5], pending_input[FRAME_LIMIT], pending_output[BUFFER_LIMIT];
     size_t control_used = 0, input_used = 0, output_used = 0;
-    int control_open = 1, master_open = interactive, status = 0, reaped = 0, reason = 0;
+    int control_open = 1, master_open = interactive, output_open = 1, status = 0, reaped = 0, reason = 0;
     int64_t start = now_ms(), stopping = 0, drained = 0, family_scan = 0;
     for (;;) {
         int64_t now = now_ms();
@@ -226,14 +226,21 @@ int main(int argc, char **argv) {
             {control_open ? STDIN_FILENO : -1, POLLIN, 0},
             {wake_pipe[0], POLLIN, 0},
             {master_open ? terminal_master : -1,
-             (short)((output_used < BUFFER_LIMIT ? POLLIN : 0) | (input_used ? POLLOUT : 0)), 0},
-            {interactive && output_used ? STDOUT_FILENO : -1, POLLOUT, 0}
+             (short)((!output_open || output_used < BUFFER_LIMIT ? POLLIN : 0) | (input_used ? POLLOUT : 0)), 0},
+            {interactive && output_open && output_used ? STDOUT_FILENO : -1, POLLOUT, 0}
         };
         int wait = 1000;
         if (timeout && !stopping) { int64_t left = timeout - (now - start); if (left < wait) wait = left > 0 ? (int)left : 0; }
         if (stopping || reaped) wait = 50;
         int rc = poll(fds, 4, wait); if (rc < 0 && errno != EINTR) { interrupted = 1; continue; }
         if (fds[1].revents & POLLIN) { unsigned char discard[64]; while (read(wake_pipe[0], discard, sizeof(discard)) > 0) {} }
+        if (fds[3].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            /* The GUI's output reader is gone. Never poll that destination
+             * again, and keep draining the PTY without retaining its output.
+             * Closing the PTY instead could interrupt a cooperative app swap
+             * before the child reaches its own safe cancellation boundary. */
+            output_open = 0; output_used = 0; interrupted = 1;
+        }
         if (fds[0].revents & (POLLIN | POLLHUP | POLLERR)) {
             ssize_t n = read(STDIN_FILENO, control + control_used, sizeof(control) - control_used);
             if (n == 0) control_open = 0;
@@ -266,15 +273,16 @@ int main(int argc, char **argv) {
                 memset(pending_input + input_used - n, 0, (size_t)n); input_used -= (size_t)n;
             }
         }
-        if (master_open && fds[2].revents & (POLLIN | POLLHUP | POLLERR) && output_used < BUFFER_LIMIT) {
-            ssize_t n = read(terminal_master, pending_output + output_used, BUFFER_LIMIT - output_used);
-            if (n > 0) output_used += (size_t)n;
+        if (master_open && fds[2].revents & (POLLIN | POLLHUP | POLLERR) && (!output_open || output_used < BUFFER_LIMIT)) {
+            size_t offset = output_open ? output_used : 0;
+            ssize_t n = read(terminal_master, pending_output + offset, BUFFER_LIMIT - offset);
+            if (n > 0) { if (output_open) output_used += (size_t)n; }
             else if (n == 0 || (n < 0 && errno != EAGAIN && errno != EINTR)) master_open = 0;
         }
-        if (output_used && (fds[3].revents & POLLOUT || reaped)) {
+        if (output_open && output_used && (fds[3].revents & POLLOUT || reaped)) {
             ssize_t n = write(STDOUT_FILENO, pending_output, output_used);
             if (n > 0) { memmove(pending_output, pending_output + n, output_used - (size_t)n); output_used -= (size_t)n; }
-            else if (n < 0 && errno != EAGAIN && errno != EINTR) { interrupted = 1; output_used = 0; }
+            else if (n < 0 && errno != EAGAIN && errno != EINTR) { interrupted = 1; output_open = 0; output_used = 0; }
         }
     }
     signal_family(SIGKILL);

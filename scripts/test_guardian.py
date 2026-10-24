@@ -5,6 +5,7 @@ Usage: python3 scripts/test_guardian.py /absolute/path/to/MoPanelGuardian
 The caller builds/signs the tested executable; this script never overwrites it.
 """
 import os
+import fcntl
 import pathlib
 import select
 import signal
@@ -138,6 +139,62 @@ class GuardianTests(unittest.TestCase):
         code, out, _ = collect(p)
         self.assertEqual(code, 130)
         self.assertIn(b"COMMITTED", out, "Do not SIGKILL an atomic transaction after the ordinary two-second grace")
+
+    def test_closed_full_output_pipe_drains_cooperative_child(self):
+        # A crashed GUI closes both its control writer and its output reader.
+        # Fill the output pipe before launch so a lost reader cannot be mistaken
+        # for writable output. The child owns only these disposable fixture files.
+        with tempfile.TemporaryDirectory(prefix="mopanel-closed-output-") as root:
+            ready = pathlib.Path(root, "ready")
+            committed = pathlib.Path(root, "committed")
+            reader, writer = os.pipe()
+            flags = fcntl.fcntl(writer, fcntl.F_GETFL)
+            fcntl.fcntl(writer, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+            try:
+                while True:
+                    os.write(writer, b"p" * 4096)
+            except BlockingIOError:
+                pass
+            script = (
+                "import os,pathlib,signal,sys,time;"
+                "signal.signal(signal.SIGINT,lambda *args:None);"
+                "signal.signal(signal.SIGALRM,lambda *args:os._exit(99));signal.alarm(5);"
+                "pathlib.Path(sys.argv[1]).write_text(str(os.getpid()));"
+                "data=b'x'*(4*1024*1024);offset=0\n"
+                "while offset<len(data):offset+=os.write(1,data[offset:])\n"
+                "time.sleep(2.3);pathlib.Path(sys.argv[2]).write_text('COMMITTED')\n"
+            )
+            p = subprocess.Popen([str(GUARDIAN), "--pty", "--timeout-ms", "0", "--cooperative", "--",
+                                  sys.executable, "-c", script, str(ready), str(committed)],
+                                 stdin=subprocess.PIPE, stdout=writer, stderr=subprocess.PIPE)
+            os.close(writer)
+            try:
+                deadline = time.monotonic() + 3
+                while not ready.exists() and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertTrue(ready.exists(), "Harmless PTY fixture did not start")
+                began = time.monotonic()
+                os.close(reader); reader = None
+                p.stdin.close()
+                pid, status, usage = os.wait4(p.pid, 0)
+                p.returncode = os.waitstatus_to_exitcode(status)
+                elapsed = time.monotonic() - began
+                cpu = usage.ru_utime + usage.ru_stime
+                print(f"closed-output fixture: exit={p.returncode}, elapsed={elapsed:.3f}s, "
+                      f"cpu={cpu:.3f}s, committed={committed.exists()}", flush=True)
+                self.assertEqual(pid, p.pid)
+                self.assertEqual(p.returncode, 130)
+                self.assertTrue(committed.exists(), "Closed output must be drained so the safe boundary can finish")
+                self.assertGreater(elapsed, 2.1, "Cooperative cancellation must not force-kill before the safe boundary")
+                self.assertLess(cpu, 0.75, "A closed output descriptor must not cause a busy poll loop")
+            finally:
+                if reader is not None:
+                    os.close(reader)
+                if p.poll() is None:
+                    p.kill(); p.wait(timeout=2)
+                for stream in (p.stdin, p.stderr):
+                    if stream and not stream.closed:
+                        stream.close()
 
     def test_detached_descendant_observed_and_cleaned(self):
         # This execution sandbox exposes host /proc but returns namespace PIDs.

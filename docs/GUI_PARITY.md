@@ -22,6 +22,8 @@
 
 本表反映建立時的程式碼。新模組加入後，負責人必須更新其程式碼位置、實際測試證據與狀態。不可只把「未實作」改成「完成」而不附驗收結果。最終測試總結以根目錄 `TEST_REPORT.md` 與發行包 `Reports/` 的實際紀錄為準。
 
+目前最後一份已完成的 Mac 測試證據是 [run 40076181707](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076181707)：macOS 27.0.1／Xcode 27.1／Apple Swift 6.4 ARM64 的 **140／140 XCTest 通過**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），主 App 與兩個 helper 的 release 編譯、ARM64 及 ad-hoc 完整性驗證也通過。但 UI smoke 在初始生命週期發生 SIGSEGV，尚未完成原生流程驗收；效能與 ZIP 發行仍被 gate 阻擋。下表「待驗收」不能解讀為 XCTest 仍失敗，也不能以 XCTest 通過推定 UI、實際變更或硬體操作已通過。
+
 ## 1.17 正式功能與 MoPanel 現況
 
 以下是從官方公開資料可以確認的功能集合。分類名稱與行為摘要是對照用途，不複製官方介面素材。產品頁可能隨 Preview 更新；精細規則未能從正式發行紀錄確認時，另註「版本邊界待實機確認」，不把最新文案直接當成 1.17 的全部細節。
@@ -37,8 +39,8 @@
 | A02 | AI sessions、worktrees、閒置 AI CLI 的專用審查 [S1][S3] | CLI worktrees 是報告用途；Codex session/state 預設受保護 [C5][C6] | **未實作** | 需要新增工具整合、可恢復副本、索引一致性及 Git 唯一內容保護；不得直接刪目錄替代 |
 | S01 | App 清單、圖示、大小、搜尋、多選卸載 [S4] | `uninstall --list`、名稱參數及官方選取器 | **原生＋PTY／待驗收**；`UninstallView.swift` | 重名 App、cask 名稱歧義、特殊檔名與實際確認範圍的端到端測試 |
 | S02 | App 殘留、共享資料、個人資料與系統擴充的審查 [S4] | 官方卸載分析及確認；CLI 殘留計畫並非完整公開 JSON | **部分**；個人資料預選預設關閉，最終審查在 PTY | 原生逐項審查、共享資料安全、特殊卸載器 handoff；不能猜測所有權 |
-| S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／最新修復待 macOS CI**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle／App Store 只有來源辨識與原 App handoff。30個Core與2個環境測試在 Linux 通過；未升級真實 App，非所有來源完整對等 |
-| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／最新修復待 macOS CI**；`StartupController.swift`、`StartupView.swift` | 已有有限中繼資料清單、可驗證 user LaunchAgent 啟用／停用與確認；未知身分禁止變更，其他項目使用正式系統設定入口。15個Core測試在 Linux 通過，涵蓋目錄URL回歸與真Mac唯讀launchctl樣本；CI用私有mock，不修改真launchd工作 |
+| S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／原生流程待驗收**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle／App Store 只有來源辨識與原 App handoff。30 個 Core 與 2 個環境測試已包含在通過的 Mac 140 案例中；未升級真實 App，非所有來源完整對等 |
+| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／原生流程待驗收**；`StartupController.swift`、`StartupView.swift` | 已有有限中繼資料清單、可驗證 user LaunchAgent 啟用／停用與確認；未知身分禁止變更，其他項目使用正式系統設定入口。15 個 Core 測試已在 Mac 通過，涵蓋目錄 URL 回歸與真 Mac 唯讀 launchctl 樣本；controller 的私有 mock smoke 尚未完成，不修改真 launchd 工作 |
 | O01 | macOS 維護、任務結果與略過原因 [S5] | `optimize`、Dry Run、Whitelist；官方承認任務集合可能不同 [S2] | **PTY／待驗收**；`MaintenanceView.swift` | 逐項核對 1.17 GUI 任務；不能宣稱兩套預設維護流程完全相同 |
 | O02 | 管理員授權重用及工作結束後停止 [S5] | 官方 CLI sudo／Touch ID 流程 | **PTY／待驗收**；`ManagedProcess.swift`、`TerminalPanel.swift` | 真 Mac sudo、Touch ID、取消及授權過期；不保存密碼 |
 | D01 | 階層磁碟圖、搜尋、大小、Finder、重新掃描 [S6] | `analyze --json` | **原生／待驗收**；`AnalyzeView.swift` | 圖僅畫篩選後最大 30 個可測項目並明示；不等同官方全部細節、快取與視覺排列 |
@@ -78,15 +80,15 @@
 
 ## 測試矩陣與完成門檻
 
-**目前沒有可以誠實標成 100% 官方 GUI 功能對等的結果。** 既有 Core、Process、Guardian 測試驗證的是我們的介面契約與安全層，不是官方 GUI 全套行為。公開 macOS CI 的編譯、簽章與 UI 結果須依該版 `TEST_REPORT.md`／Reports 判斷。新增 System Tools 的 7 個純政策測試已在 Swift 6.4.1 Linux 實際通過（0 失敗，`docs/SYSTEM_TOOLS_POLICY_TEST_OUTPUT.txt`）；這不是 IOKit／AppKit 驗收。
+**目前沒有可以誠實標成 100% 官方 GUI 功能對等的結果。** 既有 Core、Process、Guardian 測試驗證的是我們的介面契約與安全層，不是官方 GUI 全套行為。公開 macOS CI 的編譯、簽章與 UI 結果須依該版 `TEST_REPORT.md`／Reports 判斷。System Tools 的 7 個純政策測試已在 Linux 與 Mac 通過，包含在上述 Mac 140 案例中；這不是 IOKit／AppKit 驗收，UI smoke 仍受初始崩潰阻擋。
 
 | 驗收層 | 必須證明的內容 | 此文件建立時的證據／缺口 |
 |---|---|---|
 | 官方資料盤點 | 1.17 穩定、1.18 Preview、CLI V1.62.0 分開 | 公開文件及固定 CLI 原始碼已盤點；官方 GUI 未作二進位實測 |
 | CLI Adapter | argv、身分、來源、版本、help、JSON／NDJSON | 已有實際 XCTest；總數及最新 log 見 TEST_REPORT |
 | 子程序安全 | PTY、無密碼紀錄、取消、逾時、父程序消失 | Linux fixtures 已測；macOS libproc、App 強制退出、sudo 需各自證據 |
-| 原生 App 建置 | macOS 27 ARM64 SwiftUI／AppKit／Charts／SwiftTerm | 最新公開 CI 已編譯新增模組的 debug App；該次 XCTest 仍有失敗，後續修復必須重新取得完整 release／smoke／封裝證據 |
-| App 包裝 | Mach-O ARM64、helper、codesign、ZIP 解壓再驗證 | 必須由成功 CI 產物證明，不由來源樹推定 |
+| 原生 App 建置 | macOS 27 ARM64 SwiftUI／AppKit／Charts／SwiftTerm | run 40076181707 的完整整合版 release 編譯與 140／140 Mac XCTest 通過；UI smoke 初始 SIGSEGV 尚未解決，仍須重新取得完整啟動／流程證據 |
+| App 包裝 | Mach-O ARM64、helper、codesign、ZIP 解壓再驗證 | 上述 run 已驗證主程式與兩個 helper 的 ARM64 及 ad-hoc bundle 完整性；因 UI gate 失敗，ZIP 封裝、解壓再驗證與發行尚未完成 |
 | UI 流程 | 所有真按鈕、返回、空白／失敗／取消、鍵盤、VoiceOver | 尚未全量完成；Smoke test 不等於完整人工流程驗收 |
 | 清理／卸載 | 同隔離資料集的預覽、確認、實際結果與保護 | 不對使用者個人資料測試；尚須可丟棄 VM／獨立測試帳號完整流程 |
 | 原生新增模組 | 每項功能行為、失敗恢復與來源安全 | System Tools 已有 7 項政策測試及安全 Mac smoke 入口；其他未實作項仍保留，沒有以開網頁算完成 |

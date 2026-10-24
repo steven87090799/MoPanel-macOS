@@ -1,0 +1,7 @@
+test_closed_full_output_pipe_drains_cooperative_child (__main__.GuardianTests.test_closed_full_output_pipe_drains_cooperative_child) ... closed-output fixture: exit=130, elapsed=2.346s, cpu=0.085s, committed=True
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.389s
+
+OK

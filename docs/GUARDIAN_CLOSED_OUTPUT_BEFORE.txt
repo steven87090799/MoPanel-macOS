@@ -1,0 +1,15 @@
+test_closed_full_output_pipe_drains_cooperative_child (__main__.GuardianTests.test_closed_full_output_pipe_drains_cooperative_child) ... closed-output fixture: exit=130, elapsed=4.997s, cpu=5.044s, committed=False
+FAIL
+
+======================================================================
+FAIL: test_closed_full_output_pipe_drains_cooperative_child (__main__.GuardianTests.test_closed_full_output_pipe_drains_cooperative_child)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/295743c3c15b/MoPanel/scripts/test_guardian.py", line 187, in test_closed_full_output_pipe_drains_cooperative_child
+    self.assertTrue(committed.exists(), "Closed output must be drained so the safe boundary can finish")
+AssertionError: False is not true : Closed output must be drained so the safe boundary can finish
+
+----------------------------------------------------------------------
+Ran 1 test in 5.040s
+
+FAILED (failures=1)

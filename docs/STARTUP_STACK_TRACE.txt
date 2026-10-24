@@ -1,0 +1,169 @@
+Extracted verbatim from run40076975513 smoke-debug-lldb.log; disposable debug-signed copy, not release acceptance.
+Process 15809 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=2, address=0x16b473f20)
+       frame #0: 0x00000001a2f8c70c libswiftCore.dylib`swift::SubstGenericParametersFromMetadata::buildDescriptorPath(swift::TargetContextDescriptor<swift::InProcess> const*, swift::Demangle::__runtime::Demangler&) const + 84
+libswiftCore.dylib`swift::SubstGenericParametersFromMetadata::buildDescriptorPath:
+->  0x1a2f8c70c <+84>: stur   q0, [sp, #0x40]
+    0x1a2f8c710 <+88>: strb   wzr, [sp, #0x58]
+    0x1a2f8c714 <+92>: add    x9, x8, #0x58
+    0x1a2f8c718 <+96>: str    xzr, [sp, #0x260]
+Target 0: (MoPanel) stopped.
+(lldb) thread backtrace -c 128 all
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=2, address=0x16b473f20)
+   * frame #0: 0x00000001a2f8c70c libswiftCore.dylib`swift::SubstGenericParametersFromMetadata::buildDescriptorPath(swift::TargetContextDescriptor<swift::InProcess> const*, swift::Demangle::__runtime::Demangler&) const + 84
+     frame #1: 0x00000001a2ef9800 libswiftCore.dylib`swift::SubstGenericParametersFromMetadata::setup() const + 272
+     frame #2: 0x00000001a2f908ec libswiftCore.dylib`std::__1::__function::__func<swift_getOpaqueTypeMetadataImpl(swift::MetadataRequest, void const* const*, swift::TargetOpaqueTypeDescriptor<swift::InProcess> const*, unsigned int)::$_0, void const* (unsigned int, unsigned int)>::operator()(unsigned int&&, unsigned int&&) + 48
+     frame #3: 0x00000001a2f9ac9c libswiftCore.dylib`(anonymous namespace)::DecodedMetadataBuilder::createGenericTypeParameterType(unsigned int, unsigned int) const + 76
+     frame #4: 0x00000001a2f93cec libswiftCore.dylib`swift::Demangle::__runtime::TypeDecoder<(anonymous namespace)::DecodedMetadataBuilder>::decodeMangledType(swift::Demangle::__runtime::Node*, unsigned int, bool, bool) + 6648
+     frame #5: 0x00000001a2f98130 libswiftCore.dylib`swift::Demangle::__runtime::TypeDecoder<(anonymous namespace)::DecodedMetadataBuilder>::decodeGenericArgs(swift::Demangle::__runtime::Node*, unsigned int, __swift::__runtime::llvm::SmallVectorImpl<swift::MetadataPackOrValue>&) + 456
+     frame #6: 0x00000001a2f92698 libswiftCore.dylib`swift::Demangle::__runtime::TypeDecoder<(anonymous namespace)::DecodedMetadataBuilder>::decodeMangledType(swift::Demangle::__runtime::Node*, unsigned int, bool, bool) + 932
+     frame #7: 0x00000001a2f8dc0c libswiftCore.dylib`swift_getTypeByMangledNodeImpl(swift::MetadataRequest, swift::Demangle::__runtime::Demangler&, swift::Demangle::__runtime::Node*, void const* const*, std::__1::function<void const* (unsigned int, unsigned int)>, std::__1::function<swift::TargetWitnessTable<swift::InProcess> const* (swift::TargetMetadata<swift::InProcess> const*, unsigned int)>) + 788
+     frame #8: 0x00000001a2f8a614 libswiftCore.dylib`swift_getTypeByMangledNode + 336
+     frame #9: 0x00000001a2f8e5f0 libswiftCore.dylib`swift_getTypeByMangledNameImpl(swift::MetadataRequest, __swift::__runtime::llvm::StringRef, void const* const*, std::__1::function<void const* (unsigned int, unsigned int)>, std::__1::function<swift::TargetWitnessTable<swift::InProcess> const* (swift::TargetMetadata<swift::InProcess> const*, unsigned int)>) + 1172
+     frame #10: 0x00000001a2f8842c libswiftCore.dylib`swift_getTypeByMangledName + 336
+     frame #11: 0x00000001a2f8b0a8 libswiftCore.dylib`swift_getOpaqueTypeMetadataImpl(swift::MetadataRequest, void const* const*, swift::TargetOpaqueTypeDescriptor<swift::InProcess> const*, unsigned int) + 384
+     frame #12: 0x00000001c8206044 SwiftUI`View.keyboardShortcut(_:) + 348
+     frame #13: 0x00000001c8205ea0 SwiftUI`View.keyboardShortcut(_:) + 92
+     frame #14: 0x00000001c8206254 SwiftUI`View.keyboardShortcut(_:modifiers:) + 84
+     frame #15: 0x000000010424e128 MoPanel`closure #2() in closure #2 in MoPanelApp.body.getter at MoPanelApp.swift:58:91 [opt]
+     frame #16: 0x00000001c8233138 SwiftUI`CommandGroup.init(after:addition:) + 284
+     frame #17: 0x000000010424d9f0 MoPanel`closure #2() in MoPanelApp.body.getter at MoPanelApp.swift:57:13 [opt]
+     frame #18: 0x00000001c7adf838 SwiftUI`Scene.commands(content:) + 304
+     frame #19: 0x000000010424ae80 MoPanel`MoPanelApp.body.getter() at MoPanelApp.swift:55:10 [opt]
+     frame #20: 0x00000001c8493e4c SwiftUI`partial apply for closure #1 in AppBodyAccessor.updateBody(of:changed:) + 44
+     frame #21: 0x0000000232ba2104 SwiftUICore`BodyAccessor.setBody(_:) + 1612
+     frame #22: 0x00000001c848fcc0 SwiftUI`AppBodyAccessor.updateBody(of:changed:) + 116
+     frame #23: 0x0000000232ba4ba8 SwiftUICore`closure #1 in DynamicBody.updateValue() + 952
+     frame #24: 0x0000000232ba44e4 SwiftUICore`DynamicBody.updateValue() + 1036
+     frame #25: 0x00000002328643a0 SwiftUICore`partial apply for implicit closure #1 in closure #1 in closure #1 in Attribute.init(_:) + 32
+     frame #26: 0x00000001c875def8 AttributeGraph`AG::Graph::UpdateStack::update() + 528
+     frame #27: 0x00000001c875e688 AttributeGraph`AG::Graph::update_attribute(AG::data::ptr<AG::Node>, unsigned int) + 356
+     frame #28: 0x00000001c8765e1c AttributeGraph`AG::Graph::value_ref(AG::AttributeID, unsigned int, AGSwiftMetadata const*, unsigned char&) + 332
+     frame #29: 0x00000001c877f150 AttributeGraph`AGGraphGetValue + 348
+     frame #30: 0x00000001c848c960 SwiftUI`AppGraph.sceneList(namespace:flush:) + 260
+     frame #31: 0x00000001c80f2558 SwiftUI`AppDelegate.appGraphDidChange() + 500
+     frame #32: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #33: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #34: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #35: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #36: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #37: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #38: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #39: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #40: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #41: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #42: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #43: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #44: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #45: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #46: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #47: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #48: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #49: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #50: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #51: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #52: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #53: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #54: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #55: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #56: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #57: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #58: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #59: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #60: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #61: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #62: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #63: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #64: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #65: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #66: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #67: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #68: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #69: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #70: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #71: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #72: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #73: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #74: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #75: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #76: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #77: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #78: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #79: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #80: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #81: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #82: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #83: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #84: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #85: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #86: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #87: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #88: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #89: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #90: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #91: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #92: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #93: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #94: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #95: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #96: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #97: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #98: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #99: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #100: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #101: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #102: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #103: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #104: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #105: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #106: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #107: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #108: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #109: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #110: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #111: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #112: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #113: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #114: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #115: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #116: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #117: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #118: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #119: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #120: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+     frame #121: 0x00000002329b3168 SwiftUICore`UpdateGroup.ensure(_:) + 68
+     frame #122: 0x00000001c79338a0 SwiftUI`AppKitWindowController.updateRootHost(forceUpdate:) + 752
+     frame #123: 0x00000001c849087c SwiftUI`AppGraph.graphDidChange() + 816
+     frame #124: 0x0000000232e761f0 SwiftUICore`GraphHost.flushTransactions() + 1156
+     frame #125: 0x00000001c848c918 SwiftUI`AppGraph.sceneList(namespace:flush:) + 188
+     frame #126: 0x00000001c793dc00 SwiftUI`closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 540
+     frame #127: 0x00000001c794cdbc SwiftUI`partial apply for closure #1 in AppKitWindowController.updateRootHost(forceUpdate:) + 20
+  thread #2
+       frame #0: 0x000000018e93e9ec libsystem_kernel.dylib`__workq_kernreturn + 8
+  thread #3
+       frame #0: 0x000000018e93e9ec libsystem_kernel.dylib`__workq_kernreturn + 8
+  thread #4, queue = 'com.apple.libtrace.state.block-list'
+       frame #0: 0x000000018e93eaf4 libsystem_kernel.dylib`__ulock_wait + 8
+       frame #1: 0x000000018e7c2664 libdispatch.dylib`_dispatch_thread_main_event_wait_slow + 76
+       frame #2: 0x000000018e7d07fc libdispatch.dylib`__DISPATCH_WAIT_FOR_QUEUE__ + 464
+       frame #3: 0x000000018e7d0328 libdispatch.dylib`_dispatch_sync_f_slow + 144
+       frame #4: 0x000000018e69faa0 libsystem_trace.dylib`___os_state_request_for_self_block_invoke + 376
+       frame #5: 0x000000018e7c0a34 libdispatch.dylib`_dispatch_call_block_and_release + 32
+       frame #6: 0x000000018e7da5a0 libdispatch.dylib`_dispatch_client_callout + 16
+       frame #7: 0x000000018e7c8fc0 libdispatch.dylib`_dispatch_lane_serial_drain + 744
+       frame #8: 0x000000018e7c9af4 libdispatch.dylib`_dispatch_lane_invoke + 448
+       frame #9: 0x000000018e7d3f58 libdispatch.dylib`_dispatch_root_queue_drain_deferred_wlh + 284
+       frame #10: 0x000000018e7d385c libdispatch.dylib`_dispatch_workloop_worker_thread + 720
+       frame #11: 0x000000018e97df9c libsystem_pthread.dylib`_pthread_wqthread + 292
+  thread #5, name = 'com.apple.NSEventThread'
+       frame #0: 0x000000018e93cc20 libsystem_kernel.dylib`mach_msg2_trap + 8
+       frame #1: 0x000000018e94f8e0 libsystem_kernel.dylib`mach_msg2_internal + 76
+       frame #2: 0x000000018e945a28 libsystem_kernel.dylib`mach_msg_overwrite + 480
+       frame #3: 0x000000018e93cfac libsystem_kernel.dylib`mach_msg + 24
+       frame #4: 0x000000018ea42aec CoreFoundation`__CFRunLoopServiceMachPort + 160
+       frame #5: 0x000000018ea41334 CoreFoundation`__CFRunLoopRun + 1172
+       frame #6: 0x000000018eb1b82c CoreFoundation`_CFRunLoopRunSpecificWithOptions + 536
+       frame #7: 0x000000019311c844 AppKit`_NSEventThread + 184
+       frame #8: 0x000000018e981d00 libsystem_pthread.dylib`_pthread_start + 136
+  thread #6
+       frame #0: 0x000000018e93e9ec libsystem_kernel.dylib`__workq_kernreturn + 8

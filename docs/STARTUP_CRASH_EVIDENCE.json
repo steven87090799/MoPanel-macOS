@@ -1,0 +1,26 @@
+{
+  "workflow_run_url": "https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076975513",
+  "source_revision": "726cc1e7abafa75d72138e4853cc1d7e953d52ef",
+  "artifact_id": 12553213128,
+  "artifact_sha256": "e4caa8b2a79a3fb2d925fa81d75cde394ffcf14f5c48721a5fb8223f73e68239",
+  "formal_smoke_exit_code": -11,
+  "formal_smoke_timed_out": false,
+  "diagnostic_copy": true,
+  "publishing_during_update_warning_count": 5139,
+  "debug_elapsed_seconds": 30.557,
+  "original_files_unchanged": true,
+  "original_sha256_before": {
+    "Contents/MacOS/MoPanel": "0db1d6c8ffe81c916bb0dd4660c47ca0a28baa816524c2b61097ca7bb53957d0",
+    "Contents/_CodeSignature/CodeResources": "74c2ce1b9508bbc042098be962a9f7fbb5494b8bd30ff2da32aa4fca61cfe21b",
+    "Contents/Helpers/MoPanelGuardian": "2a657a142357e552298e8293b4ea7dcdf8790801e78eb96367d9828e897ab10b",
+    "Contents/Helpers/MoPanelEditor": "ffd0fa0f064021d0a93a4c01c730cbf687ba6d529de2148819fefcceeb7d1982"
+  },
+  "original_sha256_after": {
+    "Contents/MacOS/MoPanel": "0db1d6c8ffe81c916bb0dd4660c47ca0a28baa816524c2b61097ca7bb53957d0",
+    "Contents/_CodeSignature/CodeResources": "74c2ce1b9508bbc042098be962a9f7fbb5494b8bd30ff2da32aa4fca61cfe21b",
+    "Contents/Helpers/MoPanelGuardian": "2a657a142357e552298e8293b4ea7dcdf8790801e78eb96367d9828e897ab10b",
+    "Contents/Helpers/MoPanelEditor": "ffd0fa0f064021d0a93a4c01c730cbf687ba6d529de2148819fefcceeb7d1982"
+  },
+  "stack_excerpt": "STARTUP_STACK_TRACE.txt",
+  "interpretation": "Main-thread EXC_BAD_ACCESS after repeated AppGraph/GraphHost/Window-host reentrancy. The exact initiating state publication is not established by this truncated 128-frame stack."
+}

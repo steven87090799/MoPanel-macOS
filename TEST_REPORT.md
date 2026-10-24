@@ -6,23 +6,23 @@
 
 ## 交付狀態
 
-後續 [run40076809338](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076809338) 在建置前的隔離debug harness中7／8通過，一個mock期望把`/var`與`/private/var`視為不同路徑，阻擋流程，沒有新App或LLDB結果。已將測試期望canonicalize並加入實際symlink別名fixture，8／8在Linux重新通過；正式診斷及產品碼未改動。下列140個Mac XCTest與SIGSEGV仍指最後實際執行App的run40076181707。
+**已取得真正的 macOS 27 ARM64 編譯與測試結果；最新整合版的 UI 啟動仍失敗，未產生可交付的 `MoPanel-macOS27-arm64.zip`。**
 
-**已取得真正的 macOS 27 ARM64 編譯與測試結果；最新整合版尚有 macOS 測試失敗，未產生可交付的 `MoPanel-macOS27-arm64.zip`。**
+最新 [run40076975513](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076975513)，commit `726cc1e7abafa75d72138e4853cc1d7e953d52ef`，使用 macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。**140／140 Mac XCTest通過，0失敗／略過**（116 Core、24 Process／Editor／Streaming）。主App與兩個helper完成release編譯、ARM64、ad-hoc完整性驗證，並通過正式產物沒有`get-task-allow`的簽章gate。
 
-公開 repository 為 [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS)。最新的 [run 40076181707](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076181707)（commit `e7eef21badb2ebf4a6b77232dcc7bccc96033c89`）使用 macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64；**140／140 Mac XCTest 通過，0 failures／skipped**，其中116 Core及24 Process／Editor／Streaming。之前的Startup15項與installed receipt12項路徑回歸均已通過真Mac測試。
+Homebrew audit15、獨立gate harness6、smoke driver5、crash辨識5、debug guard8個Python／Bash案例都在真Mac通過。最新穩定官方CLI的唯讀合約通過。這些成功不能代替UI驗收或相加當成另一套完整XCTest。
 
-主App及兩個helper也完成release編譯、ARM64與ad-hoc完整性驗證。Homebrew Python15案例、獨立gate Bash6案例、smoke driver5案例與crash辨識5案例在真Mac全部通過；官方Mole最新穩定唯讀契約亦通過。這些成功不能代替尚未通過的UI驗收。
+正式fixture-only UI仍以SIGSEGV（-11）退出，stderr僅有`[MoPanel smoke] entered`，尚未到`detect.begin`；沒有App最終JSON或截圖。正式執行及4秒crash報告等待共8.963秒，未達45秒deadline。系統未產生符合條件的近期MoPanel crash報告（0候選、0 bytes讀取）。
 
-本輪fixture-only UI smoke仍以**SIGSEGV（-11）退出**，含4秒crash等待的總時間為7.782秒，不是逾時。stderr僅有`[MoPanel smoke] entered`，尚未到`detect begin`；沒有App最終JSON或截圖。因此已定位為初始介面生命週期階段，不能歸因於尚未執行的IOPM、Startup或AX流程。兩個獨立gate正確保存XCTest成功與smoke失敗，並阻止效能、後續guardian驗收、baseline probe與ZIP封裝。
+這次已真正取得隔離debug拷貝的LLDB堆疊：main thread EXC_BAD_ACCESS前出現5,139次SwiftUI「Publishing changes from within view updates」警告；stack反覆經過AppGraph.graphDidChange、GraphHost.flushTransactions、AppGraph.sceneList、AppKitWindowController.updateRootHost。最上方可見MoPanelApp.body與commands建立，**不能只因當下frame落在keyboardShortcut就認定該API是根因**。這是scene graph重入的具體證據；啟動它的狀態發布仍須修正後驗證。
 
-三處初值通知重入路徑的窄修沒有消除這次SIGSEGV，不能宣稱已修復啟動。自身crash收集已在真Mac執行，但沒有近期MoPanel候選報告（0 files examined、0 bytes read），所以仍無stack。下一輪將僅在正式smoke失敗後，用同一release bytes的獨立臨時App拷貝加debug-only entitlement並由LLDB批次取stack；診斷最多60秒、原bundle四檔hash前後核對、正式失敗仍阻擋ZIP。正式產物新增拒絕get-task-allow簽章gate。8個隔離／mock guard案例已通過（`docs/DEBUG_DIAGNOSTIC_TEST_OUTPUT.txt`），不是實際LLDB驗收；詳見`docs/SMOKE_DEBUG_DIAGNOSTICS.md`。
+隔離診斷實際30.557秒，僅臨時拷貝有debug entitlement，正式App主程式、CodeResources及兩個helper的SHA-256前後完全一致。診斷不改主機安全設定，也不替代原本失敗的smoke。證據摘要在`docs/STARTUP_CRASH_EVIDENCE.json`，真正stack節錄在`docs/STARTUP_STACK_TRACE.txt`；完整log在該run artifact，流程說明在`docs/SMOKE_DEBUG_DIAGNOSTICS.md`。
 
-外部driver直接保存stdout/stderr；45秒到期仍立即判定失敗，再對存活的同一Popen子App嘗試2秒stack sample（command上限8秒）並停止回收。已退出的App不取樣。所有額外診斷均不延長成功期限、不把晚完成改為通過，也不更改TCC、entitlement或系統安全設定。較早run40074913811的45秒逾時與本輪SIGSEGV是不同執行結果。
+XCTest與fixture UI兩個gate分開保存結果；UI失敗明確非零退出並阻擋效能、guardian Python驗收、baseline probe與ZIP封裝。原45秒成功期限未延長。IOPM、Startup mock及17項AX按鈕驗收尚未抵達，不能宣稱通過。
 
-較早的 [run 40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 通過 77 個 Mac XCTest、ARM64 主程式及兩個 helper 的 release 編譯與 ad-hoc bundle 驗證。其 UI smoke 12 項中 11 項通過，僅監控串流樣本檢查失敗；完整 JSON、stdout／stderr 及自身視窗截圖已保存。之後找到 Foundation 讀取會等待緩衝填滿的實際問題，新增串流回歸，改用增量 POSIX read；新回歸已在本輪 Mac 通過；完整UI smoke仍因上述初始生命週期問題未通過。
+較早run40072470759基礎UI的12項檢查中11項通過，監控串流問題已透過POSIX增量讀取修正並通過Mac回歸；run40076809338新增debug harness的路徑別名期望失敗，之後已改為canonical比較及symlink fixture，本輪8項已通過。這些不同版本的結果不重複加總。
 
-下表保留各套 Linux 基準測試的實際證據與範圍。後續新增功能的測試亦各有獨立紀錄，不能將不同版本／平台重複加總為一次完整驗收。Guardian Python 整合、效能三態與 ZIP gate 尚未在 Mac 完整執行。
+下表保留Linux基準及後續回歸的實際範圍。Guardian新增closed-output回歸的17項已在Linux完整通過（`docs/GUARDIAN_CLOSED_OUTPUT_FULL.txt`），不在本輪head內且尚未在Mac驗收。
 
 ## 已實際執行
 
@@ -75,12 +75,12 @@
 
 | 項目 | 狀態 |
 |---|---|
-| macOS27 SwiftUI/AppKit/Charts 編譯 | run40076181707完整整合版release編譯與140XCTest通過；UI啟動SIGSEGV仍待修復驗證 |
+| macOS27 SwiftUI/AppKit/Charts 編譯 | run40076975513完整整合版release編譯與140XCTest通過；UI啟動SIGSEGV仍待修復驗證 |
 | SwiftTerm 與 MoPanelEditor macOS 編譯 | 基礎版本通過 |
 | 真正 ARM64 Mach-O 產物 | runner 已編譯並驗證；因 smoke 失敗未上傳發行 App |
 | ad-hoc Code Signing／codesign verify | 基礎版本通過 build.sh 的 bundle gate |
 | Apple Developer ID／公證 | 未進行，未宣稱 |
-| macOS 原生視窗 smoke test | run40076181707仍於初始生命週期SIGSEGV；沒有完整App證據或系統crash報告。下一輪用隔離debug拷貝取stack，正式45秒deadline不變 |
+| macOS 原生視窗 smoke test | run40076975513仍於初始生命週期SIGSEGV；隔離LLDB已取得scene graph重入stack，仍待修後正式smoke，45秒deadline不變 |
 | 十個頁面的全部按鈕與 VoiceOver | 未完整實機驗收 |
 | 官方 status/analyze/uninstall-list 的真實 Mac 整合 | CLI 唯讀合約通過；原生 GUI 真實引擎 benchmark 待接續驗證 |
 | Full Disk Access／Touch ID／sudo | 尚未實機驗證 |

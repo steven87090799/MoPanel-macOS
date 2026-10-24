@@ -58,20 +58,12 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 ## 公開 GitHub Actions 建置狀態
 
-run40076809338在最前方的debug診斷harness出現一個fixture路徑別名斷言（7／8通過），尚未開始編譯或啟動App。測試已改用canonical期望並加入symlink別名fixture，Linux8／8通過；正式診斷與App沒有因此改動。等待下一次真正Mac執行，不能把這次當成已取得stack。
+公開repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 使用免費標準`xcode-27` runner，實際image20261022.0305.3、macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。GitHub API token僅用於官方release metadata的同host請求，不跟隨跨host redirect；binary與checksum下載無授權header。
 
-公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
+最新[run40076975513](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076975513)通過140個Mac XCTest、App及兩個helpers release編譯、ARM64與ad-hoc完整性，並驗證三個正式executables沒有get-task-allow。Homebrew15、gate6、smoke driver5、crash辨識5與debug guard8案例全過。先前debug harness的Darwin路徑別名期望已修復。
 
-[Run 40076181707](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076181707) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit、6個獨立gate harness與5個smoke driver與5個crash辨識案例也在真Mac全過。
+正式UI仍於初始生命週期SIGSEGV，尚未detect或開始IOPM／Startup／AX；45秒期限未達。系統沒有產生可確認的自身crash report，所以採已授權的獨立debug-only App拷貝，由guardian管控LLDB固定fixture啟動與backtrace。診斷30.557秒完成，取得main-thread scene graph重入stack及5,139次publishing-during-update警告。正式App四檔SHA前後一致，無主機安全設定變更。診斷不能替代正式smoke；完整流程與證據見`SMOKE_DEBUG_DIAGNOSTICS.md`、`STARTUP_CRASH_EVIDENCE.json`及`STARTUP_STACK_TRACE.txt`。
 
-本輪UI smoke仍以SIGSEGV（-11）退出，含4秒診斷等待共7.782秒，僅有`[MoPanel smoke] entered`，尚未到`detect begin`；不是逾時。沒有最終App JSON或截圖。這是初始介面生命週期失敗，IOPM、Startup、AX流程尚未開始。`validation-gates.json`分別保留XCTest成功與smoke失敗，最後明確非零退出，未進效能／後續guardian／baseline probe／ZIP。
-
-初值通知重入路徑窄修未消除SIGSEGV。此次自身crash收集未找到任何近期MoPanel候選（0 files examined），沒有讀取其他App報告。下一輪僅在正式smoke失敗後，對獨立臨時App拷貝加入debug-only get-task-allow，由既有guardian管控LLDB批次啟動／backtrace，總診斷上限60秒。正式App與helpers前後SHA核對、發行簽章禁止該debug entitlement；不改主機安全設定，也不以診斷結果替代正式smoke。8個合成／mock guard已通過，真Mac診斷待執行；見`SMOKE_DEBUG_DIAGNOSTICS.md`。
-
-Popen直接保存stdout/stderr。45秒仍是測試成功期限；逾時後僅對同一存活子App嘗試固定2秒`/usr/bin/sample`（command上限8秒）再回收。已退出的App不取樣；crash收集與stack診斷不延長成功期限、不更改安全設定，也不會覆蓋原失敗。run40074913811的45秒逾時為先前另一次執行。
-
-XCTest與fixture-only UI仍獨立收集，只有編譯／bundle成功才能啟動App，兩個gate都成功且無略過，才可進後續驗收。發行報告另強制完整成功的gate JSON及harness logs，任何失敗均阻擋ZIP。
-
-較早的 [run40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 已通過77個 Mac XCTest、基礎App ARM64 release與ad-hoc驗證，但UI smoke僅11/12通過。失敗的watch小量輸出問題已透過增量POSIX read修正，且新增兩個Mac串流回歸通過；尚待本輪其他失敗修正後重新執行UI與三態測量。
+兩個獨立gate保存XCTest成功與UI失敗，最後非零退出，未進效能、後續guardian Python驗收、baseline probe或ZIP。尚無可交付App ZIP。修後必須重過完整流程，不能因debugger成功啟動或看到stack就宣稱App驗收成功。
 
 `scripts/audit_platform.py` 已在真macOS執行四組固定、唯讀的 `launchctl` 公開介面探測。help與print-disabled exit0，對不存在fixture服務的print exit113。原始輸出保留於 `platform-contracts.json`，沒有呼叫 enable、disable、bootstrap或bootout，也未讀取私有BTM資料庫。

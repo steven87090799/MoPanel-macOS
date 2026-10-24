@@ -67,7 +67,7 @@ import Darwin
                     .keyboardShortcut("p", modifiers: [.command, .shift])
             }
         }
-        MenuBarExtra(isInserted: $model.menuBarEnabled) {
+        MenuBarExtra(isInserted: menuBarInsertion) {
             MenuBarPanel().environmentObject(model).preferredColorScheme(model.colorScheme)
         } label: {
             Label {
@@ -75,6 +75,15 @@ import Darwin
                 else { Text("MoPanel") }
             } icon: { Image(systemName: "gauge.with.dots.needle.67percent") }
         }.menuBarExtraStyle(.window)
+    }
+    private var menuBarInsertion: Binding<Bool> {
+        let appModel = model
+        return Binding(get: { appModel.menuBarEnabled }, set: { inserted in
+            // Scene reconciliation can write its existing value back. Avoid
+            // publishing a no-op change into the App graph being reconciled.
+            guard appModel.menuBarEnabled != inserted else { return }
+            appModel.menuBarEnabled = inserted
+        })
     }
     private func nativeOperationChanged() {
         model.objectWillChange.send()

@@ -109,9 +109,14 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             guard !model.isTestLaunch else { return }
-            model.windowActive = phase == .active
+            let active = phase == .active
+            guard model.windowActive != active else { return }
+            model.windowActive = active
         }
-        .onDisappear { model.windowActive = false }
+        // A SwiftUI root-host replacement can make this view disappear while
+        // its NSWindow is still open. Scene phase owns activity; the application
+        // delegate owns last-window/quit cleanup. Publishing here would reenter
+        // AppGraph while it is updating that host.
     }
 }
 
