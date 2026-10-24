@@ -27,3 +27,5 @@
 另以明確的合成資料模式檢查實際視窗中的深色／淺色外觀、圖示區、M 圖示、按鈕位置及監控卡片。開發預覽最多 300 秒，標準 smoke driver 會移除預覽參數。預覽期間的語言、外觀與路徑修改不寫入正常設定。
 
 此批驗證不等於全專案所有控制項、真實破壞性操作／權限、1／8／24 小時常駐或 Instruments 驗收。全面審查剩餘項目見 [PRODUCT_READINESS_AUDIT.md](PRODUCT_READINESS_AUDIT.md)。
+
+最新本機完整建置、測試與產物來源證據見 [native-interface-validation.json](audit-2026-10-24/native-interface-validation.json)。

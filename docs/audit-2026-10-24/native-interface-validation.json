@@ -1,0 +1,153 @@
+{
+  "generated_at": "2026-10-24T14:55:29.793990+00:00",
+  "date": "2026-10-24",
+  "timezone": "Asia/Taipei",
+  "verified_source_revision": "4ae06698aa4be0e433ad473a7071f464f705b97d",
+  "scope": "Local release build and bounded fixture acceptance of the native drawer and monitoring interface",
+  "toolchain": {
+    "xcode": "Xcode 27.1\nBuild version 27A9275",
+    "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+    "architecture": "arm64",
+    "macos": "27.0.1"
+  },
+  "swift_test_bundles": [
+    {
+      "suite": "MoPanelProcessTests.xctest",
+      "tests": 35,
+      "failures": 0
+    },
+    {
+      "suite": "MoPanelCoreTests.xctest",
+      "tests": 150,
+      "failures": 0
+    }
+  ],
+  "swift_test_count": 185,
+  "swift_tests_skipped": 0,
+  "fixture_ui": {
+    "checks_passed": 20,
+    "actual_accessibility_presses": 23,
+    "all_postconditions_verified": true,
+    "sidebar_checks": {
+      "sidebar_button_borderless": true,
+      "sidebar_button_has_no_focus_ring": true,
+      "sidebar_button_in_supplied_window": true,
+      "sidebar_button_not_highlighted": true,
+      "sidebar_button_remains_momentary_without_focus_ring": true,
+      "sidebar_button_state_off": true,
+      "sidebar_compacts_to_icon_width": true,
+      "sidebar_expands_to_text_width": true,
+      "sidebar_native_button_found": true,
+      "sidebar_route_opens_dashboard_controls": true,
+      "sidebar_route_opens_uninstall_controls": true
+    },
+    "direct_action_fallback_used": false,
+    "elapsed_seconds": 19.024
+  },
+  "guardian_tests_passed": 17,
+  "validation_gates_passed": true,
+  "artifact": {
+    "path": "build/releases/MoPanel-macOS27-arm64.zip",
+    "sha256": "77dbe1e8f94c310e4c2cbb77eb186dad57799c8370ba8f946094d981254f5481",
+    "size_bytes": 11007142,
+    "source_revision": "4ae06698aa4be0e433ad473a7071f464f705b97d",
+    "app_sources_verified_against_archive_manifest": 68,
+    "archived_gate_evidence_matches_local_reports": true,
+    "bundle_verification_passed": true,
+    "zip_verification_passed": true,
+    "signature": "ad-hoc",
+    "notarized": false,
+    "mole_bundled": false
+  },
+  "fixture_performance": [
+    {
+      "mode": "idle",
+      "cpu_mean_percent": 0.03,
+      "cpu_peak_percent": 0.2,
+      "rss_mean_bytes": 174867251,
+      "rss_peak_bytes": 175243264,
+      "max_process_count": 1
+    },
+    {
+      "mode": "monitor",
+      "cpu_mean_percent": 2.158,
+      "cpu_peak_percent": 12.3,
+      "rss_mean_bytes": 189232613,
+      "rss_peak_bytes": 189317120,
+      "max_process_count": 4
+    },
+    {
+      "mode": "scan",
+      "cpu_mean_percent": 28.76,
+      "cpu_peak_percent": 58.9,
+      "rss_mean_bytes": 196497408,
+      "rss_peak_bytes": 201408512,
+      "max_process_count": 4
+    }
+  ],
+  "performance_limitations": "Synthetic fixtures measure GUI overhead, not real CLI workload costs. CPU is ps lifetime-average percent; peaks are observed sample maxima, not Instruments traces. RSS is summed across the GUI and observed descendants, so shared pages may be counted more than once; it is not unique physical footprint or Activity Monitor memory pressure.",
+  "representative_manual_review": [
+    "Actual dark expanded and compact sidebar windows, fixed icon positions, square neutral toggle and black-and-white M app mark",
+    "Actual light appearance and Settings view",
+    "Uninstall empty/list layout and Mole-style monitoring cards"
+  ],
+  "manual_fixture_preferences": {
+    "fixture_ui_fields_exercised": [
+      "language: English",
+      "appearance: Light",
+      "customPath: nonexecuted test path"
+    ],
+    "persistent_preferences_unchanged": {
+      "language": true,
+      "appearance": true,
+      "cliPath": true
+    },
+    "passed": true
+  },
+  "evidence": {
+    "native-final-build-20261024.log": {
+      "sha256": "460551b02d40547a5fd462191a514fad5afc3079e9011397c4f93abd446d1777",
+      "storage": "local ignored build/reports"
+    },
+    "swift-test.log": {
+      "sha256": "0569ce094ff6d6d3425f130eb8ab80cc677e6e9425885e224d7e51b2ac02d357",
+      "storage": "local ignored build/reports"
+    },
+    "smoke-test.json": {
+      "sha256": "c00244cd4dfc70199ec016aebc6ffad11a89d60cf5b76a6ba4282e0609976e33",
+      "storage": "local ignored build/reports"
+    },
+    "guardian-test.log": {
+      "sha256": "123d6f45123672aadb72a54428a4eb7afe47144662ff4e8d73afb919b2c9082a",
+      "storage": "local ignored build/reports"
+    },
+    "performance.json": {
+      "sha256": "8f91759f692d5005cdee3611f2b536e8b7d570d04431bd234c8bd0b808fa82b2",
+      "storage": "local ignored build/reports"
+    },
+    "validation-gates.json": {
+      "sha256": "bab8b9ade28ddc592b4575e2939a830a41c133266806798889f03156911b8e07",
+      "storage": "local ignored build/reports"
+    },
+    "bundle-verification.txt": {
+      "sha256": "6c4a36245caee2721a7a57b7ddb85b3023d058b4b90f50f6e4a2569bd2bde1c1",
+      "storage": "local ignored build/reports"
+    },
+    "zip-verification.txt": {
+      "sha256": "53d1186f9b8ef01a3cf400089cd8c9deabda5786892b2db079d2da207c5b54d0",
+      "storage": "local ignored build/reports"
+    }
+  },
+  "not_validated": [
+    "Every project control and every physical/VoiceOver interaction",
+    "Real destructive Mole operations, administrator/TCC flows and hardware controls",
+    "Fresh real-engine contract and steady-state performance measurement in this local run",
+    "Complete Stats provider integration, custom menu bar lifecycle and commercial GUI feature parity",
+    "1/8/24 hour soak or Instruments Allocations/Leaks/Energy acceptance"
+  ],
+  "notes": [
+    "The application uses the existing single Mole Status stream; no Stats-style separate status indicators or polling loop were added.",
+    "No long-running test or recurring monitor was started.",
+    "The artifact is built from verified_source_revision; this validation document is committed afterward without changing application sources."
+  ]
+}

@@ -2,6 +2,8 @@
 
 日期：2026-10-24（Asia/Taipei）。工作分支：`codex/product-readiness-audit`；起點：`64b81eb`。本輪實作與有限驗證的程式提交：`9eb131721293cdf621161ef2052c3f8ca0c1e5cb`。
 
+後續原生介面與監控面板的程式提交為 `4ae06698aa4be0e433ad473a7071f464f705b97d`，已通過本機完整建置與有限測試。最新來源、測試數、產物雜湊及適用範圍見 [native-interface-validation.json](audit-2026-10-24/native-interface-validation.json)。
+
 **這是持續審查的第一批交付，不是正式版驗收完成報告。** 已完成來源與控制項的機器盤點，並人工追蹤監控、Mole 執行、程序輸出與主介面的相關路徑。全專案逐行人工審查、Stats 採樣模組整合、全部功能與長時間效能驗收尚未完成。歷史 CI 結果只適用於各自記載的舊 revision，不能套用到本分支。
 
 ## 來源與架構
@@ -115,7 +117,7 @@ Stats 的資訊覆蓋與成本不能只由 reader 函式判定。這輪只完成
 | AI caches／sessions／worktrees | CLI 清理範圍＋獨立 Git worktree 管理 | 沒有完整 AI Session retention 與工具整合，不可標完成 |
 | CPU/GPU/RAM/網路/磁碟/電池/感測器 | 共用 Mole snapshot | 單一高效率 provider 設計與真量測，非完整 Stats 整合 |
 | 行程排序／固定／安全結束 | 已有受限原生功能 | pin 持久化與全部 UI／真 App 身分驗收 |
-| 選單列 | CPU 文字＋詳細面板 | 多元件、排序、mini chart、Dock-only、登入啟動、關窗持續監控均未完整完成 |
+| 選單列 | CPU 文字入口＋Mole 式卡片、迷你趨勢與高用量程式面板 | 依最新指示不新增 Stats 式獨立指示；選單列自訂、Dock-only、登入啟動、關窗持續監控尚未完整驗收 |
 | Keep Screen On／Clean Screen／退出 | 原生實作已有 | 實體互動、電源與磁碟退出情境未測 |
 | Camera/Microphone 指示、全域快捷鍵 | 尚未完成 | 公開 API／權限成本評估與實作 |
 | Doctor | 原生中繼資料報告 | 完整診斷／回復與 UI 驗收 |
@@ -132,7 +134,8 @@ Stats 的資訊覆蓋與成本不能只由 reader 函式判定。這輪只完成
 - 安裝前缺 XCTest、Metal compiler、SwiftUI macro plugin 的失敗原始 log 仍保留於本地 `build/reports/product-audit/`；`audit-2026-10-24/validation.json` 是安裝前紀錄，不代表目前工具狀態。
 - 本輪分支 CI [run 40090538651](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40090538651) 已完成且 conclusion 為 success，對應來源 `e01892325c06f132c63f15ebab4265f6fd4f7723`。
 - 後續本機完整流程已通過：185 項 XCTest、20 項 fixture UI 檢查、19 次真正的 accessibility 按鈕操作與效果驗證、17 項 Guardian 整合測試、ad-hoc 簽章、ZIP 解壓及內容驗證。初始完整流程的精簡證據見 [local-full-build-baseline.json](audit-2026-10-24/local-full-build-baseline.json)。
-- 全控制項人工 UI、真實破壞性操作／權限、1/8/24 小時 soak、Instruments Allocations/Leaks/Energy：**尚未完成驗收**。20 項自動檢查與 19 次按鈕操作不涵蓋盤點中的全部控制項。
+- 最新 `4ae0669` 本機完整流程再次通過：185 項 XCTest、20 項 fixture UI 檢查、23 次真正的 accessibility 按壓與效果驗證、17 項 Guardian、release 編譯及簽章／ZIP 驗證；ZIP 內 68 個 App 原始碼檔案雜湊與該提交一致。最新短測數字及限制見上述驗證 JSON，不將不同次短測當成穩態效能改善證明。
+- 全控制項人工 UI、真實破壞性操作／權限、1/8/24 小時 soak、Instruments Allocations/Leaks/Energy：**尚未完成驗收**。20 項自動檢查與 23 次按鈕操作不涵蓋盤點中的全部控制項。
 
 ### 實際視窗補查與修正
 
@@ -183,7 +186,7 @@ python3 scripts/profile.py --observe-pid YOUR_MOPANEL_PID \
 7. 是否修復 CPU／記憶體浪費：修了 formatter 重建與串流保留問題，證據範圍如上；整個 App 的實測目標尚未證明。
 8. 是否仍有未驗證 leak／瓶頸：**有**，特別是長時 SwiftUI/Charts/SwiftTerm、完整掃描與硬體來源成本。
 9. Mole 是否獨立且可更新：是，架構與本輪修改維持外部原版 CLI；未驗證所有未來版本。
-10. 是否所有實際執行測試都通過：修正及工具安裝後，本機 XCTest、工具測試、20 項 fixture UI／19 次按鈕、17 項 Guardian、release 編譯與本機簽章封裝流程通過；安裝前失敗和舊版問題重現仍保留為歷史證據。全控制項人工 UI／長時效能仍待驗收。
+10. 是否所有實際執行測試都通過：修正及工具安裝後，本機 XCTest、工具測試、20 項 fixture UI／23 次按鈕、17 項 Guardian、release 編譯與本機簽章封裝流程通過；安裝前失敗和舊版問題重現仍保留為歷史證據。全控制項人工 UI／長時效能仍待驗收。
 11. 是否適合正式長時間常駐：**尚未驗收**。
 12. 尚未完成／未測項目：全檔人工逐行審查、逐控制項來源及測試、Stats provider、完整原生候選、選單列自訂／生命週期、官方功能差距、硬體／權限實機、全控制項人工 UI／長時性能驗收。
 
