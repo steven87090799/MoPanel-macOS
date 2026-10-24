@@ -139,17 +139,179 @@ struct DashboardView: View {
             ProcessInspectorView(snapshot: s).padding(10)
         }
         DisclosureGroup(model.t("GPU 與其他硬體讀值", "GPU and Other Hardware")) {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(s.gpu.enumerated()), id: \.offset) { _, gpu in
-                    LabeledContent(gpu.name ?? "GPU", value: DisplayFormat.percent(gpu.usage))
-                    if let note = gpu.note, !note.isEmpty { Text(note).font(.caption).foregroundStyle(.secondary) }
+            VStack(alignment: .leading, spacing: 20) {
+                if !s.gpu.isEmpty {
+                    hardwareSectionHeading(model.t("圖形處理器", "Graphics Processors"), symbol: "cpu", count: s.gpu.count)
+                    VStack(spacing: 12) {
+                        ForEach(Array(s.gpu.enumerated()), id: \.offset) { _, gpu in gpuCard(gpu) }
+                    }
                 }
-                ForEach(Array(s.bluetooth.enumerated()), id: \.offset) { _, device in
-                    LabeledContent(device.name, value: device.battery ?? model.unavailable)
+                if !s.bluetooth.isEmpty {
+                    hardwareSectionHeading(model.t("藍牙裝置", "Bluetooth Devices"), symbol: "wave.3.right", count: s.bluetooth.count)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 250, maximum: 380))], alignment: .leading, spacing: 12) {
+                        ForEach(Array(s.bluetooth.enumerated()), id: \.offset) { _, device in bluetoothCard(device) }
+                    }
                 }
-                Button(model.t("查看官方 JSON 快照", "View Official JSON Snapshot")) { model.request(.status, options: [.json]) }
-            }.padding(10)
+                if !s.sensors.isEmpty {
+                    hardwareSectionHeading(model.t("感測器", "Sensors"), symbol: "thermometer.medium", count: s.sensors.count)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 250, maximum: 380))], alignment: .leading, spacing: 12) {
+                        ForEach(Array(s.sensors.enumerated()), id: \.offset) { _, sensor in sensorCard(sensor) }
+                    }
+                }
+                if s.gpu.isEmpty && s.bluetooth.isEmpty && s.sensors.isEmpty {
+                    ContentUnavailableView(model.t("沒有其他硬體讀值", "No Additional Hardware Readings"),
+                                           systemImage: "cpu",
+                                           description: Text(model.t("Mole 目前沒有提供 GPU、藍牙或感測器資料。", "Mole did not provide GPU, Bluetooth or sensor data.")))
+                        .frame(maxWidth: .infinity)
+                }
+                HStack {
+                    Spacer()
+                    Button(model.t("查看官方 JSON 快照", "View Official JSON Snapshot")) {
+                        model.request(.status, options: [.json])
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 14)
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func hardwareSectionHeading(_ title: String, symbol: String, count: Int) -> some View {
+        HStack(spacing: 8) {
+            Label(title, systemImage: symbol).font(.headline)
+            Text(String(count))
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Color.primary.opacity(0.06), in: Capsule())
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func gpuCard(_ gpu: GPUStatus) -> some View {
+        HStack(spacing: 18) {
+            Image(systemName: "cpu")
+                .font(.title2)
+                .foregroundStyle(.teal)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            VStack(alignment: .leading, spacing: 5) {
+                Text(gpu.name ?? model.t("GPU", "GPU")).font(.headline)
+                if let note = gpu.note, !note.isEmpty {
+                    Text(readableGPUNote(note)).font(.caption).foregroundStyle(.secondary)
+                }
+                if let cores = gpu.coreCount, cores > 0 {
+                    Text("\(cores) " + model.t("核心", "cores")).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 16)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(model.t("使用率", "Utilization")).font(.caption).foregroundStyle(.secondary)
+                Text(gpuUsage(gpu.usage))
+                    .font(.system(size: 28, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(gpu.usage.map { $0 >= 0 && $0.isFinite } == true ? Color.primary : Color.secondary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func bluetoothCard(_ device: BluetoothDevice) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "wave.3.right")
+                    .foregroundStyle(device.connected ? Color.teal : Color.secondary)
+                    .frame(width: 22)
+                Text(readableBluetoothName(device.name))
+                    .font(.callout.weight(.medium))
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(device.connected ? model.t("已連線", "Connected") : model.t("未連線", "Not connected"))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(device.connected ? Color.teal : Color.secondary)
+                    .fixedSize()
+            }
+            if let battery = bluetoothBattery(device) {
+                Label(battery, systemImage: "battery.100percent")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 32)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 76, alignment: .topLeading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+    }
+
+    private func sensorCard(_ sensor: SensorReading) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Label(sensor.label, systemImage: "thermometer.medium")
+                .font(.callout.weight(.medium))
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(DisplayFormat.number(sensor.value, suffix: " " + sensor.unit))
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+    }
+
+    private func gpuUsage(_ value: Double?) -> String {
+        guard let value, value.isFinite, value >= 0 else { return model.t("未提供", "Unavailable") }
+        return DisplayFormat.percent(value)
+    }
+
+    private func readableGPUNote(_ note: String) -> String {
+        let prefix = "sppci_vendor_"
+        if note.hasPrefix(prefix) {
+            let vendor = String(note.dropFirst(prefix.count)).replacingOccurrences(of: "_", with: " ")
+            return model.t("廠商：\(vendor)", "Vendor: \(vendor)")
+        }
+        return note.replacingOccurrences(of: "_", with: " ")
+    }
+
+    private func readableBluetoothName(_ name: String) -> String {
+        for marker in [" Right Battery Level:", " Left Battery Level:", " Battery Level:"] {
+            if let range = name.range(of: marker, options: .caseInsensitive) {
+                return String(name[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        return name
+    }
+
+    private func bluetoothBattery(_ device: BluetoothDevice) -> String? {
+        let rawValue = device.battery?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let raw = rawValue.flatMap({ $0.isEmpty ? nil : $0 }) ?? embeddedBluetoothBattery(device.name) else { return nil }
+        let detail = raw.range(of: "Battery Level:", options: .caseInsensitive).map { raw }
+            ?? embeddedBluetoothBattery(device.name)
+            ?? raw
+        guard let range = detail.range(of: "Battery Level:", options: .caseInsensitive) else {
+            return model.t("電量：\(raw)", "Battery: \(raw)")
+        }
+        let side = String(detail[..<range.lowerBound]).lowercased()
+        let value = String(detail[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = side.contains("right") ? model.t("右側電量", "Right battery")
+            : side.contains("left") ? model.t("左側電量", "Left battery")
+            : model.t("電量", "Battery")
+        return title + (model.language == "en" ? ": " : "：") + value
+    }
+
+    private func embeddedBluetoothBattery(_ name: String) -> String? {
+        for marker in ["Right Battery Level:", "Left Battery Level:", "Battery Level:"] {
+            if let range = name.range(of: marker, options: .caseInsensitive) {
+                return String(name[range.lowerBound...])
+            }
+        }
+        return nil
     }
     private func positive(_ value: Double?, suffix: String) -> String { ThermalStatus.availablePositive(value).map { DisplayFormat.number($0, suffix: suffix) } ?? model.unavailable }
     private func unavailableRow() -> some View { Text(model.unavailable).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(10) }
