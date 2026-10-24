@@ -125,6 +125,26 @@ enum DisplayFormat {
         guard let value, value.isFinite else { return "—" }
         return String(format: "%.1f", value) + suffix
     }
+    static func timestamp(_ value: String, language: String) -> String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = isoFormatter.date(from: value) ?? ISO8601DateFormatter().date(from: value) else {
+            // Keep a useful date and second-level time even if a newer CLI
+            // changes fractional precision or a platform parser rejects it.
+            guard let separator = value.firstIndex(of: "T") else { return value }
+            let datePart = String(value[..<separator])
+                .replacingOccurrences(of: "-", with: language == "en" ? "-" : "/")
+            let timePart = String(value[value.index(after: separator)...].prefix(8))
+            return datePart + " " + timePart
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: language == "en" ? "en_US" : "zh_TW")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .medium
+        return formatter.string(from: date)
+    }
 }
 
 struct GlassCard<Content: View>: View {

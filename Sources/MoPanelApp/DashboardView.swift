@@ -12,7 +12,7 @@ struct DashboardView: View {
                     Label(model.monitoring ? model.t("即時監控中", "Live") : model.t("監控已暫停", "Paused"), systemImage: model.monitoring ? "record.circle" : "pause.circle")
                         .foregroundStyle(model.monitoring ? Color.teal : Color.secondary)
                     if let collected = model.status?.collectedAt {
-                        Text(model.t("更新於 ", "Updated ") + readableTimestamp(collected))
+                        Text(model.t("更新於 ", "Updated ") + DisplayFormat.timestamp(collected, language: model.language))
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -71,13 +71,6 @@ struct DashboardView: View {
                 }
             }
         }
-    }
-
-    private func readableTimestamp(_ value: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = formatter.date(from: value) ?? ISO8601DateFormatter().date(from: value) else { return value }
-        return date.formatted(date: .abbreviated, time: .shortened)
     }
 
     @ViewBuilder private func detail(_ s: StatusSnapshot) -> some View {

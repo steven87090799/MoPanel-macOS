@@ -14,7 +14,8 @@ struct MenuBarPanel: View {
                     LabeledContent("↓ " + network.name, value: DisplayFormat.number(network.rxRateMbs, suffix: " MB/s"))
                     LabeledContent("↑ " + network.name, value: DisplayFormat.number(network.txRateMbs, suffix: " MB/s"))
                 }
-                Text(snapshot.collectedAt).font(.caption2.monospaced()).foregroundStyle(.secondary)
+                Text(model.t("更新於 ", "Updated ") + DisplayFormat.timestamp(snapshot.collectedAt, language: model.language))
+                    .font(.caption2).foregroundStyle(.secondary)
             } else { Text(model.t("尚無讀值；請先連接 Mole CLI。", "No readings yet. Connect Mole CLI first.")).foregroundStyle(.secondary) }
             if model.hasRunningOperation { Text(model.t("其他作業執行中，監控暫停。", "Monitoring pauses during another operation.")).font(.caption) }
             Divider()
