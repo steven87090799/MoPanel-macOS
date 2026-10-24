@@ -35,7 +35,9 @@ def run_lldb(guardian, executable, environment, directory, seconds):
     log_path = directory / "smoke-debug-lldb.log"
     arguments = [str(guardian), "--capture", "--timeout-ms", str(max(1000, int((seconds - 4) * 1000))),
                  "--", "/usr/bin/xcrun", "lldb", "--no-lldbinit", "--batch",
-                 "-o", "settings set target.disable-aslr false", "-o", "run",
+                 "-o", "settings set target.disable-aslr false",
+                 "-o", "process handle SIGPIPE --stop true --notify true --pass true",
+                 "-o", "run",
                  "-o", "thread backtrace -c 128 all",
                  "-k", "thread backtrace -c 128 all", "--", str(executable), "--smoke-test"]
     with log_path.open("wb") as log:

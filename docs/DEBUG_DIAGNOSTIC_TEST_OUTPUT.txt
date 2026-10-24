@@ -5,9 +5,10 @@ test_release_policy_accepts_empty_entitlements_and_rejects_unparseable (__main__
 test_release_policy_rejects_debug_entitlement_even_if_false (__main__.DebugFailureTests.test_release_policy_rejects_debug_entitlement_even_if_false) ... ok
 test_requires_failed_macos_ci_and_never_runs_after_success (__main__.DebugFailureTests.test_requires_failed_macos_ci_and_never_runs_after_success) ... ok
 test_signing_denial_is_recorded_without_debugger_or_security_changes (__main__.DebugFailureTests.test_signing_denial_is_recorded_without_debugger_or_security_changes) ... ok
+test_sigpipe_stops_only_debug_copy_and_is_never_suppressed (__main__.DebugFailureTests.test_sigpipe_stops_only_debug_copy_and_is_never_suppressed) ... ok
 test_unexpected_original_change_is_detected (__main__.DebugFailureTests.test_unexpected_original_change_is_detected) ... ok
 
 ----------------------------------------------------------------------
-Ran 8 tests in 0.015s
+Ran 9 tests in 0.040s
 
 OK

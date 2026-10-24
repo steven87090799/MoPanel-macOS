@@ -1,0 +1,87 @@
+[0/1] Planning build
+Building for debugging...
+[0/2] Write swift-version--692D7D6F1AAC6E0F.txt
+Build complete! (0.20s)
+Test Suite 'Selected tests' started at 2026-10-24 17:34:07.884
+Test Suite 'ControlPipeTests' started at 2026-10-24 17:34:07.888
+Test Case 'ControlPipeTests.testCancelSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:34:07.888
+Test Case 'ControlPipeTests.testCancelSurvivesClosedPeerWhileSessionStillRunning' passed (0.317 seconds)
+Test Case 'ControlPipeTests.testEPIPEPreservesCallingThreadSignalMaskAndPendingState' started at 2026-10-24 17:34:08.205
+Test Case 'ControlPipeTests.testEPIPEPreservesCallingThreadSignalMaskAndPendingState' passed (0.0 seconds)
+Test Case 'ControlPipeTests.testInputSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:34:08.206
+Test Case 'ControlPipeTests.testInputSurvivesClosedPeerWhileSessionStillRunning' passed (0.31 seconds)
+Test Case 'ControlPipeTests.testResizeSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:34:08.516
+Test Case 'ControlPipeTests.testResizeSurvivesClosedPeerWhileSessionStillRunning' passed (0.309 seconds)
+Test Case 'ControlPipeTests.testWriterPreservesQueuedOrderAndClosesBeforeLaterWrites' started at 2026-10-24 17:34:08.825
+Test Case 'ControlPipeTests.testWriterPreservesQueuedOrderAndClosesBeforeLaterWrites' passed (0.009 seconds)
+Test Suite 'ControlPipeTests' passed at 2026-10-24 17:34:08.835
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.946 (0.946) seconds
+Test Suite 'GitEnvironmentTests' started at 2026-10-24 17:34:08.835
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' started at 2026-10-24 17:34:08.835
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' passed (0.01 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' started at 2026-10-24 17:34:08.845
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' passed (0.001 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' started at 2026-10-24 17:34:08.845
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' passed (0.009 seconds)
+Test Suite 'GitEnvironmentTests' passed at 2026-10-24 17:34:08.855
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.02 (0.02) seconds
+Test Suite 'ManagedProcessTests' started at 2026-10-24 17:34:08.855
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' started at 2026-10-24 17:34:08.855
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' passed (0.015 seconds)
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' started at 2026-10-24 17:34:08.870
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' passed (0.012 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' started at 2026-10-24 17:34:08.882
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' started at 2026-10-24 17:34:08.882
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' started at 2026-10-24 17:34:08.884
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' started at 2026-10-24 17:34:08.884
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' started at 2026-10-24 17:34:08.884
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' started at 2026-10-24 17:34:08.885
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' passed (0.011 seconds)
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' started at 2026-10-24 17:34:08.896
+Test Case 'ManagedProcessTests.tewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+stPTYRetainsStartupPromptUntilViewAttaches' passed (0.158 seconds)
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' started at 2026-10-24 17:34:09.054
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' passed (0.003 seconds)
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' started at 2026-10-24 17:34:09.057
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' started at 2026-10-24 17:34:09.057
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' passed (0.012 seconds)
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' started at 2026-10-24 17:34:09.070
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' passed (0.009 seconds)
+Test Case 'ManagedProcessTests.testTaskCancellation' started at 2026-10-24 17:34:09.078
+Test Case 'ManagedProcessTests.testTaskCancellation' passed (0.087 seconds)
+Test Case 'ManagedProcessTests.testTimeout' started at 2026-10-24 17:34:09.166
+Test Case 'ManagedProcessTests.testTimeout' passed (2.123 seconds)
+Test Case 'ManagedProcessTests.testUserCancellation' started at 2026-10-24 17:34:11.289
+Test Case 'ManagedProcessTests.testUserCancellation' passed (0.087 seconds)
+Test Suite 'ManagedProcessTests' passed at 2026-10-24 17:34:11.376
+	 Executed 16 tests, with 0 failures (0 unexpected) in 2.521 (2.521) seconds
+Test Suite 'PurgePathsDocumentTests' started at 2026-10-24 17:34:11.376
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' started at 2026-10-24 17:34:11.376
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' passed (0.006 seconds)
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' started at 2026-10-24 17:34:11.382
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' passed (0.003 seconds)
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' started at 2026-10-24 17:34:11.384
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' passed (0.012 seconds)
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' started at 2026-10-24 17:34:11.396
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' passed (0.004 seconds)
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' started at 2026-10-24 17:34:11.400
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' passed (0.001 seconds)
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' started at 2026-10-24 17:34:11.401
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' passed (0.004 seconds)
+Test Suite 'PurgePathsDocumentTests' passed at 2026-10-24 17:34:11.405
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.029 (0.029) seconds
+Test Suite 'StreamingTests' started at 2026-10-24 17:34:11.405
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' started at 2026-10-24 17:34:11.405
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' passed (0.023 seconds)
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' started at 2026-10-24 17:34:11.428
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' passed (0.023 seconds)
+Test Suite 'StreamingTests' passed at 2026-10-24 17:34:11.451
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.046 (0.046) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 17:34:11.453
+	 Executed 32 tests, with 0 failures (0 unexpected) in 3.561 (3.561) seconds

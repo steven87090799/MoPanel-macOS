@@ -2,9 +2,9 @@
 
 更新日期：2026-10-24。這份文件回應「自己新增的功能要告訴我」。**來源實作、測試通過與產品驗收完成是不同狀態**；實際證據見 `TEST_REPORT.md`，官方 GUI 差異見 `docs/GUI_PARITY.md`。
 
-最新的 [Mac CI run 40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)（commit `e4181f754ce4a9bdc3b28efc60d2100d49403ba8`）實證 **140／140 XCTest 通過**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），並完成 ARM64 release 編譯與 ad-hoc bundle 完整性驗證。正式 App 已正常建立視窗、截圖與 smoke JSON，未再出現初始 SIGSEGV 或 Publishing changes 警告；**20 項 smoke 檢查中 19 項通過**。唯一失敗為 AX 首個 snapshot 控制查找，最大 169 節點、0 個識別碼、0 次按鈕動作；整體 UI gate 仍失敗，後續效能、Guardian 驗收與 ZIP 發行仍被阻擋。新增模組單元測試已包含在 140 中，不能把內部測項或 19／20 smoke 再加總為新的 XCTest 數量。
+以下保留歷史驗證紀錄，**不是目前版的最新驗收結論；本版結果以 `TEST_REPORT.md` 與發行包 `Reports/` 為準**。[Mac CI run 40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)（commit `e4181f754ce4a9bdc3b28efc60d2100d49403ba8`）實證 **140／140 XCTest 通過**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），並完成 ARM64 release 編譯與 ad-hoc bundle 完整性驗證。正式 App 已正常建立視窗、截圖與 smoke JSON，未再出現初始 SIGSEGV 或 Publishing changes 警告；**20 項 smoke 檢查中 19 項通過**。該歷史 run 的唯一失敗為 AX 首個 snapshot 控制查找，最大 169 節點、0 個識別碼、0 次按鈕動作；該次整體 UI gate 失敗，當時後續效能、Guardian 驗收與 ZIP 發行被阻擋，不能用來判定本版發布結果。該 run 所測的新增模組單元測試已包含在 140 中，不能把內部測項或 19／20 smoke 再加總為新的 XCTest 數量。
 
-本輪已測的原生範圍是 IOPM assertion 建立／讀回／釋放、遮罩視窗建立／關閉但不呈現、Doctor 18 項中繼資料，以及 Startup 私有 mock 的啟用／停用讀回、取消和未知格式拒絕。CLI 資料頁及 watch 使用 bundled fixture；13 個路由的選取只證明過程中視窗仍存活，並不證明所有頁面與按鈕已完整驗收。沒有真實清理、App 更新、launchctl 變更、磁碟退出或硬體控制。
+該歷史 run 已測的原生範圍是 IOPM assertion 建立／讀回／釋放、遮罩視窗建立／關閉但不呈現、Doctor 18 項中繼資料，以及 Startup 私有 mock 的啟用／停用讀回、取消和未知格式拒絕。該 run 的 CLI 資料頁及 watch 使用 bundled fixture；當時 13 個路由的選取只證明過程中視窗仍存活，並不證明所有頁面與按鈕已完整驗收。沒有真實清理、App 更新、launchctl 變更、磁碟退出或硬體控制。
 
 ## 責任界線
 
@@ -17,8 +17,8 @@ MoPanel 是非官方原生 GUI。官方 Mole CLI 仍負責其清理、卸載、�
 | 部分 | 使用者得到什麼 | 執行責任／程式碼 | 限制與驗證界線 |
 |---|---|---|---|
 | 原生導覽與偏好 | 十個主要 CLI 功能頁及四個新增頁、繁中／英文、系統／淺／深色、快捷鍵、原生 Liquid Glass | `Sources/MoPanelApp/` | 自有 UI；歷史 run 的 13 個路由不包含新增 Git 頁。新版本路由及 AX 按鈕結果須看本版 TEST_REPORT／Reports；VoiceOver、Retina、全按鈕仍須完整驗收 |
-| 原生資料頁 | Status 圖表、App 清單、Analyze 層級圖、History 搜尋與內容 | `DashboardView.swift`、`UninstallView.swift`、`AnalyzeView.swift`、`HistoryView.swift` | 正式使用時資料來自官方 CLI；本輪 smoke 的 bundled fixture 解碼、watch 接收與切頁停止已通過，不冒充真硬體 benchmark。圖表不是新掃描引擎，某些操作仍進官方 PTY |
-| CLI 探索 | Homebrew／官方腳本／PATH／自訂路徑、symlink 與實際資源位置判斷 | `MoleDiscovery.swift`、`CLIProbe.swift` | 來源不明或身分無法確認時失敗，不隨意回退到另一個執行檔 |
+| 原生資料頁 | Status 圖表、App 清單、Analyze 層級圖、History 搜尋與內容 | `DashboardView.swift`、`UninstallView.swift`、`AnalyzeView.swift`、`HistoryView.swift` | 正式使用時資料來自官方 CLI；該歷史 run smoke 的 bundled fixture 解碼、watch 接收與切頁停止已通過，不冒充真硬體 benchmark。圖表不是新掃描引擎，某些操作仍進官方 PTY |
+| CLI 探索 | Homebrew／官方腳本／PATH／自訂路徑、symlink 與實際資源位置判斷 | `MoleDiscovery.swift`、`CLIProbe.swift` | 明確自訂路徑失敗不回退；自動探索逐一檢查候選。資源／身分／契約無法確認時封鎖相關變更；可信自訂官方 checkout 可分類為 custom，來源分類不等於密碼學發行認證 |
 | 相容層 | 版本、正式 help 契約、JSON 型別、未知掃描狀態檢查；更新後重新探測 | `Compatibility.swift`、`MoleCommand.swift`、`MoleModels.swift` | 是介面相容性檢查，不是對所有未來 CLI 核心行為的保證 |
 | Nightly／dev 復原入口 | 合條件的官方腳本安裝可以確認後回到 stable | `Compatibility.swift`、`SettingsView.swift` | 實際更新仍由官方 `mo update`；不將 Homebrew HEAD 冒充可直接切 stable，不寫自己的更新引擎 |
 | 破壞性操作確認 | 執行前說明範圍、永久刪除／垃圾桶影響、保留官方二次確認 | `AppModel.swift`、`ContentView.swift` | 不代替官方路徑驗證；取消不能復原已經刪除的資料 |
@@ -29,9 +29,9 @@ MoPanel 是非官方原生 GUI。官方 Mole CLI 仍負責其清理、卸載、�
 | 操作紀錄與匯出 | 查看入口與結果；非互動輸出可匯出，互動作業只匯出執行摘要 | `OperationExport.swift`、`AppModel.swift`、`SettingsView.swift` | 不記錄鍵盤／密碼輸入，不保留完整 PTY 逐字日誌。互動內容只在終端有限回捲；Mole 自己的可用歷史另列。含路徑的非互動輸出由使用者決定是否匯出 |
 | 權限與安裝引導 | 缺 CLI、無 FDA、來源不明、相容性錯誤、官方安裝及更新入口 | `SettingsView.swift`、`CLIProbe.swift` | 不代替系統授權，不偷偷下載執行腳本，不停用 Gatekeeper |
 | Keep Awake | 原生顯示／系統閒置喚醒、可選時限、低電量暫停、接電續行、停止／睡眠／退出釋放 | `SystemToolsController.swift`、`SystemToolsPolicy.swift` | **MoPanel 新實作**，使用 IOPMAssertion；7 個政策測試及真實 system-idle assertion 建立、讀回、釋放與確認不存在已通過。定時、低電量／接電、睡眠等完整情境未驗收；不保證關蓋、不跨重啟恢復、不改 pmset |
-| Clean Screen | 原生多螢幕純色遮罩、Esc／按鈕／切換 App／5分鐘保底退出 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**；本輪 1 個螢幕的遮罩視窗建立並關閉，未呈現、未攔截輸入。沒有全域輸入鎖、不需輔助使用授權；實際顯示、事件與多螢幕仍待驗收 |
+| Clean Screen | 原生多螢幕純色遮罩、Esc／按鈕／切換 App／5分鐘保底退出 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**；該歷史 run 1 個螢幕的遮罩視窗建立並關閉，未呈現、未攔截輸入。沒有全域輸入鎖、不需輔助使用授權；實際顯示、事件與多螢幕仍待驗收 |
 | 外接磁碟退出 | 讀掛載中繼資料、保護根／內建／家目錄／App 所在磁碟、確認後交給 NSWorkspace | `SystemToolsController.swift`、`SystemToolsPolicy.swift` | **MoPanel 新實作**，無強制退出；純政策已測，CI 不退出任何真實 volume |
-| Doctor 唯讀報告 | 明確來源的 OS／硬體／電源／顯示器／磁碟中繼資料，可複製或儲存 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**；本輪實際讀到 18 項中繼資料，複製／儲存按鈕仍待驗收。不掃描目錄內容、不探測私人檔案，不知道的 FDA／安全狀態明示未檢查，非官方完整 Doctor |
+| Doctor 唯讀報告 | 明確來源的 OS／硬體／電源／顯示器／磁碟中繼資料，可複製或儲存 | `SystemToolsController.swift`、`SystemToolsView.swift` | **MoPanel 新實作**；該歷史 run 實際讀到 18 項中繼資料，複製／儲存按鈕仍待驗收。不掃描目錄內容、不探測私人檔案，不知道的 FDA／安全狀態明示未檢查，非官方完整 Doctor |
 | App Updates | Homebrew 結構化版本、官方預覽、逐項確認、計畫重驗及結果；其他 App 來源辨識與 handoff | `AppUpdatesController.swift`、`AppUpdatesView.swift`、`AppUpdateModels.swift` | **MoPanel 新實作**；直接更新僅符合安全條件的一般官方 cask。30 個 Core 與 2 個環境測試已在 Mac 通過，沒有真實 App 升級驗收。Sparkle／App Store 不代管下載安裝；詳見 APP_UPDATES.md |
 | Startup | 有界 plist 清單、搜尋、來源、實際狀態、受保護 user LaunchAgent 預覽與確認 | `StartupController.swift`、`StartupView.swift`、`StartupModels.swift` | **MoPanel 新實作**；15 項 Core 與 controller 私有 mock 的啟用／停用讀回、取消不變更及未知格式拒絕已通過。真 launchctl 變更／持續工作建立皆為 0，AX 按鈕尚待驗收；不刪 plist、不用 sudo、不讀私有 BTM DB，其他項目交由系統設定 |
 | Git 工作目錄與保留分支重建 | 只檢查選定倉庫、逐項保護理由、確認前重驗、保留 HEAD 分支、官方 Git 移除與新位置重建 | `GitWorktreeController.swift`、`GitWorktreeView.swift`、`GitWorktreeService.swift`、`GitWorktreeModels.swift` | **MoPanel 新實作**；真 Git 拋棄式倉庫測試使用合成提交與檔案，不碰個人倉庫。主工作目錄、dirty／untracked／ignored、鎖定、submodule、特殊設定及無法驗證狀態受保護。沒有 AI session／閒置判讀，保留分支不是獨立備份；Mac 驗收與精確案例見本版 TEST_REPORT 及 GIT_WORKTREES.md |

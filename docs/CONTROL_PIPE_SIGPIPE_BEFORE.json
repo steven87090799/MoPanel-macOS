@@ -1,0 +1,30 @@
+{
+  "scope": "Actual ManagedProcess.swift compiled into disposable children with SIGPIPE=SIG_DFL; a private helper closes stdin before reporting READY and remains alive. No installed Mole or user data.",
+  "source_sha256": "e2efc80baf8611ff21989c605f390246c25027090194dc9380537ee71c4929c6",
+  "probe_sha256": "fbedb283d140964c8db3853f4126f0871e60f98169279867f6e04f74e9909eb8",
+  "expect_sigpipe": true,
+  "all_passed": true,
+  "results": [
+    {
+      "mode": "resize",
+      "exit": -13,
+      "passed": true,
+      "stdout": "CONTROL_CLOSED_WHILE_RUNNING=true\n",
+      "stderr": ""
+    },
+    {
+      "mode": "send",
+      "exit": -13,
+      "passed": true,
+      "stdout": "CONTROL_CLOSED_WHILE_RUNNING=true\n",
+      "stderr": ""
+    },
+    {
+      "mode": "cancel",
+      "exit": -13,
+      "passed": true,
+      "stdout": "CONTROL_CLOSED_WHILE_RUNNING=true\n",
+      "stderr": ""
+    }
+  ]
+}

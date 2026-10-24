@@ -22,9 +22,9 @@
 
 本表反映建立時的程式碼。新模組加入後，負責人必須更新其程式碼位置、實際測試證據與狀態。不可只把「未實作」改成「完成」而不附驗收結果。最終測試總結以根目錄 `TEST_REPORT.md` 與發行包 `Reports/` 的實際紀錄為準。
 
-最新實際證據是 [run 40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)，commit `e4181f754ce4a9bdc3b28efc60d2100d49403ba8`：macOS 27.0.1／Xcode 27.1／Apple Swift 6.4 ARM64 的 **140／140 XCTest 通過**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），主 App 與兩個 helper 的 release 編譯、ARM64 及 ad-hoc 完整性驗證也通過。先前的啟動 SIGSEGV 在本輪未再出現，也沒有 Publishing changes 警告；正式 App 產生視窗、截圖與 smoke JSON，**20 項 smoke 檢查中 19 項通過**，22.345 秒內以測試失敗狀態退出，並非逾時。
+以下保留歷史驗證紀錄，**不是目前版的最新驗收結論；本版結果以 `TEST_REPORT.md` 與發行包 `Reports/` 為準**。[run 40077546222](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40077546222)，commit `e4181f754ce4a9bdc3b28efc60d2100d49403ba8`：macOS 27.0.1／Xcode 27.1／Apple Swift 6.4 ARM64 的 **140／140 XCTest 通過**（116 Core、24 Process／Editor／Streaming，0 失敗、0 略過），主 App 與兩個 helper 的 release 編譯、ARM64 及 ad-hoc 完整性驗證也通過。先前的啟動 SIGSEGV 在該歷史 run 未再出現，也沒有 Publishing changes 警告；正式 App 產生視窗、截圖與 smoke JSON，**20 項 smoke 檢查中 19 項通過**，22.345 秒內以測試失敗狀態退出，並非逾時。
 
-通過範圍包括真實 IOPM assertion 建立／讀回／釋放、AppKit 遮罩視窗建立／關閉（未呈現）、Doctor 18 項中繼資料、Startup 私有 mock 控制流程、bundled CLI fixture 的 status／apps／analyze／history 解碼及 watch 接收／切頁停止，以及選取 13 個路由後視窗仍存活。**路由選取不等於每頁完整渲染或按鈕驗收。** 唯一失敗是 AX 測試找不到 `mopanel.dashboard.snapshot` 控制項：觀察到最多 169 個節點、0 個識別碼、0 次按鈕動作，沒有直接呼叫 model 冒充按鈕成功。效能、後續 Guardian 驗收與 ZIP 發行仍被 UI gate 阻擋。140 個 XCTest 與 19／20 smoke 是不同層次的證據，不合併成新的測試總數，也不代表真實清理、App 更新或硬體控制已驗收。
+該歷史 run 通過的範圍包括真實 IOPM assertion 建立／讀回／釋放、AppKit 遮罩視窗建立／關閉（未呈現）、Doctor 18 項中繼資料、Startup 私有 mock 控制流程、bundled CLI fixture 的 status／apps／analyze／history 解碼及 watch 接收／切頁停止，以及選取 13 個路由後視窗仍存活。**路由選取不等於每頁完整渲染或按鈕驗收。** 該歷史 run 的唯一失敗是 AX 測試找不到 `mopanel.dashboard.snapshot` 控制項：觀察到最多 169 個節點、0 個識別碼、0 次按鈕動作，沒有直接呼叫 model 冒充按鈕成功。該次 run 的效能、後續 Guardian 驗收與 ZIP 發行被 UI gate 阻擋；後續版的結果須另讀對應 Reports。140 個 XCTest 與 19／20 smoke 是不同層次的證據，不合併成新的測試總數，也不代表真實清理、App 更新或硬體控制已驗收。
 
 ## 1.17 正式功能與 MoPanel 現況
 
@@ -42,25 +42,25 @@
 | S01 | App 清單、圖示、大小、搜尋、多選卸載 [S4] | `uninstall --list`、名稱參數及官方選取器 | **原生＋PTY／待驗收**；`UninstallView.swift` | 重名 App、cask 名稱歧義、特殊檔名與實際確認範圍的端到端測試 |
 | S02 | App 殘留、共享資料、個人資料與系統擴充的審查 [S4] | 官方卸載分析及確認；CLI 殘留計畫並非完整公開 JSON | **部分**；個人資料預選預設關閉，最終審查在 PTY | 原生逐項審查、共享資料安全、特殊卸載器 handoff；不能猜測所有權 |
 | S03 | 跨來源 App 更新、重試與取消 [S4][S1] | `mo update` 只更新 Mole CLI，不會更新任意 App | **部分原生新實作＋Homebrew PTY／原生流程待驗收**；`AppUpdatesController.swift`、`AppUpdatesView.swift` | 官方一般 cask 結構化查詢、預覽、確認、同計畫重驗與更新後檢查已寫；加入舊配方／收據／設定比對，不能只信任新版。Sparkle 交回原 App；App Store 開啟 Apple 商店，由使用者選擇「更新」頁，MoPanel 不代管兩者的更新。30 個 Core 與 2 個環境測試已包含在通過的 Mac 140 案例中；未升級真實 App，非所有來源完整對等 |
-| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／私有 mock smoke 通過**；`StartupController.swift`、`StartupView.swift` | 15 個 Core 測試及本輪 controller 私有 mock 的啟用／停用讀回、取消不變更、未知格式拒絕已通過；真 launchctl 變更與持續工作建立均為 0。未知身分禁止變更，其他項目使用系統設定；真實 launchd、AX 按鈕及完整背景項目管理仍待驗收 |
+| S04 | Login Items、LaunchAgents、LaunchDaemons、背景項目管理 [S4] | CLI 卸載／最佳化有相關工作，沒有同等通用管理介面 | **部分原生新實作／私有 mock smoke 通過**；`StartupController.swift`、`StartupView.swift` | 15 個 Core 測試及該歷史 run controller 私有 mock 的啟用／停用讀回、取消不變更、未知格式拒絕已通過；真 launchctl 變更與持續工作建立均為 0。未知身分禁止變更，其他項目使用系統設定；真實 launchd、AX 按鈕及完整背景項目管理仍待驗收 |
 | O01 | macOS 維護、任務結果與略過原因 [S5] | `optimize`、Dry Run、Whitelist；官方承認任務集合可能不同 [S2] | **PTY／待驗收**；`MaintenanceView.swift` | 逐項核對 1.17 GUI 任務；不能宣稱兩套預設維護流程完全相同 |
 | O02 | 管理員授權重用及工作結束後停止 [S5] | 官方 CLI sudo／Touch ID 流程 | **PTY／待驗收**；`ManagedProcess.swift`、`TerminalPanel.swift` | 真 Mac sudo、Touch ID、取消及授權過期；不保存密碼 |
 | D01 | 階層磁碟圖、搜尋、大小、Finder、重新掃描 [S6] | `analyze --json` | **原生／待驗收**；`AnalyzeView.swift` | 圖僅畫篩選後最大 30 個可測項目並明示；不等同官方全部細節、快取與視覺排列 |
 | D02 | 不完整掃描、不可讀資料、APFS 空間解釋 [S6] | `complete`／`partial`／`unavailable`；未必提供逐項原因 | **原生／待驗收**；`MoleModels.swift`、`AnalyzeView.swift` | 權限不足、TCC、外接磁碟、APFS clone／sparse 等真 Mac fixture |
 | D03 | 安全移至垃圾桶與保護路徑 [S6] | 官方 `analyze` 互動操作 | **PTY／待驗收** | 原生圖表不直接刪除；需在官方介面重新選擇，不猜索引。這不是官方 GUI 的即點即移體驗 |
-| M01 | 健康、CPU／每核、GPU、記憶體、Swap、磁碟、網路與趨勢 [S7] | `status --json --watch` | **原生／fixture 資料與 watch smoke 通過**；`DashboardView.swift`、`AppModel.swift` | 本輪 bundled fixture 的解碼、NDJSON 接收及切頁停止通過；真實硬體資料的 GUI benchmark、前景／選單列完整生命週期與三種效能量測仍待驗收 |
+| M01 | 健康、CPU／每核、GPU、記憶體、Swap、磁碟、網路與趨勢 [S7] | `status --json --watch` | **原生／fixture 資料與 watch smoke 通過**；`DashboardView.swift`、`AppModel.swift` | 該歷史 run bundled fixture 的解碼、NDJSON 接收及切頁停止通過；真實硬體資料的 GUI benchmark、前景／選單列完整生命週期與三種效能量測仍待驗收 |
 | M02 | 溫度、功耗、風扇轉速、本機及配件電池 [S7][S8] | CLI 本來就有 `thermal`、`sensors`、`batteries`、`bluetooth` [C3][C4] | **部分**；顯示 CLI 有提供的數值 | 未提供訊號不能估造；配對 iPhone／iPad、頻率、個別程序能耗等不等於目前 CLI 資料 |
 | M03 | 程序搜尋、排序、固定、說明、退出／強制退出 [S7] | CLI 有程序樣本、watch、alerts，非完整 GUI 控制介面 | **部分原生新實作／操作流程待驗收**；`ProcessInspectorView.swift`、`NativeControlPolicy.swift` | 已有搜尋、排序、置頂、精確 App 身分重驗與 AppKit 結束／強制結束；只使用官方有限樣本，不終止任意背景／系統程序，沒有用途說明庫。7 項政策測試包含身分重用與過期樣本，未結束使用者 App |
 | B01 | 選單列監測、可選指標、網速、隱藏 Dock、啟動偏好 [S7] | 無 CLI UI | **部分原生新實作／操作流程待驗收**；`MenuBarPanel.swift`、`AppModel.swift` | 預設關閉、啟用後共用單一 watch，CPU／記憶體／健康／網速、暫停與關閉生命週期已有程式；沒有隱藏 Dock／登入啟動與官方全部自選指標 |
-| B02 | Keep Screen On、定時與停止 [S9] | 無對等 Mole CLI 命令 | **原生新實作／IOPM 生命週期 smoke 通過**；`SystemToolsController.swift`、`SystemToolsView.swift`、`SystemToolsPolicy.swift` | 本輪真實 system-idle assertion 建立、讀回、釋放及確認不存在通過。定時、低電量／接電與睡眠情境仍待驗收；沒有閉蓋保證或跨重啟恢復，非完整對等 |
-| B03 | Clean Screen 與可選輸入保護 [S7] | 無對等 Mole CLI 命令 | **部分原生新實作／視窗建立關閉 smoke 通過**；`SystemToolsController.swift` | 本輪 1 個螢幕的遮罩視窗建立及關閉通過，未呈現遮罩、未攔截輸入。已寫 Esc／按鈕／切換 App／5 分鐘退出；實際呈現、事件及多螢幕仍待驗收，沒有全域輸入鎖 |
+| B02 | Keep Screen On、定時與停止 [S9] | 無對等 Mole CLI 命令 | **原生新實作／IOPM 生命週期 smoke 通過**；`SystemToolsController.swift`、`SystemToolsView.swift`、`SystemToolsPolicy.swift` | 該歷史 run 真實 system-idle assertion 建立、讀回、釋放及確認不存在通過。定時、低電量／接電與睡眠情境仍待驗收；沒有閉蓋保證或跨重啟恢復，非完整對等 |
+| B03 | Clean Screen 與可選輸入保護 [S7] | 無對等 Mole CLI 命令 | **部分原生新實作／視窗建立關閉 smoke 通過**；`SystemToolsController.swift` | 該歷史 run 1 個螢幕的遮罩視窗建立及關閉通過，未呈現遮罩、未攔截輸入。已寫 Esc／按鈕／切換 App／5 分鐘退出；實際呈現、事件及多螢幕仍待驗收，沒有全域輸入鎖 |
 | B04 | 攝影機／麥克風狀態、通知 [S7] | 無對等 Mole CLI 命令 | **未實作** | 可取得訊號的真實性、通知權限；不得猜測 macOS 不提供的擁有者 |
-| B05 | 退出外接磁碟／磁碟映像 [S7] | 分析路徑支援不等於退出功能 | **原生新實作／實際退出待驗收**；`SystemToolsController.swift` | 只列正向確認的外接可退出 volume、重新核對身分、NSWorkspace 非強制退出及掛載結果檢查；本輪 smoke 未呼叫退出 API，需隔離裝置／DMG 驗收 |
+| B05 | 退出外接磁碟／磁碟映像 [S7] | 分析路徑支援不等於退出功能 | **原生新實作／實際退出待驗收**；`SystemToolsController.swift` | 只列正向確認的外接可退出 volume、重新核對身分、NSWorkspace 非強制退出及掛載結果檢查；該歷史 run smoke 未呼叫退出 API，需隔離裝置／DMG 驗收 |
 | H01 | 風扇 Auto／Cool／Max [S10] | CLI 讀值不等於風扇控制 | **未實作；現在範圍內** | 支援硬體偵測、窄授權、模式讀回、退出／崩潰後回復；無風扇機型不可顯示可用控制 |
 | H02 | Battery Care 充電限制 [S2] | 無 CLI 控制入口 | **未實作；現在範圍內** | 內建電池支援判斷、充放電邊界、授權、退出／重新開機／睡眠恢復 |
 | H03 | WiFi Low Latency／AWDL 暫停與恢復 [S11] | 無 CLI 控制入口 | **未實作；現在範圍內** | 原狀保存、AirDrop 等影響提示、網路變動／睡眠／退出／失敗重試，不聲稱保證加速 |
 | V01 | 關機 Parallels VM 未用磁碟空間回收 [S3][S1] | 無等價正式命令 | **未實作** | 使用 Parallels 官方工具、驗證 VM 狀態與磁碟身分、不可中斷階段及真實回收量 |
-| X01 | Doctor、操作紀錄、權限及問題引導 [S2] | CLI `history --json`；GUI 狀態診斷需自建 | **部分新實作／Doctor 中繼資料 smoke 通過**；`HistoryView.swift`、`CLIProbe.swift`、`SystemToolsController.swift` | 本輪 Doctor 讀到 18 項實際中繼資料；History fixture 解碼通過。複製／匯出與完整權限情境仍待驗收；FDA／安全設定未檢查就明示，不是官方完整診斷條件集合 |
+| X01 | Doctor、操作紀錄、權限及問題引導 [S2] | CLI `history --json`；GUI 狀態診斷需自建 | **部分新實作／Doctor 中繼資料 smoke 通過**；`HistoryView.swift`、`CLIProbe.swift`、`SystemToolsController.swift` | 該歷史 run Doctor 讀到 18 項實際中繼資料；History fixture 解碼通過。複製／匯出與完整權限情境仍待驗收；FDA／安全設定未檢查就明示，不是官方完整診斷條件集合 |
 | X02 | 原生外觀、語言、深淺模式、快捷鍵、VoiceOver [S1][S8] | 無 CLI UI | **部分／待驗收**；原生 SwiftUI、繁中／英文、Liquid Glass | 全頁鍵盤與 VoiceOver 仍需逐項實測。僅支援本任務指定兩種語言，不宣稱官方全部語系 |
 
 ### CLI 特有入口依然保留
@@ -82,7 +82,7 @@
 
 ## 測試矩陣與完成門檻
 
-**目前沒有可以誠實標成 100% 官方 GUI 功能對等的結果。** 既有 Core、Process、Guardian 測試驗證的是我們的介面契約與安全層，不是官方 GUI 全套行為。公開 macOS CI 的編譯、簽章與 UI 結果須依該版 `TEST_REPORT.md`／Reports 判斷。System Tools 的 7 個純政策測試包含在上述 Mac 140 案例中；本輪另取得真實 IOPM／AppKit 生命週期與 Doctor 的有限 smoke 證據，不能延伸為實體硬體或完整互動驗收。整體 UI smoke 仍因 AX 控制查找失敗而不通過。
+**目前沒有可以誠實標成 100% 官方 GUI 功能對等的結果。** 既有 Core、Process、Guardian 測試驗證的是我們的介面契約與安全層，不是官方 GUI 全套行為。公開 macOS CI 的編譯、簽章與 UI 結果須依該版 `TEST_REPORT.md`／Reports 判斷。System Tools 的 7 個純政策測試包含在上述 Mac 140 案例中；該歷史 run 另取得真實 IOPM／AppKit 生命週期與 Doctor 的有限 smoke 證據，不能延伸為實體硬體或完整互動驗收。上述歷史 run 的整體 UI smoke 因 AX 控制查找失敗而不通過；這不是對目前版 UI gate 的判定。
 
 | 驗收層 | 必須證明的內容 | 此文件建立時的證據／缺口 |
 |---|---|---|
@@ -90,8 +90,8 @@
 | CLI Adapter | argv、身分、來源、版本、help、JSON／NDJSON | 已有實際 XCTest；總數及最新 log 見 TEST_REPORT |
 | 子程序安全 | PTY、無密碼紀錄、取消、逾時、父程序消失 | Linux fixtures 已測；macOS libproc、App 強制退出、sudo 需各自證據 |
 | 原生 App 建置 | macOS 27 ARM64 SwiftUI／AppKit／Charts／SwiftTerm | run 40077546222 的 release 編譯與 140／140 Mac XCTest 通過；App 啟動、視窗與 19／20 smoke 通過，未再出現初始崩潰或 Publishing changes 警告 |
-| App 包裝 | Mach-O ARM64、helper、codesign、ZIP 解壓再驗證 | 本輪已驗證主程式與兩個 helper 的 ARM64 及 ad-hoc bundle 完整性；整體 UI gate 仍失敗，ZIP 封裝、解壓再驗證與發行尚未完成 |
-| UI 流程 | 所有真按鈕、返回、空白／失敗／取消、鍵盤、VoiceOver | 13 個路由選取後視窗仍存活；AX 首個 snapshot 控制未找到，0 次按鈕動作。尚未證明全部頁面渲染、實際按鈕、鍵盤或 VoiceOver 流程 |
+| App 包裝 | Mach-O ARM64、helper、codesign、ZIP 解壓再驗證 | 該歷史 run 已驗證主程式與兩個 helper 的 ARM64 及 ad-hoc bundle 完整性；該次 UI gate 失敗，因此未進行 ZIP 封裝與解壓再驗證；本版發行狀態見 TEST_REPORT／Reports |
+| UI 流程 | 所有真按鈕、返回、空白／失敗／取消、鍵盤、VoiceOver | 歷史 run 40077546222 選取 13 個路由後視窗仍存活；當時 AX 首個 snapshot 控制未找到，0 次按鈕動作。這不代表後續新增路由或本版按鈕結果；須讀本版 TEST_REPORT／Reports，亦不能延伸為全頁鍵盤／VoiceOver 驗收 |
 | 清理／卸載 | 同隔離資料集的預覽、確認、實際結果與保護 | 不對使用者個人資料測試；尚須可丟棄 VM／獨立測試帳號完整流程 |
 | 原生新增模組 | 每項功能行為、失敗恢復與來源安全 | 真 IOPM assertion 建立／讀回／釋放、未呈現遮罩視窗建立／關閉、Doctor 18 項資料及 Startup 私有 mock 已通過；未呼叫退出磁碟 API、未修改真 launchd、未更新真 App，其他未實作項仍保留 |
 | 權限 | 無 FDA、拒絕 sudo、Touch ID、通知、輔助使用權限 | 需真 Mac 環境逐情境執行，CI mock 不能取代系統權限驗收 |

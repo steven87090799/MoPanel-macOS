@@ -50,13 +50,14 @@ public struct ProcessResult: Sendable {
 }
 
 public enum ManagedProcessError: LocalizedError {
-    case alreadyRunning, invalidRequest, helperMissing, executableMissing
+    case alreadyRunning, invalidRequest, helperMissing, executableMissing, controlChannelUnavailable
     public var errorDescription: String? {
         switch self {
         case .alreadyRunning: return "A process is already running."
         case .invalidRequest: return "The executable, arguments, or process limits are invalid."
         case .helperMissing: return "MoPanelGuardian is missing or not executable. Reinstall the complete app."
         case .executableMissing: return "The selected executable does not exist or cannot be executed."
+        case .controlChannelUnavailable: return "A safe private control pipe could not be created. The command was not started."
         }
     }
 }
@@ -82,9 +83,8 @@ public enum ManagedProcessError: LocalizedError {
     public var onExit: ((ProcessResult) -> Void)?
 
     private let helperURL: URL
-    private let inputQueue = DispatchQueue(label: "app.mopanel.process.input", qos: .userInitiated)
     private var process: Process?
-    private var controlHandle: FileHandle?
+    private var controlWriter: ControlPipeWriter?
     private var outputHandle: FileHandle?
     private var errorHandle: FileHandle?
     private var outputClosed = false
@@ -104,7 +104,7 @@ public enum ManagedProcessError: LocalizedError {
 
     deinit {
         // The guardian must outlive this object long enough to perform cleanup.
-        try? controlHandle?.close()
+        controlWriter?.close()
     }
 
     public func start(request: ProcessRequest, interactive: Bool = false) throws {
@@ -131,7 +131,7 @@ public enum ManagedProcessError: LocalizedError {
         child.environment = Self.safeEnvironment(overrides: request.environment, interactive: interactive)
         child.currentDirectoryURL = request.workingDirectory ?? FileManager.default.homeDirectoryForCurrentUser
         child.standardInput = control; child.standardOutput = output; child.standardError = error
-        controlHandle = control.fileHandleForWriting
+        controlWriter = try ControlPipeWriter(handle: control.fileHandleForWriting)
         outputHandle = output.fileHandleForReading; errorHandle = error.fileHandleForReading
         child.terminationHandler = { [weak self] p in
             let status = p.terminationStatus
@@ -151,7 +151,7 @@ public enum ManagedProcessError: LocalizedError {
             startReader(error.fileHandleForReading, isError: true)
         } catch {
             running = false; failure = error.localizedDescription
-            try? controlHandle?.close(); controlHandle = nil
+            controlWriter?.close(); controlWriter = nil
             try? outputHandle?.close(); try? errorHandle?.close()
             process = nil
             throw error
@@ -229,7 +229,7 @@ public enum ManagedProcessError: LocalizedError {
         if result.timedOut { failure = "The command exceeded its time limit and was stopped." }
         else if outputTruncated { failure = "Output exceeded the safe memory limit; the command was stopped." }
         else if code != 0 && !result.cancelled { failure = "The command exited with status \(code)." }
-        try? controlHandle?.close(); controlHandle = nil
+        controlWriter?.close(); controlWriter = nil
         outputHandle = nil; errorHandle = nil; process = nil
         let pending = waiters; waiters.removeAll()
         for waiter in pending { waiter.resume(returning: result) }
@@ -250,10 +250,7 @@ public enum ManagedProcessError: LocalizedError {
         cancellationRequested = true
         sendFrame(kind: 67, data: Data())
         // Even if a control frame cannot be delivered, EOF triggers cancellation.
-        if let handle = controlHandle {
-            inputQueue.async { try? handle.close() }
-            controlHandle = nil
-        }
+        controlWriter?.close(); controlWriter = nil
     }
 
     public func send(_ data: Data) {
@@ -262,21 +259,17 @@ public enum ManagedProcessError: LocalizedError {
     }
 
     public func resize(columns: Int, rows: Int) {
-        guard interactive else { return }
+        guard running, interactive, !cancellationRequested else { return }
         let cols = min(1000, max(20, columns)), height = min(500, max(5, rows))
         sendFrame(kind: 82, data: Data([UInt8(cols >> 8), UInt8(cols & 255), UInt8(height >> 8), UInt8(height & 255)]))
     }
 
     private func sendFrame(kind: UInt8, data: Data) {
-        guard let handle = controlHandle, data.count <= 65536 else { return }
+        guard let writer = controlWriter, data.count <= 65536 else { return }
         let count = UInt32(data.count)
         let bytes = Data([kind, UInt8((count >> 24) & 255), UInt8((count >> 16) & 255),
                           UInt8((count >> 8) & 255), UInt8(count & 255)]) + data
-        inputQueue.async {
-            var frame = bytes
-            defer { frame.resetBytes(in: frame.startIndex..<frame.endIndex) }
-            try? handle.write(contentsOf: frame)
-        }
+        writer.send(bytes)
     }
 
     /// Do not inherit shell hooks, DYLD injection, sudo askpass, or MOLE_* overrides.
@@ -338,6 +331,101 @@ public enum ManagedProcessError: LocalizedError {
                   FileManager.default.isExecutableFile(atPath: path) else { return fallback }
             return path
         }
+    }
+}
+
+/// Owns the write end of one private guardian channel. All writes and closes
+/// share a serial queue, including completion, cancellation and object teardown.
+/// A peer can exit before the main actor receives its termination callback.
+/// EPIPE is therefore an expected transport closure, never an app-wide signal.
+final class ControlPipeWriter: @unchecked Sendable {
+    private let handle: FileHandle
+    private let queue = DispatchQueue(label: "app.mopanel.process.input", qos: .userInitiated)
+    private var closed = false // Accessed only on queue.
+
+    init(handle: FileHandle) throws {
+        #if canImport(Darwin)
+        // Apple's fcntl(2) and pipe(2) document this per-descriptor setting for
+        // pipes. It does not change the GUI's or the executed CLI's signal
+        // disposition. Refuse to launch if protection cannot be established.
+        guard fcntl(handle.fileDescriptor, F_SETNOSIGPIPE, 1) == 0,
+              fcntl(handle.fileDescriptor, F_GETNOSIGPIPE) == 1 else {
+            throw ManagedProcessError.controlChannelUnavailable
+        }
+        #endif
+        self.handle = handle
+    }
+
+    deinit { try? handle.close() }
+
+    func send(_ data: Data) {
+        queue.async {
+            var frame = data
+            defer { frame.resetBytes(in: frame.startIndex..<frame.endIndex) }
+            guard !self.closed else { return }
+            if Self.writeAll(self.handle.fileDescriptor, data: frame) != nil {
+                // Stop using the channel after any write failure. Closing a
+                // live guardian's lifeline also requests its normal cleanup.
+                // Never retry a failed frame or retain/log its input bytes.
+                self.closeOnQueue()
+            }
+        }
+    }
+
+    func close() { queue.async { self.closeOnQueue() } }
+
+    private func closeOnQueue() {
+        guard !closed else { return }
+        closed = true
+        try? handle.close()
+    }
+
+    /// Nil means the complete frame was delivered; otherwise return errno.
+    /// Keeping this internal also permits isolated low-level transport tests.
+    static func writeAll(_ descriptor: Int32, data: Data) -> Int32? {
+        data.withUnsafeBytes { bytes in
+            var offset = 0
+            while offset < bytes.count {
+                let count = writeWithoutSIGPIPE(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                if count > 0 { offset += count; continue }
+                if count < 0, errno == EINTR { continue }
+                return count == 0 ? EIO : errno
+            }
+            return nil
+        }
+    }
+
+    private static func writeWithoutSIGPIPE(_ descriptor: Int32, _ bytes: UnsafeRawPointer, _ count: Int) -> Int {
+        #if canImport(Darwin)
+        // init verified F_SETNOSIGPIPE on this descriptor before child launch.
+        return Darwin.write(descriptor, bytes, count)
+        #else
+        // Linux has no F_SETNOSIGPIPE for pipes. Temporarily block SIGPIPE on
+        // this writer thread only, consume only a newly generated EPIPE signal,
+        // then restore the exact prior thread mask. Never change a process-wide
+        // handler, and preserve a SIGPIPE that was pending before this write.
+        var blocked = sigset_t(), previous = sigset_t(), pending = sigset_t()
+        sigemptyset(&blocked); sigaddset(&blocked, SIGPIPE)
+        let maskError = pthread_sigmask(SIG_BLOCK, &blocked, &previous)
+        guard maskError == 0 else { errno = maskError; return -1 }
+        guard sigpending(&pending) == 0 else {
+            let error = errno
+            _ = pthread_sigmask(SIG_SETMASK, &previous, nil)
+            errno = error
+            return -1
+        }
+        let wasPending = sigismember(&pending, SIGPIPE) == 1
+        let written = Glibc.write(descriptor, bytes, count)
+        let writeError = written < 0 ? errno : 0
+        if written < 0, writeError == EPIPE, !wasPending {
+            var noWait = timespec(tv_sec: 0, tv_nsec: 0)
+            while sigtimedwait(&blocked, nil, &noWait) < 0 && errno == EINTR {}
+        }
+        let restoreError = pthread_sigmask(SIG_SETMASK, &previous, nil)
+        guard restoreError == 0 else { errno = restoreError; return -1 }
+        errno = writeError
+        return written
+        #endif
     }
 }
 

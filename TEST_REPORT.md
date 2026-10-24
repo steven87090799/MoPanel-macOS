@@ -6,21 +6,23 @@
 
 ## 交付狀態
 
-**已編譯並真正啟動 macOS27 ARM64 原生App；20項safe smoke檢查中19項通過，剩餘accessibility按鈕驗收仍阻擋ZIP交付。**
+**已編譯並真正啟動 macOS27 ARM64 原生App；最新正式smoke因SIGPIPE（signal13）結束，仍阻擋ZIP交付。**
 
-最新[run40081012904](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40081012904)，commit `f9bce8b583e520c5d5eb0200822280b4c243b105`，使用macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。**171／171 Mac XCTest通過，0失敗／略過**（144 Core、27 Process／Editor／Streaming）。其中GitWorktreeIntegrationTests的21個真Git臨時倉庫案例與Parser的7個案例全過，已包含在總數；沒有操作使用者倉庫。主App與兩個helpers完成release編譯、ARM64、ad-hoc完整性驗證，且正式executables沒有`get-task-allow`。
+最新[run40081612793](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40081612793)，commit `c602267b7d03c47b1ea0a46ec773db87f2d0d806`，使用macOS27.0.1、Xcode27.1、Apple Swift6.4 ARM64。**171／171 Mac XCTest通過，0失敗／略過**（144 Core、27 Process／Editor／Streaming）。其中21個真Git臨時倉庫整合與7個Git解析案例已包含於總數，沒有操作使用者倉庫。主App與兩個helpers完成release編譯、ARM64、ad-hoc完整性驗證，且正式executables沒有`get-task-allow`。
 
-Homebrew audit15、獨立gate harness6、smoke driver8、crash辨識5、debug guard8、release report4個Python／Bash案例在真Mac全過，最新官方穩定CLI唯讀契約也通過。這些不與XCTest重複加總。
+Homebrew audit15、獨立gate harness6、smoke driver8、crash辨識5、debug guard8、release report4個Python／Bash案例在本輪真Mac全過，最新官方穩定CLI唯讀契約也通過。這些不與XCTest重複加總。
 
-本輪原App不再SIGSEGV，正式smoke在8.322秒產生完整JSON與自身視窗截圖；此輪沒有崩潰或逾時；正式stdout／stderr皆沒有先前publishing-during-update警告。實際通過的範圍包含：原生視窗建立、4組adapter資料解碼、真watch串流及離頁停止、14路由選取存活、IOPM assertion建立／讀取／釋放確認、1個overlay視窗建立／關閉（未呈現或攔截輸入）、18項Doctor唯讀資料，以及Startup私有mock的啟用／停用／回讀／取消／未知格式拒絕。沒有真實launchctl變更、磁碟退出或使用者資料清理。
+本輪實際原生按鈕已可透過AppKit公開、由cell宣告支援的legacy AXPress介面操作。正式stderr記錄**16次dispatch、其中15次操作後效果驗證通過**；包含掃描、取消、返回、清理dry-run、作業停止與確認取消／核取方塊。legacy介面返回Void，沒有將它寫成BOOL true，也沒有直接呼叫model action。最後一次confirmation.continue dispatch後、等待其結果時，App以exit−13（SIGPIPE）結束；要求的17項流程未全部完成。
 
-唯一失敗已從找不到控制項推進為首個snapshot按壓被拒絕。正式可見NSButton／checkbox與cell identifier修正均通過Apple SDK編譯；AX找到唯一、啟用且可見的自身視窗NSButtonCell，角色AXButton、ID為mopanel.dashboard.snapshot。harness記錄1次press嘗試，pressAccepted=false，尚無成功按壓或後置條件通過；現有trace不能區分selector-allowed guard拒絕與cell實作返回false，仍待定位。公開accessibility環境讀回true；最多324個節點（213 protocol＋111 selector-only，unsupported0）。沒有直接action fallback。本輪精簡證據在`docs/MACOS_SMOKE_RUN40081012904.json`，完整原始JSON及trace在run artifact。**不能宣稱17項按鈕流程或完整VoiceOver已通過。**
+正式driver記錄elapsed_seconds=19.845，非45秒timeout。**App沒有產生最終完整smoke JSON，也沒有截圖，因此本輪沒有可用的19／20或20／20彙總，不能沿用前輪的19／20作為最新結果。**正式／debug log皆沒有publishing-during-update警告。原生UI進度來自已flush的階段紀錄，不能代替完整驗收。
 
-正式smoke維持exit1與45秒deadline，不進效能、guardian Python、baseline probe或ZIP。這次已有完整有效JSON，driver正確略過不必要的LLDB副本且原失敗仍阻擋ZIP。Guardian新增17項已於Linux全過，但本輪Mac仍未抵達該階段。
+隔離debug副本在相同確認後stage也因SIGPIPE退出。正式主程式、CodeResources及兩個helper的四組SHA-256在診斷前後逐項相同，original_files_unchanged=true；沒有修改正式App或host安全設定。當時LLDB預設直接傳遞SIGPIPE而未暫停，因此backtrace命令只回報沒有stopped process，**沒有可用stack**。本輪精簡證據及完整hash在`docs/MACOS_SMOKE_RUN40081612793.json`，原始stderr／driver JSON／LLDB log在run artifact。
 
-driver窄修已在本輪Mac驗證：8個案例全過，且真實完整JSON的邏輯失敗沒有重跑LLDB，仍非零退出。signal／timeout／缺失或無效報告的診斷路徑保留。
+已在diagnostic-only LLDB指令新增SIGPIPE stop／notify／pass=true，保留訊號傳遞；9個mock／隔離guard案例在Linux通過0.040秒（`docs/DEBUG_DIAGNOSTIC_TEST_OUTPUT.txt`）。這只是讓未來仍失敗時可取得stack，未改正式App或驗收結果；該增量尚待下輪Mac驗證。
 
-先前run40076975513的main-thread scene graph重入stack與原始hash證據保留於`docs/STARTUP_CRASH_EVIDENCE.json`／`docs/STARTUP_STACK_TRACE.txt`。修正移除錯誤的view-disappear狀態發布並防止同值發布後，本輪已越過該啟動失敗；尚須修復並重新通過真正AX控制項驗收，再完成所有後續門檻。
+正式smoke仍非零退出，不進效能、Guardian Python、baseline probe或ZIP。Guardian17個案例已於Linux全過，但本輪Mac仍未抵達該階段。SIGPIPE產品修復與完整17項操作、六種效能模式及封裝都仍須實際通過，不能宣稱已完成交付。
+
+較早run40081012904的完整JSON曾通過19／20項safe smoke；前一個scene graph啟動重入的證據則保留於`docs/STARTUP_CRASH_EVIDENCE.json`／`docs/STARTUP_STACK_TRACE.txt`。這些都是歷史快照，不代表本輪新的SIGPIPE已修復。
 
 ## 已實際執行
 
@@ -74,12 +76,12 @@ driver窄修已在本輪Mac驗證：8個案例全過，且真實完整JSON的邏
 
 | 項目 | 狀態 |
 |---|---|
-| macOS27 SwiftUI/AppKit/Charts 編譯 | run40081012904完整整合版release與171XCTest通過；已建立視窗、smoke19／20通過 |
+| macOS27 SwiftUI/AppKit/Charts 編譯 | run40081612793完整整合版release與171XCTest通過；已建立視窗，但正式smoke因SIGPIPE失敗 |
 | SwiftTerm 與 MoPanelEditor macOS 編譯 | 基礎版本通過 |
 | 真正 ARM64 Mach-O 產物 | runner 已編譯並驗證；因 smoke 失敗未上傳發行 App |
 | ad-hoc Code Signing／codesign verify | 基礎版本通過 build.sh 的 bundle gate |
 | Apple Developer ID／公證 | 未進行，未宣稱 |
-| macOS 原生視窗 smoke test | run40081012904視窗／adapter／watch／安全系統API及Startup mock通過；唯一失敗為首個AX press被拒絕，沒有繞過或降低gate |
+| macOS 原生視窗 smoke test | run40081612793已實際執行16次AXPress並驗證15次效果，隨後SIGPIPE；無最終JSON／截圖，17項完整驗收尚未通過 |
 | 十個頁面的全部按鈕與 VoiceOver | 未完整實機驗收 |
 | 官方 status/analyze/uninstall-list 的真實 Mac 整合 | CLI 唯讀合約通過；原生 GUI 真實引擎 benchmark 待接續驗證 |
 | Full Disk Access／Touch ID／sudo | 尚未實機驗證 |

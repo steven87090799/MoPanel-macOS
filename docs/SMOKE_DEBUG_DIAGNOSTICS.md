@@ -7,7 +7,7 @@
 1. 記錄正式 App 主程式、CodeResources 及兩個 helper 的 SHA-256。
 2. 將同一個已編譯的 release App 複製到 RUNNER_TEMP 的全新私有目錄；確認 bytes 相同且不共用檔案 inode。
 3. 只對拷貝使用 ad-hoc runtime 簽章加上 `com.apple.security.get-task-allow`。
-4. 由正式 guardian 管控 LLDB 子程序樹與逾時，以固定 `--smoke-test` 啟動拷貝；停用 lldbinit 載入，維持 ASLR，批次取得所有執行緒各最多 128 frames 的 backtrace。
+4. 由正式 guardian 管控 LLDB 子程序樹與逾時，以固定 `--smoke-test` 啟動拷貝；停用 lldbinit 載入，維持 ASLR，批次取得所有執行緒各最多 128 frames 的 backtrace。針對已觀察到的 SIGPIPE，以公開 `process handle SIGPIPE --stop true --notify true --pass true` 在 run 前設定除錯器暫停／通知，仍保留傳遞訊號；只影響此隔離 debug session，不修改正式 App 或 host 的訊號設定，也不吞掉失敗。
 5. 保存獨立的 debugger log 與診斷 JSON，清除暫存拷貝，再核對正式 App 四個檔案的 SHA-256。
 
 LLDB 或 codesign 遭拒絕時如實記錄；不提升權限，不修改 TCC、SIP、Gatekeeper 或系統設定。拷貝使用不同的 smoke JSON 路徑，即使在 debugger 下完成測試也不會覆蓋正式結果。原 smoke 失敗後仍明確非零退出，不進效能或 ZIP 封裝。

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "summary_of": "Actual driver smoke-test.json plus flushed formal stderr from a verified Actions artifact. App died before its final report; trace counts are derived progress evidence, not a complete successful smoke report.",
+  "workflow_run_url": "https://github.com/steven87090799/MoPanel-macOS/actions/runs/40081612793",
+  "source_revision": "c602267b7d03c47b1ea0a46ec773db87f2d0d806",
+  "artifact_id": 12555557265,
+  "artifact_sha256": "43b0b81f9fd8d138d4a84f567939269258d1a926a7a89d69628397f6157fc3fa",
+  "original_smoke_report_sha256": "dac80b5684cbd25b8ee0fb5b2c645ea30c02df716d8b4e9e43c5494aaf5af833",
+  "formal_stderr_sha256": "59bc5af6af0876e9696bc3d3f2dadbedcd4f837bc6799c4080de359112b8090e",
+  "success": false,
+  "evidence_missing": true,
+  "process_exit_code": -13,
+  "timed_out": false,
+  "elapsed_seconds": 19.845,
+  "test_deadline_seconds": 45,
+  "screenshot_available": false,
+  "signal": "SIGPIPE (13)",
+  "formal_trace_progress": {
+    "legacy_axpress_dispatches": 16,
+    "postconditions_verified": 15,
+    "dispatched_identifiers": [
+      "mopanel.dashboard.snapshot",
+      "mopanel.uninstall.scan",
+      "mopanel.analyze.overview",
+      "mopanel.analyze.rescan",
+      "mopanel.analyze.parent",
+      "mopanel.analyze.overview",
+      "mopanel.scan.stop",
+      "mopanel.error.dismiss",
+      "mopanel.maintenance.clean.preview",
+      "mopanel.operation.stop",
+      "mopanel.operation.close",
+      "mopanel.maintenance.clean.review",
+      "mopanel.confirmation.cancel",
+      "mopanel.maintenance.clean.review",
+      "mopanel.confirmation.acknowledge",
+      "mopanel.confirmation.continue"
+    ],
+    "verified_identifiers": [
+      "mopanel.dashboard.snapshot",
+      "mopanel.uninstall.scan",
+      "mopanel.analyze.overview",
+      "mopanel.analyze.rescan",
+      "mopanel.analyze.parent",
+      "mopanel.analyze.overview",
+      "mopanel.scan.stop",
+      "mopanel.error.dismiss",
+      "mopanel.maintenance.clean.preview",
+      "mopanel.operation.stop",
+      "mopanel.operation.close",
+      "mopanel.maintenance.clean.review",
+      "mopanel.confirmation.cancel",
+      "mopanel.maintenance.clean.review",
+      "mopanel.confirmation.acknowledge"
+    ],
+    "required_total_actions": 17,
+    "last_stage": "postcondition.wait.begin id=mopanel.confirmation.continue",
+    "modern_bool_return_claimed": false,
+    "publishing_warning_count": 0
+  },
+  "debug_copy": {
+    "attempted": true,
+    "original_smoke_still_failed": true,
+    "status": "diagnostic_finished_not_acceptance",
+    "original_files_unchanged": true,
+    "original_sha256_before": {
+      "Contents/MacOS/MoPanel": "9b9797170c8f2f0b314789a55353a098df20978b03e758e3aea17bd9b25e4bf0",
+      "Contents/_CodeSignature/CodeResources": "706a3f86b67c61edf9ee300a8656359d8bf7a1db99cf4aae2fe2ca4f193aab96",
+      "Contents/Helpers/MoPanelGuardian": "fb442e2ceeedadd13d2dba562a4f8fe27e2d34987acd966e45b5af50caf49e70",
+      "Contents/Helpers/MoPanelEditor": "fe096990119826f6584ba3b9714a4cf82b6968919120406ef540cb6e624cef12"
+    },
+    "original_sha256_after": {
+      "Contents/MacOS/MoPanel": "9b9797170c8f2f0b314789a55353a098df20978b03e758e3aea17bd9b25e4bf0",
+      "Contents/_CodeSignature/CodeResources": "706a3f86b67c61edf9ee300a8656359d8bf7a1db99cf4aae2fe2ca4f193aab96",
+      "Contents/Helpers/MoPanelGuardian": "fb442e2ceeedadd13d2dba562a4f8fe27e2d34987acd966e45b5af50caf49e70",
+      "Contents/Helpers/MoPanelEditor": "fe096990119826f6584ba3b9714a4cf82b6968919120406ef540cb6e624cef12"
+    },
+    "elapsed_seconds": 31.156,
+    "host_security_settings_changed": false,
+    "debug_copy_distributed": false,
+    "backtrace_available": false,
+    "backtrace_failure": "LLDB passed SIGPIPE without stopping; process exited and thread backtrace reported no stopped process.",
+    "same_stage_progress": {
+      "legacy_axpress_dispatches": 16,
+      "postconditions_verified": 15
+    }
+  },
+  "swift_passed_counts": {
+    "core": 144,
+    "process": 27,
+    "total": 171,
+    "git_integration_included": 21,
+    "git_parser_included": 7
+  }
+}

@@ -50,7 +50,12 @@ struct AnalyzeView: View {
                     if scan.scanStatus != .complete {
                         Notice(text: model.t("部分掃描的數字是實際量到的下限；無法取得的大小不是 0。官方 JSON 不提供每項詳細失敗原因，請查看原始輸出或確認讀取權限。", "Partial sizes are measured lower bounds. An unavailable size is not zero. Per-item error reasons are not present in the JSON; inspect output or check read permissions."), warning: true)
                     }
-                    let measured = Array(entries.filter { ($0.measuredBytes ?? 0) > 0 }.prefix(30))
+                    let measured = Array(entries.filter { ($0.measuredBytes ?? 0) > 0 }.sorted { left, right in
+                        let leftSize = left.measuredBytes ?? 0, rightSize = right.measuredBytes ?? 0
+                        if leftSize != rightSize { return leftSize > rightSize }
+                        if left.path != right.path { return left.path < right.path }
+                        return left.name < right.name
+                    }.prefix(30))
                     if !measured.isEmpty {
                         Treemap(entries: measured) { entry in
                             if entry.isDir { Task { await model.analyze(path: entry.path) } } else { model.reveal(entry.path) }

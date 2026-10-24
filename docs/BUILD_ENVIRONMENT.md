@@ -60,10 +60,12 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS)使用免費標準`xcode-27` ARM64 runner，實際image20261022.0305.3、macOS27.0.1、Xcode27.1、Apple Swift6.4。API token只送同host官方release metadata請求；binary與checksum下載無授權header。
 
-最新[run40081012904](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40081012904)通過171Mac XCTest（144 Core＋27 Process，已包含21個真Git臨時倉庫整合與7個Git解析案例）、App及helpers release編譯、ARM64與ad-hoc完整性，正式executables沒有get-task-allow。Python／Bash的Homebrew15、gate6、driver8、crash辨識5、debug guard8、release report4也通過。
+最新[run40081612793](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40081612793)通過171Mac XCTest（144 Core＋27 Process，已包含21個真Git臨時倉庫整合與7個Git解析案例）、App及helpers release編譯、ARM64與ad-hoc完整性，正式executables沒有get-task-allow。Python／Bash的Homebrew15、gate6、driver8、crash辨識5、debug guard8、release report4也通過。
 
-這次正式App不再崩潰，8.322秒完成safe smoke JSON及自己的視窗截圖，20項中19項通過：adapter／watch／路由存活、安全IOPM assertion與overlay生命週期／Doctor唯讀資料／Startup私有mock皆成功。公開selector bridge與SwiftUI accessibilityEnabled設定均已真Mac編譯通過；真context讀回publicAccessibilityEnvironmentEnabled=true。正式可見NSButton／checkbox也通過Apple SDK編譯。cell identifier修正後，已找到唯一、啟用、可見、自身視窗的snapshot AXButton；掃到324個節點（213 protocol＋111 selector-only，unsupported0）。但首個press嘗試被拒絕，pressAccepted=false，沒有成功按壓。現有trace未區分selector-allowed guard或cell實作的拒絕，須繼續定位。14路由切換僅驗證存活，不等同每頁或全部按鈕的渲染／操作驗收。正式stdout／stderr沒有publishing-during-update警告。截圖中的可見按鈕不能代替真正操作驗收；沒有直接action fallback。
+正式UI已透過由實際AppKit cell宣告的公開legacy AXPress完成16次dispatch與15次效果驗證；這個API返回Void，沒有假稱BOOL true或直接呼叫model action。confirmation.continue dispatch後等待結果時發生SIGPIPE（exit−13）；非45秒timeout。App尚未寫出最終JSON，也沒有截圖，因此不能沿用前一輪19／20作本輪結果。兩組正式／debug log皆沒有publishing-during-update警告。
 
-兩個獨立gate保留XCTest成功與smoke失敗，仍非零退出，效能、guardian Python、baseline probe和ZIP尚未執行。有完整JSON的明確邏輯失敗不再多跑LLDB副本，driver8項與實際FAIL保存都已在Mac驗證。前幾輪scene graph重入stack保留為修前證據；這次不是崩潰或逾時。下一輪仍須完整通過AX及其後所有門檻。
+隔離debug副本在相同stage因SIGPIPE退出；正式主程式、CodeResources與兩個helpers的四組SHA-256在前後完全相同。當時LLDB未在SIGPIPE暫停，因此沒有可用stack。新增的debug-only公開SIGPIPE stop／notify／pass=true指令僅影響獨立除錯session，保留訊號傳遞、不改正式App或host設定；9個synthetic／mock guards已在Linux通過，Mac仍待下輪。
+
+XCTest成功與正式smoke失敗分別保存，仍非零退出，效能、Guardian17 Python、baseline probe和ZIP尚未執行。最新精簡證據見`docs/MACOS_SMOKE_RUN40081612793.json`。必須修復此實際程序問題並完整通過17項操作效果及所有後續門檻，才能產生發行ZIP。
 
 `scripts/audit_platform.py` 已在真macOS執行四組固定、唯讀的 `launchctl` 公開介面探測。help與print-disabled exit0，對不存在fixture服務的print exit113。原始輸出保留於 `platform-contracts.json`，沒有呼叫 enable、disable、bootstrap或bootout，也未讀取私有BTM資料庫。

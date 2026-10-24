@@ -1,0 +1,436 @@
+[0/1] Planning build
+Building for debugging...
+[0/11] Write sources
+[2/11] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/11] Compiling MoPanelProcess ManagedProcess.swift
+[5/11] Emitting module MoPanelProcess
+[6/12] Wrapping AST for MoPanelProcess for debugging
+[8/18] Compiling MoPanelProcessTests StreamingTests.swift
+[9/18] Compiling MoPanelProcessTests GitEnvironmentTests.swift
+[10/18] Emitting module MoPanelProcessTests
+[11/18] Compiling MoPanelProcessTests ControlPipeTests.swift
+[12/18] Compiling MoPanelProcessTests ManagedProcessTests.swift
+[13/18] Compiling MoPanelProcessTests PurgePathsDocumentTests.swift
+[14/23] /workspace/scratch/295743c3c15b/MoPanel/.build-root-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[15/23] Write sources
+[16/23] Wrapping AST for MoPanelProcessTests for debugging
+[18/27] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[19/27] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[20/27] Emitting module MoPanelPackageDiscoveredTests
+[21/27] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[22/28] /workspace/scratch/295743c3c15b/MoPanel/.build-root-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[23/28] Write sources
+[24/28] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[26/30] Emitting module MoPanelPackageTests
+[27/30] Compiling MoPanelPackageTests runner.swift
+[28/30] Write Objects.LinkFileList
+[29/30] Linking MoPanelPackageTests.xctest
+Build complete! (4.08s)
+Test Suite 'All tests' started at 2026-10-24 17:34:49.313
+Test Suite 'debug.xctest' started at 2026-10-24 17:34:49.315
+Test Suite 'AppUpdateTests' started at 2026-10-24 17:34:49.315
+Test Case 'AppUpdateTests.testAbsentOutdatedEntryCannotFalselyClaimDifferentVersionIsCurrent' started at 2026-10-24 17:34:49.315
+Test Case 'AppUpdateTests.testAbsentOutdatedEntryCannotFalselyClaimDifferentVersionIsCurrent' passed (0.004 seconds)
+Test Case 'AppUpdateTests.testAdditiveSchemaChangesRemainReadable' started at 2026-10-24 17:34:49.319
+Test Case 'AppUpdateTests.testAdditiveSchemaChangesRemainReadable' passed (0.002 seconds)
+Test Case 'AppUpdateTests.testCommandUsesOneFullyQualifiedTokenAndNoShell' started at 2026-10-24 17:34:49.321
+Test Case 'AppUpdateTests.testCommandUsesOneFullyQualifiedTokenAndNoShell' passed (0.101 seconds)
+Test Case 'AppUpdateTests.testCustomInstallersHooksAndDependenciesCannotUpgrade' started at 2026-10-24 17:34:49.422
+Test Case 'AppUpdateTests.testCustomInstallersHooksAndDependenciesCannotUpgrade' passed (0.008 seconds)
+Test Case 'AppUpdateTests.testDisagreeingInstalledAndAvailableVersionsFailClosed' started at 2026-10-24 17:34:49.430
+Test Case 'AppUpdateTests.testDisagreeingInstalledAndAvailableVersionsFailClosed' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testDiscoveryIgnoresRelativeAndEmptyPathEntries' started at 2026-10-24 17:34:49.432
+Test Case 'AppUpdateTests.testDiscoveryIgnoresRelativeAndEmptyPathEntries' passed (0.0 seconds)
+Test Case 'AppUpdateTests.testDuplicateTokensAcrossTapsCannotBindToFirstDisplayName' started at 2026-10-24 17:34:49.432
+Test Case 'AppUpdateTests.testDuplicateTokensAcrossTapsCannotBindToFirstDisplayName' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testHelpNegotiationRequiresRealFlagsAndSafetyOptions' started at 2026-10-24 17:34:49.433
+Test Case 'AppUpdateTests.testHelpNegotiationRequiresRealFlagsAndSafetyOptions' passed (0.002 seconds)
+Test Case 'AppUpdateTests.testIdentityRejectsFlagsTraversalURLsAndShellInjection' started at 2026-10-24 17:34:49.435
+Test Case 'AppUpdateTests.testIdentityRejectsFlagsTraversalURLsAndShellInjection' passed (0.0 seconds)
+Test Case 'AppUpdateTests.testLargeInventoryAndSpecialPathCharactersRemainData' started at 2026-10-24 17:34:49.435
+Test Case 'AppUpdateTests.testLargeInventoryAndSpecialPathCharactersRemainData' passed (0.869 seconds)
+Test Case 'AppUpdateTests.testLayoutResolvesActualHomebrewSymlinkWithoutExecution' started at 2026-10-24 17:34:50.305
+Test Case 'AppUpdateTests.testLayoutResolvesActualHomebrewSymlinkWithoutExecution' passed (0.009 seconds)
+Test Case 'AppUpdateTests.testMalformedFieldTypesDoNotReceiveGuessedDefaults' started at 2026-10-24 17:34:50.313
+Test Case 'AppUpdateTests.testMalformedFieldTypesDoNotReceiveGuessedDefaults' passed (0.002 seconds)
+Test Case 'AppUpdateTests.testOfficialJSONFixturePreservesSourceVersionAndExplicitCustomAppPath' started at 2026-10-24 17:34:50.316
+Test Case 'AppUpdateTests.testOfficialJSONFixturePreservesSourceVersionAndExplicitCustomAppPath' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testPlanRevalidationRejectsPathSourceChecksumAndVersionChanges' started at 2026-10-24 17:34:50.316
+Test Case 'AppUpdateTests.testPlanRevalidationRejectsPathSourceChecksumAndVersionChanges' passed (0.006 seconds)
+Test Case 'AppUpdateTests.testPublisherMetadataRequiresSignatureHTTPSAndNoCredentialsOrQueries' started at 2026-10-24 17:34:50.322
+Test Case 'AppUpdateTests.testPublisherMetadataRequiresSignatureHTTPSAndNoCredentialsOrQueries' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testRequiredEnvelopeCannotBecomeEmptySuccess' started at 2026-10-24 17:34:50.323
+Test Case 'AppUpdateTests.testRequiredEnvelopeCannotBecomeEmptySuccess' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testUnknownOrRepeatedOutdatedIdentityIsRejected' started at 2026-10-24 17:34:50.324
+Test Case 'AppUpdateTests.testUnknownOrRepeatedOutdatedIdentityIsRejected' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testUnknownTargetAndMissingChecksumAreExplicitlyUnsupported' started at 2026-10-24 17:34:50.325
+Test Case 'AppUpdateTests.testUnknownTargetAndMissingChecksumAreExplicitlyUnsupported' passed (0.004 seconds)
+Test Suite 'AppUpdateTests' passed at 2026-10-24 17:34:50.329
+	 Executed 18 tests, with 0 failures (0 unexpected) in 1.014 (1.014) seconds
+Test Suite 'BrewInstalledReceiptTests' started at 2026-10-24 17:34:50.329
+Test Case 'BrewInstalledReceiptTests.testCaskroomOutputMustBeOneExactIdentityAndCommandIsReadOnly' started at 2026-10-24 17:34:50.329
+Test Case 'BrewInstalledReceiptTests.testCaskroomOutputMustBeOneExactIdentityAndCommandIsReadOnly' passed (0.0 seconds)
+Test Case 'BrewInstalledReceiptTests.testChangedReceiptOrConfigurationInvalidatesConfirmationProof' started at 2026-10-24 17:34:50.330
+Test Case 'BrewInstalledReceiptTests.testChangedReceiptOrConfigurationInvalidatesConfirmationProof' passed (0.012 seconds)
+Test Case 'BrewInstalledReceiptTests.testChangedSourceVersionAndAppRenameAreRejected' started at 2026-10-24 17:34:50.341
+Test Case 'BrewInstalledReceiptTests.testChangedSourceVersionAndAppRenameAreRejected' passed (0.004 seconds)
+Test Case 'BrewInstalledReceiptTests.testFileManagerAndLogicalRootRepresentationsInspectIdentically' started at 2026-10-24 17:34:50.345
+Test Case 'BrewInstalledReceiptTests.testFileManagerAndLogicalRootRepresentationsInspectIdentically' passed (0.009 seconds)
+Test Case 'BrewInstalledReceiptTests.testLinkedMetadataDirectoryAndCaskDirectoryAreRejected' started at 2026-10-24 17:34:50.354
+Test Case 'BrewInstalledReceiptTests.testLinkedMetadataDirectoryAndCaskDirectoryAreRejected' passed (0.005 seconds)
+Test Case 'BrewInstalledReceiptTests.testMissingOrUnknownReceiptFormatsAndUnsafeAppdirFailClosed' started at 2026-10-24 17:34:50.359
+Test Case 'BrewInstalledReceiptTests.testMissingOrUnknownReceiptFormatsAndUnsafeAppdirFailClosed' passed (0.006 seconds)
+Test Case 'BrewInstalledReceiptTests.testMultipleVersionsOrTimestampsAreNotGuessed' started at 2026-10-24 17:34:50.365
+Test Case 'BrewInstalledReceiptTests.testMultipleVersionsOrTimestampsAreNotGuessed' passed (0.009 seconds)
+Test Case 'BrewInstalledReceiptTests.testOldUninstallHooksCannotHideBehindSafeNewRecipe' started at 2026-10-24 17:34:50.374
+Test Case 'BrewInstalledReceiptTests.testOldUninstallHooksCannotHideBehindSafeNewRecipe' passed (0.01 seconds)
+Test Case 'BrewInstalledReceiptTests.testOversizedReceiptIsRejectedBeforeDecoding' started at 2026-10-24 17:34:50.384
+Test Case 'BrewInstalledReceiptTests.testOversizedReceiptIsRejectedBeforeDecoding' passed (0.006 seconds)
+Test Case 'BrewInstalledReceiptTests.testRubyMissingAndAmbiguousInstalledDefinitionsAreNeverEvaluated' started at 2026-10-24 17:34:50.391
+Test Case 'BrewInstalledReceiptTests.testRubyMissingAndAmbiguousInstalledDefinitionsAreNeverEvaluated' passed (0.011 seconds)
+Test Case 'BrewInstalledReceiptTests.testSupportedCompactReceiptAndCustomAppDirectory' started at 2026-10-24 17:34:50.401
+Test Case 'BrewInstalledReceiptTests.testSupportedCompactReceiptAndCustomAppDirectory' passed (0.008 seconds)
+Test Case 'BrewInstalledReceiptTests.testSymlinkAndWorldWritableReceiptsAreRejected' started at 2026-10-24 17:34:50.409
+Test Case 'BrewInstalledReceiptTests.testSymlinkAndWorldWritableReceiptsAreRejected' passed (0.007 seconds)
+Test Suite 'BrewInstalledReceiptTests' passed at 2026-10-24 17:34:50.416
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.087 (0.087) seconds
+Test Suite 'DiscoveryTests' started at 2026-10-24 17:34:50.416
+Test Case 'DiscoveryTests.testAliasMissingCompanionFailsWithoutDefaultFallback' started at 2026-10-24 17:34:50.416
+Test Case 'DiscoveryTests.testAliasMissingCompanionFailsWithoutDefaultFallback' passed (0.002 seconds)
+Test Case 'DiscoveryTests.testDefaultCandidatesDeduplicateAndIgnoreRelativePATHComponents' started at 2026-10-24 17:34:50.418
+Test Case 'DiscoveryTests.testDefaultCandidatesDeduplicateAndIgnoreRelativePATHComponents' passed (0.0 seconds)
+Test Case 'DiscoveryTests.testExplicitPathDoesNotFallThroughToAnotherInstallation' started at 2026-10-24 17:34:50.418
+Test Case 'DiscoveryTests.testExplicitPathDoesNotFallThroughToAnotherInstallation' passed (0.0 seconds)
+Test Case 'DiscoveryTests.testHomebrewSymlinkUsesResolvedResourceTree' started at 2026-10-24 17:34:50.418
+Test Case 'DiscoveryTests.testHomebrewSymlinkUsesResolvedResourceTree' passed (0.009 seconds)
+Test Case 'DiscoveryTests.testInstallerShellWordEscapesDecodeWithoutShellExecution' started at 2026-10-24 17:34:50.427
+Test Case 'DiscoveryTests.testInstallerShellWordEscapesDecodeWithoutShellExecution' passed (0.001 seconds)
+Test Case 'DiscoveryTests.testLiteralRelocatedResourcesWinOverAdjacentResources' started at 2026-10-24 17:34:50.428
+Test Case 'DiscoveryTests.testLiteralRelocatedResourcesWinOverAdjacentResources' passed (0.004 seconds)
+Test Case 'DiscoveryTests.testMissingPinnedResourcesNeverSelectAdjacentReceipt' started at 2026-10-24 17:34:50.432
+Test Case 'DiscoveryTests.testMissingPinnedResourcesNeverSelectAdjacentReceipt' passed (0.002 seconds)
+Test Case 'DiscoveryTests.testNonScriptAndOversizedLauncherFailBeforeAnyProbe' started at 2026-10-24 17:34:50.434
+Test Case 'DiscoveryTests.testNonScriptAndOversizedLauncherFailBeforeAnyProbe' passed (0.052 seconds)
+Test Case 'DiscoveryTests.testOfficialAliasUsesTheInvokedDirectory' started at 2026-10-24 17:34:50.487
+Test Case 'DiscoveryTests.testOfficialAliasUsesTheInvokedDirectory' passed (0.005 seconds)
+Test Case 'DiscoveryTests.testReceiptChannelRequiresOneRecognizedBoundedAssignment' started at 2026-10-24 17:34:50.491
+Test Case 'DiscoveryTests.testReceiptChannelRequiresOneRecognizedBoundedAssignment' passed (0.0 seconds)
+Test Case 'DiscoveryTests.testSubstitutionsMultipleAssignmentsAndNULAreRejected' started at 2026-10-24 17:34:50.492
+Test Case 'DiscoveryTests.testSubstitutionsMultipleAssignmentsAndNULAreRejected' passed (0.0 seconds)
+Test Suite 'DiscoveryTests' passed at 2026-10-24 17:34:50.492
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.076 (0.076) seconds
+Test Suite 'GitWorktreeIntegrationTests' started at 2026-10-24 17:34:50.492
+Test Case 'GitWorktreeIntegrationTests.testAssumeUnchangedAndSkipWorktreeCannotHideDirtyContent' started at 2026-10-24 17:34:50.492
+Test Case 'GitWorktreeIntegrationTests.testAssumeUnchangedAndSkipWorktreeCannotHideDirtyContent' passed (0.205 seconds)
+Test Case 'GitWorktreeIntegrationTests.testBareAndMissingPrunableEntriesRemainReadOnly' started at 2026-10-24 17:34:50.697
+Test Case 'GitWorktreeIntegrationTests.testBareAndMissingPrunableEntriesRemainReadOnly' passed (0.088 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCancelOrFailureAfterRecoveryRefLeavesItIntactAndDoesNotClaimRemoval' started at 2026-10-24 17:34:50.785
+Test Case 'GitWorktreeIntegrationTests.testCancelOrFailureAfterRecoveryRefLeavesItIntactAndDoesNotClaimRemoval' passed (0.901 seconds)
+Test Case 'GitWorktreeIntegrationTests.testChangedDirectoryIdentityOrSymlinkNeverTargetsReplacement' started at 2026-10-24 17:34:51.687
+Test Case 'GitWorktreeIntegrationTests.testChangedDirectoryIdentityOrSymlinkNeverTargetsReplacement' passed (0.201 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCommittedMessageIsAcceptedButUniqueOrChangedDraftIsProtected' started at 2026-10-24 17:34:51.887
+Test Case 'GitWorktreeIntegrationTests.testCommittedMessageIsAcceptedButUniqueOrChangedDraftIsProtected' passed (0.425 seconds)
+Test Case 'GitWorktreeIntegrationTests.testConfigurationAndDestinationChangesAfterReviewStopBeforeMutation' started at 2026-10-24 17:34:52.312
+Test Case 'GitWorktreeIntegrationTests.testConfigurationAndDestinationChangesAfterReviewStopBeforeMutation' passed (0.605 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCustomFilterCanaryIsNotExecutedByInspection' started at 2026-10-24 17:34:52.917
+Test Case 'GitWorktreeIntegrationTests.testCustomFilterCanaryIsNotExecutedByInspection' passed (0.088 seconds)
+Test Case 'GitWorktreeIntegrationTests.testCustomFiltersSparsePartialAndIncludeSettingsAreBlockedBeforeStatus' started at 2026-10-24 17:34:53.005
+Test Case 'GitWorktreeIntegrationTests.testCustomFiltersSparsePartialAndIncludeSettingsAreBlockedBeforeStatus' passed (0.255 seconds)
+Test Case 'GitWorktreeIntegrationTests.testDetachedHEADGetsReachableRecoveryBranchBeforeRemoval' started at 2026-10-24 17:34:53.260
+Test Case 'GitWorktreeIntegrationTests.testDetachedHEADGetsReachableRecoveryBranchBeforeRemoval' passed (0.375 seconds)
+Test Case 'GitWorktreeIntegrationTests.testFreshStatusAndHEADChangesInvalidateConfirmation' started at 2026-10-24 17:34:53.636
+Test Case 'GitWorktreeIntegrationTests.testFreshStatusAndHEADChangesInvalidateConfirmation' passed (0.401 seconds)
+Test Case 'GitWorktreeIntegrationTests.testInProgressMetadataAndExternalObjectStorageAreProtected' started at 2026-10-24 17:34:54.036
+Test Case 'GitWorktreeIntegrationTests.testInProgressMetadataAndExternalObjectStorageAreProtected' passed (0.211 seconds)
+Test Case 'GitWorktreeIntegrationTests.testMainLockedDirtyUntrackedAndIgnoredAreProtectedWithoutMutations' started at 2026-10-24 17:34:54.247
+Test Case 'GitWorktreeIntegrationTests.testMainLockedDirtyUntrackedAndIgnoredAreProtectedWithoutMutations' passed (0.272 seconds)
+Test Case 'GitWorktreeIntegrationTests.testOldDetachedReflogCommitIsNotMistakenForRetainedHEADHistory' started at 2026-10-24 17:34:54.519
+Test Case 'GitWorktreeIntegrationTests.testOldDetachedReflogCommitIsNotMistakenForRetainedHEADHistory' passed (0.123 seconds)
+Test Case 'GitWorktreeIntegrationTests.testPhysicalAncestorAliasesAndTrackedSpecialFilenamesRestoreCorrectly' started at 2026-10-24 17:34:54.642
+Test Case 'GitWorktreeIntegrationTests.testPhysicalAncestorAliasesAndTrackedSpecialFilenamesRestoreCorrectly' passed (0.536 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRealCleanUniqueCommitRemovalAndRecoveryPreserveContentsAndOriginalBranch' started at 2026-10-24 17:34:55.177
+Test Case 'GitWorktreeIntegrationTests.testRealCleanUniqueCommitRemovalAndRecoveryPreserveContentsAndOriginalBranch' passed (0.532 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRecoveryRefCollisionIsNeverOverwritten' started at 2026-10-24 17:34:55.709
+Test Case 'GitWorktreeIntegrationTests.testRecoveryRefCollisionIsNeverOverwritten' passed (0.346 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRepositoryHooksNeverRunDuringScanRefCreationRemovalOrRestore' started at 2026-10-24 17:34:56.056
+Test Case 'GitWorktreeIntegrationTests.testRepositoryHooksNeverRunDuringScanRefCreationRemovalOrRestore' passed (0.575 seconds)
+Test Case 'GitWorktreeIntegrationTests.testRestoreRejectsExistingDestinationAndChangedRecoveryBranch' started at 2026-10-24 17:34:56.631
+Test Case 'GitWorktreeIntegrationTests.testRestoreRejectsExistingDestinationAndChangedRecoveryBranch' passed (0.474 seconds)
+Test Case 'GitWorktreeIntegrationTests.testSubmoduleGitlinkAndPrivateRefsAreProtected' started at 2026-10-24 17:34:57.105
+Test Case 'GitWorktreeIntegrationTests.testSubmoduleGitlinkAndPrivateRefsAreProtected' passed (0.339 seconds)
+Test Case 'GitWorktreeIntegrationTests.testSymbolicRefCollisionsArePreservedBeforeAndAfterReview' started at 2026-10-24 17:34:57.444
+Test Case 'GitWorktreeIntegrationTests.testSymbolicRefCollisionsArePreservedBeforeAndAfterReview' passed (0.499 seconds)
+Test Case 'GitWorktreeIntegrationTests.testUnsupportedProtectiveFlagAndTruncatedOutputStopBeforeMutations' started at 2026-10-24 17:34:57.944
+Test Case 'GitWorktreeIntegrationTests.testUnsupportedProtectiveFlagAndTruncatedOutputStopBeforeMutations' passed (0.088 seconds)
+Test Suite 'GitWorktreeIntegrationTests' passed at 2026-10-24 17:34:58.031
+	 Executed 21 tests, with 0 failures (0 unexpected) in 7.538 (7.538) seconds
+Test Suite 'GitWorktreeParserTests' started at 2026-10-24 17:34:58.032
+Test Case 'GitWorktreeParserTests.testBoundsAndFutureStatusRecordsFailClosed' started at 2026-10-24 17:34:58.032
+Test Case 'GitWorktreeParserTests.testBoundsAndFutureStatusRecordsFailClosed' passed (0.02 seconds)
+Test Case 'GitWorktreeParserTests.testIndexHiddenFlagsAndSubmoduleModesAreExplicit' started at 2026-10-24 17:34:58.052
+Test Case 'GitWorktreeParserTests.testIndexHiddenFlagsAndSubmoduleModesAreExplicit' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testMalformedOrFutureInventoryNeverBecomesAnActionableList' started at 2026-10-24 17:34:58.052
+Test Case 'GitWorktreeParserTests.testMalformedOrFutureInventoryNeverBecomesAnActionableList' passed (0.001 seconds)
+Test Case 'GitWorktreeParserTests.testNULInventoryPreservesNewlinesUnicodeAndLiteralShellCharacters' started at 2026-10-24 17:34:58.053
+Test Case 'GitWorktreeParserTests.testNULInventoryPreservesNewlinesUnicodeAndLiteralShellCharacters' passed (0.101 seconds)
+Test Case 'GitWorktreeParserTests.testProtectivePrefixUsesOfficialFlagsAndNeverForce' started at 2026-10-24 17:34:58.153
+Test Case 'GitWorktreeParserTests.testProtectivePrefixUsesOfficialFlagsAndNeverForce' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testRecoveryRefsRequireDedicatedUUIDNamespaceAndRealHashShape' started at 2026-10-24 17:34:58.154
+Test Case 'GitWorktreeParserTests.testRecoveryRefsRequireDedicatedUUIDNamespaceAndRealHashShape' passed (0.0 seconds)
+Test Case 'GitWorktreeParserTests.testStatusSeparatesIgnoredUntrackedAndDirtyAndRejectsTruncation' started at 2026-10-24 17:34:58.154
+Test Case 'GitWorktreeParserTests.testStatusSeparatesIgnoredUntrackedAndDirtyAndRejectsTruncation' passed (0.0 seconds)
+Test Suite 'GitWorktreeParserTests' passed at 2026-10-24 17:34:58.154
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.122 (0.122) seconds
+Test Suite 'MoleCoreTests' started at 2026-10-24 17:34:58.154
+Test Case 'MoleCoreTests.testAddedJSONFieldsAreForwardCompatible' started at 2026-10-24 17:34:58.154
+Test Case 'MoleCoreTests.testAddedJSONFieldsAreForwardCompatible' passed (0.003 seconds)
+Test Case 'MoleCoreTests.testAnalyzeInteractiveModeIsDestructiveCapable' started at 2026-10-24 17:34:58.157
+Test Case 'MoleCoreTests.testAnalyzeInteractiveModeIsDestructiveCapable' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testAnalyzeInvalidTotalAndRelativePathFailClosed' started at 2026-10-24 17:34:58.157
+Test Case 'MoleCoreTests.testAnalyzeInvalidTotalAndRelativePathFailClosed' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testAnalyzeLargeListDoesNotTruncateEntries' started at 2026-10-24 17:34:58.159
+Test Case 'MoleCoreTests.testAnalyzeLargeListDoesNotTruncateEntries' passed (1.106 seconds)
+Test Case 'MoleCoreTests.testAnalyzeNewScanStatusFailsClosed' started at 2026-10-24 17:34:59.265
+Test Case 'MoleCoreTests.testAnalyzeNewScanStatusFailsClosed' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testAnalyzePartialUnavailableAndLargeIntegers' started at 2026-10-24 17:34:59.266
+Test Case 'MoleCoreTests.testAnalyzePartialUnavailableAndLargeIntegers' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testAppInventoryIsAuthoritativeAndUnicodeSurvives' started at 2026-10-24 17:34:59.266
+Test Case 'MoleCoreTests.testAppInventoryIsAuthoritativeAndUnicodeSurvives' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testCaskAliasCannotPretendToBeExactPathSelection' started at 2026-10-24 17:34:59.267
+Test Case 'MoleCoreTests.testCaskAliasCannotPretendToBeExactPathSelection' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testChangedHelpBlocksAffectedCommand' started at 2026-10-24 17:34:59.267
+Test Case 'MoleCoreTests.testChangedHelpBlocksAffectedCommand' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testCommandArgumentsPreserveShellMetacharactersLiterally' started at 2026-10-24 17:34:59.269
+Test Case 'MoleCoreTests.testCommandArgumentsPreserveShellMetacharactersLiterally' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testConfigFlagsCannotMasqueradeAsDryRun' started at 2026-10-24 17:34:59.269
+Test Case 'MoleCoreTests.testConfigFlagsCannotMasqueradeAsDryRun' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testDevelopmentReceiptRemainsBlockedExceptStableRecovery' started at 2026-10-24 17:34:59.269
+Test Case 'MoleCoreTests.testDevelopmentReceiptRemainsBlockedExceptStableRecovery' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testDuplicateAppNamesRequireOfficialSelector' started at 2026-10-24 17:34:59.270
+Test Case 'MoleCoreTests.testDuplicateAppNamesRequireOfficialSelector' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testExternalVolumeAndHistoryBounds' started at 2026-10-24 17:34:59.271
+Test Case 'MoleCoreTests.testExternalVolumeAndHistoryBounds' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testHistoryAmbiguousSessionIsNotAuthoritative' started at 2026-10-24 17:34:59.271
+Test Case 'MoleCoreTests.testHistoryAmbiguousSessionIsNotAuthoritative' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testHomebrewHEADIsNotTreatedAsStableRecovery' started at 2026-10-24 17:34:59.273
+Test Case 'MoleCoreTests.testHomebrewHEADIsNotTreatedAsStableRecovery' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testMajorNightlyAndOldVersionsBlockMutation' started at 2026-10-24 17:34:59.274
+Test Case 'MoleCoreTests.testMajorNightlyAndOldVersionsBlockMutation' passed (0.009 seconds)
+Test Case 'MoleCoreTests.testMissingCLIIdentityDoesNotAuthorizeOperations' started at 2026-10-24 17:34:59.283
+Test Case 'MoleCoreTests.testMissingCLIIdentityDoesNotAuthorizeOperations' passed (0.003 seconds)
+Test Case 'MoleCoreTests.testMissingRequiredStatusGroupFails' started at 2026-10-24 17:34:59.285
+Test Case 'MoleCoreTests.testMissingRequiredStatusGroupFails' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testNDJSONFramesAcrossUTF8ChunkBoundaries' started at 2026-10-24 17:34:59.287
+Test Case 'MoleCoreTests.testNDJSONFramesAcrossUTF8ChunkBoundaries' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testNDJSONRejectsTruncatedAndOversizeLines' started at 2026-10-24 17:34:59.287
+Test Case 'MoleCoreTests.testNDJSONRejectsTruncatedAndOversizeLines' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testNewStableEngineNegotiatesWithoutExactVersionPin' started at 2026-10-24 17:34:59.287
+Test Case 'MoleCoreTests.testNewStableEngineNegotiatesWithoutExactVersionPin' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testNoUsableCoreMetricsIsAnError' started at 2026-10-24 17:34:59.289
+Test Case 'MoleCoreTests.testNoUsableCoreMetricsIsAnError' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testOfficialHistoryOutputKeepsIncompleteAndLegacyAttribution' started at 2026-10-24 17:34:59.290
+Test Case 'MoleCoreTests.testOfficialHistoryOutputKeepsIncompleteAndLegacyAttribution' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testRequiredFlagsMatchAuditedUpstreamHelp' started at 2026-10-24 17:34:59.290
+Test Case 'MoleCoreTests.testRequiredFlagsMatchAuditedUpstreamHelp' passed (0.003 seconds)
+Test Case 'MoleCoreTests.testSettingsOperationsHaveCorrectRiskAndPreview' started at 2026-10-24 17:34:59.293
+Test Case 'MoleCoreTests.testSettingsOperationsHaveCorrectRiskAndPreview' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testStableHomebrewUpdateStillWorks' started at 2026-10-24 17:34:59.294
+Test Case 'MoleCoreTests.testStableHomebrewUpdateStillWorks' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testStableRecoveryRejectsOldNewMajorUnknownIdentityAndHelpDrift' started at 2026-10-24 17:34:59.295
+Test Case 'MoleCoreTests.testStableRecoveryRejectsOldNewMajorUnknownIdentityAndHelpDrift' passed (0.009 seconds)
+Test Case 'MoleCoreTests.testStableRecoveryRequiresOfficialScriptAndNoNightlyOption' started at 2026-10-24 17:34:59.304
+Test Case 'MoleCoreTests.testStableRecoveryRequiresOfficialScriptAndNoNightlyOption' passed (0.005 seconds)
+Test Case 'MoleCoreTests.testStatusPreservesUnknownAndStaleData' started at 2026-10-24 17:34:59.309
+Test Case 'MoleCoreTests.testStatusPreservesUnknownAndStaleData' passed (0.003 seconds)
+Test Case 'MoleCoreTests.testStatusUsesOfficialUnitsAndEstimatedPerCoreFlag' started at 2026-10-24 17:34:59.313
+Test Case 'MoleCoreTests.testStatusUsesOfficialUnitsAndEstimatedPerCoreFlag' passed (0.003 seconds)
+Test Case 'MoleCoreTests.testStatusWatchDoesNotNeedPTYAndIntervalsAreBounded' started at 2026-10-24 17:34:59.315
+Test Case 'MoleCoreTests.testStatusWatchDoesNotNeedPTYAndIntervalsAreBounded' passed (0.001 seconds)
+Test Case 'MoleCoreTests.testUninstallDefaultsPreservePersonalDataAndTrash' started at 2026-10-24 17:34:59.316
+Test Case 'MoleCoreTests.testUninstallDefaultsPreservePersonalDataAndTrash' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testUnsafeAppNameStillDisplaysButCannotBeSelectedDirectly' started at 2026-10-24 17:34:59.316
+Test Case 'MoleCoreTests.testUnsafeAppNameStillDisplaysButCannotBeSelectedDirectly' passed (0.0 seconds)
+Test Case 'MoleCoreTests.testUnsupportedWhitelistAndInjectionOptionsRejected' started at 2026-10-24 17:34:59.316
+Test Case 'MoleCoreTests.testUnsupportedWhitelistAndInjectionOptionsRejected' passed (0.002 seconds)
+Test Case 'MoleCoreTests.testVersionParsingRequiresMoleIdentity' started at 2026-10-24 17:34:59.318
+Test Case 'MoleCoreTests.testVersionParsingRequiresMoleIdentity' passed (0.002 seconds)
+Test Suite 'MoleCoreTests' passed at 2026-10-24 17:34:59.320
+	 Executed 36 tests, with 0 failures (0 unexpected) in 1.165 (1.165) seconds
+Test Suite 'NativeControlPolicyTests' started at 2026-10-24 17:34:59.320
+Test Case 'NativeControlPolicyTests.testAmbiguousCommandAndTestingNeverPermitQuit' started at 2026-10-24 17:34:59.321
+Test Case 'NativeControlPolicyTests.testAmbiguousCommandAndTestingNeverPermitQuit' passed (0.001 seconds)
+Test Case 'NativeControlPolicyTests.testCurrentRegularAppCanReceiveQuitRequest' started at 2026-10-24 17:34:59.322
+Test Case 'NativeControlPolicyTests.testCurrentRegularAppCanReceiveQuitRequest' passed (0.001 seconds)
+Test Case 'NativeControlPolicyTests.testReusedPIDOrDifferentPathCannotReceiveOldConfirmation' started at 2026-10-24 17:34:59.324
+Test Case 'NativeControlPolicyTests.testReusedPIDOrDifferentPathCannotReceiveOldConfirmation' passed (0.0 seconds)
+Test Case 'NativeControlPolicyTests.testSelfAppleHelpersAndOtherCleanerAreProtected' started at 2026-10-24 17:34:59.324
+Test Case 'NativeControlPolicyTests.testSelfAppleHelpersAndOtherCleanerAreProtected' passed (0.001 seconds)
+Test Case 'NativeControlPolicyTests.testSingleCollectorDemandAllCombinations' started at 2026-10-24 17:34:59.325
+Test Case 'NativeControlPolicyTests.testSingleCollectorDemandAllCombinations' passed (0.001 seconds)
+Test Case 'NativeControlPolicyTests.testSpecialNamesRemainLiteralAndMustMatchExactly' started at 2026-10-24 17:34:59.326
+Test Case 'NativeControlPolicyTests.testSpecialNamesRemainLiteralAndMustMatchExactly' passed (0.001 seconds)
+Test Case 'NativeControlPolicyTests.testStaleOrFutureSampleAndProcessNewerThanSampleAreRejected' started at 2026-10-24 17:34:59.327
+Test Case 'NativeControlPolicyTests.testStaleOrFutureSampleAndProcessNewerThanSampleAreRejected' passed (0.001 seconds)
+Test Suite 'NativeControlPolicyTests' passed at 2026-10-24 17:34:59.329
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.007 (0.007) seconds
+Test Suite 'ReadOnlyBenchmarkTests' started at 2026-10-24 17:34:59.329
+Test Case 'ReadOnlyBenchmarkTests.testAllMutationsAndUnrelatedReadOnlyCommandsAreDenied' started at 2026-10-24 17:34:59.329
+Test Case 'ReadOnlyBenchmarkTests.testAllMutationsAndUnrelatedReadOnlyCommandsAreDenied' passed (0.03 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testAnalyzeRequiresExactCorpusAndRejectsRootReplacement' started at 2026-10-24 17:34:59.358
+Test Case 'ReadOnlyBenchmarkTests.testAnalyzeRequiresExactCorpusAndRejectsRootReplacement' passed (0.015 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testEveryRequiredCIGuardFailsWithoutDiscoveryFallback' started at 2026-10-24 17:34:59.374
+Test Case 'ReadOnlyBenchmarkTests.testEveryRequiredCIGuardFailsWithoutDiscoveryFallback' passed (0.007 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testMalformedAndMixedTestFlagsStayRecognizedButNeverRun' started at 2026-10-24 17:34:59.381
+Test Case 'ReadOnlyBenchmarkTests.testMalformedAndMixedTestFlagsStayRecognizedButNeverRun' passed (0.006 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testManifestPathsCannotTraverseOrUseAnUnrelatedHome' started at 2026-10-24 17:34:59.387
+Test Case 'ReadOnlyBenchmarkTests.testManifestPathsCannotTraverseOrUseAnUnrelatedHome' passed (0.008 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testMonitoringUsesExactJSONArgumentsWithAlertsDisabled' started at 2026-10-24 17:34:59.394
+Test Case 'ReadOnlyBenchmarkTests.testMonitoringUsesExactJSONArgumentsWithAlertsDisabled' passed (0.009 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testPreparedSourceAndFlatCorpusAreAcceptedWithChildOnlyIsolation' started at 2026-10-24 17:34:59.404
+Test Case 'ReadOnlyBenchmarkTests.testPreparedSourceAndFlatCorpusAreAcceptedWithChildOnlyIsolation' passed (0.007 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testSourceProvenanceAndChecksumShapeAreRequired' started at 2026-10-24 17:34:59.411
+Test Case 'ReadOnlyBenchmarkTests.testSourceProvenanceAndChecksumShapeAreRequired' passed (0.013 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testStaleConflictingAndPreviouslyWrittenManifestSessionsFail' started at 2026-10-24 17:34:59.424
+Test Case 'ReadOnlyBenchmarkTests.testStaleConflictingAndPreviouslyWrittenManifestSessionsFail' passed (0.017 seconds)
+Test Case 'ReadOnlyBenchmarkTests.testSymlinkEscapesAndNestedCorpusAreRejected' started at 2026-10-24 17:34:59.442
+Test Case 'ReadOnlyBenchmarkTests.testSymlinkEscapesAndNestedCorpusAreRejected' passed (0.014 seconds)
+Test Suite 'ReadOnlyBenchmarkTests' passed at 2026-10-24 17:34:59.456
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.127 (0.127) seconds
+Test Suite 'StartupModelsTests' started at 2026-10-24 17:34:59.456
+Test Case 'StartupModelsTests.testAppleBuhoSharedScopeAndWritableFilesAreProtected' started at 2026-10-24 17:34:59.456
+Test Case 'StartupModelsTests.testAppleBuhoSharedScopeAndWritableFilesAreProtected' passed (0.008 seconds)
+Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' started at 2026-10-24 17:34:59.463
+Test Case 'StartupModelsTests.testCanonicalDirectoryURLRepresentationsEnumerateIdentically' passed (0.003 seconds)
+Test Case 'StartupModelsTests.testDisablePlanOnlyTargetsVerifiedOwnService' started at 2026-10-24 17:34:59.467
+Test Case 'StartupModelsTests.testDisablePlanOnlyTargetsVerifiedOwnService' passed (0.004 seconds)
+Test Case 'StartupModelsTests.testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent' started at 2026-10-24 17:34:59.471
+Test Case 'StartupModelsTests.testDisabledMapRecognizesKnownFormatsWithoutGuessingAbsent' passed (0.001 seconds)
+Test Case 'StartupModelsTests.testEnablePlanPreservesUnicodePlistPathAsSingleArgument' started at 2026-10-24 17:34:59.472
+Test Case 'StartupModelsTests.testEnablePlanPreservesUnicodePlistPathAsSingleArgument' passed (0.103 seconds)
+Test Case 'StartupModelsTests.testEnumeratedChildReferenceIsRebasedToApprovedRoot' started at 2026-10-24 17:34:59.575
+Test Case 'StartupModelsTests.testEnumeratedChildReferenceIsRebasedToApprovedRoot' passed (0.003 seconds)
+Test Case 'StartupModelsTests.testInventoryReportsErrorsAndNeverTraversesSubdirectories' started at 2026-10-24 17:34:59.578
+Test Case 'StartupModelsTests.testInventoryReportsErrorsAndNeverTraversesSubdirectories' passed (0.004 seconds)
+Test Case 'StartupModelsTests.testInventoryStillRejectsSymbolicDirectoryAndTraversal' started at 2026-10-24 17:34:59.583
+Test Case 'StartupModelsTests.testInventoryStillRejectsSymbolicDirectoryAndTraversal' passed (0.002 seconds)
+Test Case 'StartupModelsTests.testLabelValidationCannotEscapeServiceTarget' started at 2026-10-24 17:34:59.584
+Test Case 'StartupModelsTests.testLabelValidationCannotEscapeServiceTarget' passed (0.001 seconds)
+Test Case 'StartupModelsTests.testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity' started at 2026-10-24 17:34:59.586
+Test Case 'StartupModelsTests.testLoadedServiceRequiresMatchingHeaderAndCompleteIdentity' passed (0.103 seconds)
+Test Case 'StartupModelsTests.testMalformedFilesStillConsumeAggregateReadBudget' started at 2026-10-24 17:34:59.688
+Test Case 'StartupModelsTests.testMalformedFilesStillConsumeAggregateReadBudget' passed (0.193 seconds)
+Test Case 'StartupModelsTests.testMalformedSchemaAndOversizedMetadataFailClosed' started at 2026-10-24 17:34:59.882
+Test Case 'StartupModelsTests.testMalformedSchemaAndOversizedMetadataFailClosed' passed (0.109 seconds)
+Test Case 'StartupModelsTests.testMissingServiceIsDifferentFromPermissionFailure' started at 2026-10-24 17:34:59.990
+Test Case 'StartupModelsTests.testMissingServiceIsDifferentFromPermissionFailure' passed (0.002 seconds)
+Test Case 'StartupModelsTests.testRecordedMacOS2701LaunchctlContracts' started at 2026-10-24 17:34:59.993
+Test Case 'StartupModelsTests.testRecordedMacOS2701LaunchctlContracts' passed (0.103 seconds)
+Test Case 'StartupModelsTests.testSymlinksAndChangedSnapshotsAreRejected' started at 2026-10-24 17:35:00.095
+Test Case 'StartupModelsTests.testSymlinksAndChangedSnapshotsAreRejected' passed (0.006 seconds)
+Test Suite 'StartupModelsTests' passed at 2026-10-24 17:35:00.101
+	 Executed 15 tests, with 0 failures (0 unexpected) in 0.645 (0.645) seconds
+Test Suite 'SystemToolsPolicyTests' started at 2026-10-24 17:35:00.101
+Test Case 'SystemToolsPolicyTests.testEjectProtectsHomeAppAndPathBoundaries' started at 2026-10-24 17:35:00.101
+Test Case 'SystemToolsPolicyTests.testEjectProtectsHomeAppAndPathBoundaries' passed (0.101 seconds)
+Test Case 'SystemToolsPolicyTests.testEjectRequiresAffirmativeMetadata' started at 2026-10-24 17:35:00.202
+Test Case 'SystemToolsPolicyTests.testEjectRequiresAffirmativeMetadata' passed (0.001 seconds)
+Test Case 'SystemToolsPolicyTests.testFiniteSessionExpiresWithoutExtendingAfterPowerPause' started at 2026-10-24 17:35:00.202
+Test Case 'SystemToolsPolicyTests.testFiniteSessionExpiresWithoutExtendingAfterPowerPause' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testLowBatteryLatchOnlyResumesOnExternalPower' started at 2026-10-24 17:35:00.203
+Test Case 'SystemToolsPolicyTests.testLowBatteryLatchOnlyResumesOnExternalPower' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testStopIsFinalEvenIfExternalPowerArrives' started at 2026-10-24 17:35:00.203
+Test Case 'SystemToolsPolicyTests.testStopIsFinalEvenIfExternalPowerArrives' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testUPSAlsoHonorsBatteryCutoff' started at 2026-10-24 17:35:00.203
+Test Case 'SystemToolsPolicyTests.testUPSAlsoHonorsBatteryCutoff' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testUnknownAndInvalidPowerNeverPretendBatteryIsSafe' started at 2026-10-24 17:35:00.203
+Test Case 'SystemToolsPolicyTests.testUnknownAndInvalidPowerNeverPretendBatteryIsSafe' passed (0.0 seconds)
+Test Suite 'SystemToolsPolicyTests' passed at 2026-10-24 17:35:00.203
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.102 (0.102) seconds
+Test Suite 'ControlPipeTests' started at 2026-10-24 17:35:00.203
+Test Case 'ControlPipeTests.testCancelSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:35:00.203
+Test Case 'ControlPipeTests.testCancelSurvivesClosedPeerWhileSessionStillRunning' passed (0.308 seconds)
+Test Case 'ControlPipeTests.testEPIPEPreservesCallingThreadSignalMaskAndPendingState' started at 2026-10-24 17:35:00.511
+Test Case 'ControlPipeTests.testEPIPEPreservesCallingThreadSignalMaskAndPendingState' passed (0.0 seconds)
+Test Case 'ControlPipeTests.testInputSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:35:00.512
+Test Case 'ControlPipeTests.testInputSurvivesClosedPeerWhileSessionStillRunning' passed (0.309 seconds)
+Test Case 'ControlPipeTests.testResizeSurvivesClosedPeerWhileSessionStillRunning' started at 2026-10-24 17:35:00.821
+Test Case 'ControlPipeTests.testResizeSurvivesClosedPeerWhileSessionStillRunning' passed (0.307 seconds)
+Test Case 'ControlPipeTests.testWriterPreservesQueuedOrderAndClosesBeforeLaterWrites' started at 2026-10-24 17:35:01.128
+Test Case 'ControlPipeTests.testWriterPreservesQueuedOrderAndClosesBeforeLaterWrites' passed (0.001 seconds)
+Test Suite 'ControlPipeTests' passed at 2026-10-24 17:35:01.128
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.925 (0.925) seconds
+Test Suite 'GitEnvironmentTests' started at 2026-10-24 17:35:01.128
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' started at 2026-10-24 17:35:01.128
+Test Case 'GitEnvironmentTests.testFixedGitProtectionsReachTheActualManagedChild' passed (0.01 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' started at 2026-10-24 17:35:01.139
+Test Case 'GitEnvironmentTests.testGitIsolationDoesNotEnableRepositoryOrInterpreterInjection' passed (0.001 seconds)
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' started at 2026-10-24 17:35:01.141
+Test Case 'GitEnvironmentTests.testGitIsolationIsExplicitAndRejectsAlternateValues' passed (0.007 seconds)
+Test Suite 'GitEnvironmentTests' passed at 2026-10-24 17:35:01.148
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.018 (0.018) seconds
+Test Suite 'ManagedProcessTests' started at 2026-10-24 17:35:01.148
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' started at 2026-10-24 17:35:01.148
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' passed (0.007 seconds)
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' started at 2026-10-24 17:35:01.155
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' passed (0.008 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' started at 2026-10-24 17:35:01.164
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' started at 2026-10-24 17:35:01.164
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' passed (0.002 seconds)
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' started at 2026-10-24 17:35:01.166
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' started at 2026-10-24 17:35:01.167
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' started at 2026-10-24 17:35:01.167
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' started at 2026-10-24 17:35:01.167
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' passed (0.013 seconds)
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' started at 2026-10-24 17:35:01.180
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' passed (0.153 seconds)
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' started at 2026-10-24 17:35:01.333
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' passed (0.003 seconds)
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' started at 2026-10-24 17:35:01.336
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' started at 2026-10-24 17:35:01.336
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' passed (0.007 seconds)
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' started at 2026-10-24 17:35:01.343
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' passed (0.007 seconds)
+Test Case 'ManagedProcessTests.testTaskCancellation' started at 2026-10-24 17:35:01.350
+Test Case 'ManagedProcessTests.testTaskCancellation' passed (0.083 seconds)
+Test Case 'ManagedProcessTests.testTimeout' started at 2026-10-24 17:35:01.434
+Test Case 'ManagedProcessTests.testTimeout' passed (2.116 seconds)
+Test Case 'ManagedProcessTests.testUserCancellation' started at 2026-10-24 17:35:03.550
+Test Case 'ManagedProcessTests.testUserCancellation' passed (0.086 seconds)
+Test Suite 'ManagedProcessTests' passed at 2026-10-24 17:35:03.636
+	 Executed 16 tests, with 0 failures (0 unexpected) in 2.487 (2.487) seconds
+Test Suite 'PurgePathsDocumentTests' started at 2026-10-24 17:35:03.636
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' started at 2026-10-24 17:35:03.636
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' passed (0.003 seconds)
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' started at 2026-10-24 17:35:03.639
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' passed (0.002 seconds)
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' started at 2026-10-24 17:35:03.642
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluatiowarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+n' passed (0.009 seconds)
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' started at 2026-10-24 17:35:03.651
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' passed (0.004 seconds)
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' started at 2026-10-24 17:35:03.654
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' passed (0.001 seconds)
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' started at 2026-10-24 17:35:03.656
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' passed (0.001 seconds)
+Test Suite 'PurgePathsDocumentTests' passed at 2026-10-24 17:35:03.657
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.021 (0.021) seconds
+Test Suite 'StreamingTests' started at 2026-10-24 17:35:03.657
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' started at 2026-10-24 17:35:03.657
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' passed (0.024 seconds)
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' started at 2026-10-24 17:35:03.681
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' passed (0.023 seconds)
+Test Suite 'StreamingTests' passed at 2026-10-24 17:35:03.705
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.048 (0.048) seconds
+Test Suite 'debug.xctest' passed at 2026-10-24 17:35:03.705
+	 Executed 176 tests, with 0 failures (0 unexpected) in 14.382 (14.382) seconds
+Test Suite 'All tests' passed at 2026-10-24 17:35:03.705
+	 Executed 176 tests, with 0 failures (0 unexpected) in 14.382 (14.382) seconds
+◇ Test run started.
+↳ Testing Library Version: 6.4.1 (804dc4530ef3666)
+↳ Target Platform: x86_64-unknown-linux-gnu
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

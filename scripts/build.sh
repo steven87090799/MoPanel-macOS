@@ -21,6 +21,7 @@ python3 scripts/test_smoke_driver.py 2>&1 | tee build/reports/smoke-driver-tests
 python3 scripts/test_crash_evidence.py 2>&1 | tee build/reports/crash-evidence-tests.log
 python3 scripts/test_debug_smoke_failure.py 2>&1 | tee build/reports/debug-diagnostic-tests.log
 python3 scripts/test_release_report.py 2>&1 | tee build/reports/release-report-tests.log
+python3 scripts/test_control_pipe_sigpipe.py --output build/reports/control-pipe-sigpipe.json 2>&1 | tee build/reports/control-pipe-sigpipe.log
 mopanel_initialize_validation_gates build/reports/validation-gates.json
 build_staging="$(mktemp -d "$project_root/build/staging.XXXXXX")"
 trap 'rm -rf "$build_staging"' EXIT

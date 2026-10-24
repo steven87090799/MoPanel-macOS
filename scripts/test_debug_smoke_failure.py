@@ -107,6 +107,31 @@ class DebugFailureTests(unittest.TestCase):
             self.assertTrue(result["guardian_reaped"])
             process.stdin.close.assert_called_once()
 
+    def test_sigpipe_stops_only_debug_copy_and_is_never_suppressed(self):
+        with tempfile.TemporaryDirectory(prefix="mopanel-debug-guard-") as temporary:
+            root = pathlib.Path(temporary)
+            app, output, environment = self.fixture(root)
+            before = debug.original_hashes(app)
+            process = mock.Mock(); process.wait.return_value = 1
+            process.stdin.closed = False
+            with mock.patch.object(debug.platform, "system", return_value="Darwin"), \
+                    mock.patch.object(debug.subprocess, "run", side_effect=self.commands([])), \
+                    mock.patch.object(debug.subprocess, "Popen", return_value=process) as popen:
+                result = debug.diagnose(app, output, environment, failed=True)
+            arguments = popen.call_args.args[0]
+            commands = [arguments[i + 1] for i, value in enumerate(arguments[:-1]) if value == "-o"]
+            signal_commands = [command for command in commands if command.startswith("process handle")]
+            self.assertEqual(signal_commands, ["process handle SIGPIPE --stop true --notify true --pass true"])
+            self.assertLess(commands.index(signal_commands[0]), commands.index("run"))
+            executable = pathlib.Path(arguments[-2])
+            self.assertNotEqual(executable, app.resolve() / "Contents/MacOS/MoPanel")
+            self.assertTrue(executable.parents[3].name.startswith("mopanel-debug-only-"))
+            self.assertEqual(arguments[-1], "--smoke-test")
+            self.assertTrue(result["original_smoke_still_failed"])
+            self.assertTrue(result["original_files_unchanged"])
+            self.assertEqual(debug.original_hashes(app), before)
+            self.assertFalse(result["host_security_settings_changed"])
+
     def test_release_policy_rejects_debug_entitlement_even_if_false(self):
         for value in (True, False):
             run = mock.Mock(return_value=subprocess.CompletedProcess([], 0, stdout=plistlib.dumps({"com.apple.security.get-task-allow": value})))
