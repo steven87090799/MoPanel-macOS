@@ -202,9 +202,22 @@ public enum ManagedProcessError: LocalizedError {
         }
         guard let request else { return }
         if isError {
-            let remaining = max(0, request.outputLimit - stderr.count)
-            stderr.append(data.prefix(remaining)); onError?(data)
-            if data.count > remaining { outputTruncated = true; cancel() }
+            if request.retainsOutput {
+                let remaining = max(0, request.outputLimit - stderr.count)
+                stderr.append(data.prefix(remaining))
+                if data.count > remaining { outputTruncated = true; cancel() }
+            } else {
+                // A watch can run for days. Diagnostics are a bounded tail,
+                // not a growing capture or a reason to cancel healthy data.
+                let limit = min(request.outputLimit, 16 * 1024)
+                if data.count >= limit { stderr = Data(data.suffix(limit)) }
+                else {
+                    let excess = stderr.count + data.count - limit
+                    if excess > 0 { stderr.removeFirst(excess) }
+                    stderr.append(data)
+                }
+            }
+            onError?(data)
         } else {
             if request.retainsOutput && !interactive {
                 let remaining = max(0, request.outputLimit - stdout.count)

@@ -125,25 +125,29 @@ enum DisplayFormat {
         guard let value, value.isFinite else { return "—" }
         return String(format: "%.1f", value) + suffix
     }
-    static func timestamp(_ value: String, language: String) -> String {
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = isoFormatter.date(from: value) ?? ISO8601DateFormatter().date(from: value) else {
-            // Keep a useful date and second-level time even if a newer CLI
-            // changes fractional precision or a platform parser rejects it.
-            guard let separator = value.firstIndex(of: "T") else { return value }
-            let datePart = String(value[..<separator])
-                .replacingOccurrences(of: "-", with: language == "en" ? "-" : "/")
-            let timePart = String(value[value.index(after: separator)...].prefix(8))
-            return datePart + " " + timePart
+    @MainActor static func timestamp(_ value: String, language: String) -> String {
+        StatusTimestampDisplay.string(from: value, language: language)
+    }
+}
+
+struct MoPanelGlassSurface: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if reduceTransparency {
+            content
+                .background(Color(nsColor: .controlBackgroundColor), in: shape)
+                .overlay { shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 1) }
+        } else {
+            content.glassEffect(.regular, in: shape)
         }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: language == "en" ? "en_US" : "zh_TW")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = .current
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .medium
-        return formatter.string(from: date)
+    }
+}
+
+extension View {
+    func moPanelGlass(cornerRadius: CGFloat) -> some View {
+        modifier(MoPanelGlassSurface(cornerRadius: cornerRadius))
     }
 }
 
@@ -160,7 +164,7 @@ struct GlassCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) { content }
             .padding(18)
             .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .moPanelGlass(cornerRadius: 20)
     }
 }
 
@@ -172,7 +176,7 @@ struct MoPanelGroupBoxStyle: GroupBoxStyle {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .moPanelGlass(cornerRadius: 18)
     }
 }
 
@@ -183,7 +187,7 @@ struct PageHeading: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(.teal)
-                .frame(width: 48, height: 48).glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(width: 48, height: 48).moPanelGlass(cornerRadius: 14)
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(.system(.largeTitle, design: .rounded).weight(.bold))
                 Text(subtitle).font(.callout).foregroundStyle(.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)

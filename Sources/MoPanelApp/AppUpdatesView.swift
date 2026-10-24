@@ -37,13 +37,17 @@ struct AppUpdatesView: View {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 if controller.isBusy {
-                    HStack {
-                        ProgressView().controlSize(.small)
-                        Text(controller.activity).font(.callout)
-                        Spacer()
-                        if controller.operationSession?.running == true {
-                            Button(t("查看更新作業", "Show Update Operation")) { controller.showOperation = true }
-                        } else { Button(t("取消", "Cancel")) { controller.cancelReadOnly() } }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(controller.activity).font(.callout)
+                            Spacer()
+                            if controller.operationSession?.running == true {
+                                Button(t("查看更新作業", "Show Update Operation")) { controller.showOperation = true }
+                            } else { Button(t("取消", "Cancel")) { controller.cancelReadOnly() } }
+                        }
+                        ProgressView().progressViewStyle(.linear)
+                        if !controller.activityCommand.isEmpty { ExecutionCommandView(command: controller.activityCommand) }
+                        else { Text(t("使用 macOS 原生 API，沒有 CLI 指令。", "Uses native macOS APIs; no CLI command.")).font(.caption).foregroundStyle(.secondary) }
                     }.padding(14).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
                 if !controller.lastOutcome.isEmpty { Text(controller.lastOutcome).font(.callout).textSelection(.enabled) }
@@ -59,12 +63,11 @@ struct AppUpdatesView: View {
         .onAppear { controller.language = language }
         .onChange(of: language) { _, value in controller.language = value }
         .onDisappear { controller.cancelReadOnly() }
-        .sheet(item: $controller.pendingPreview) { preview in
-            AppUpdateConfirmationView(controller: controller, preview: preview, language: language)
-        }
-        .sheet(isPresented: $controller.showOperation) {
-            if let session = controller.operationSession {
-                AppUpdateOperationView(controller: controller, session: session, language: language)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let preview = controller.pendingPreview {
+                ScrollView {
+                    AppUpdateConfirmationView(controller: controller, preview: preview, language: language).id(preview.id)
+                }.frame(maxHeight: 360).padding(.horizontal, 16).padding(.bottom, 12)
             }
         }
         .alert(t("更新 Homebrew 程式與索引？", "Update Homebrew and its metadata?"), isPresented: $refreshConfirmation) {
@@ -248,27 +251,39 @@ private struct AppUpdateConfirmationView: View {
                 Button(t("確認更新", "Confirm Update")) { Task { await controller.confirmUpdate(preview) } }
                     .buttonStyle(.borderedProminent).disabled(!acknowledged || controller.isBusy)
             }
-        }.padding(26).frame(width: 700)
+        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).moPanelGlass(cornerRadius: 18)
     }
 }
 
-private struct AppUpdateOperationView: View {
+struct AppUpdateOperationView: View {
     @ObservedObject var controller: AppUpdatesController
     @ObservedObject var session: ManagedProcess
     let language: String
     private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(controller.operationTitle).font(.title2.bold())
-            TerminalPanel(session: session, english: language == "en", engineName: "Homebrew")
-            Text(t("停止會要求協作取消，可能等待安裝或回復完成；請勿強制關閉 Homebrew 程序。已完成的變更可能保留。這個互動視窗不保存／匯出終端逐字紀錄，也不記錄密碼輸入。", "Stop requests cooperative cancellation and may wait for installation or rollback. Do not forcibly kill Homebrew. Completed changes may remain. This interaction does not retain/export a terminal transcript or record password input.")).font(.caption).foregroundStyle(.secondary)
-            if !controller.lastOutcome.isEmpty { Text(controller.lastOutcome).font(.callout).textSelection(.enabled) }
             HStack {
-                if session.running { Button(t("要求取消", "Request Cancellation"), role: .destructive) { controller.requestCancellation() } }
+                Text(controller.operationTitle).font(.headline)
                 Spacer()
-                if controller.isBusy && !session.running { ProgressView().controlSize(.small) }
+                Button(t(controller.operationDetailsExpanded ? "收合詳細資訊" : "詳細資訊", controller.operationDetailsExpanded ? "Hide Details" : "Details")) {
+                    controller.operationDetailsExpanded.toggle()
+                }
+                if session.running { Button(t("要求取消", "Request Cancellation"), role: .destructive) { controller.requestCancellation() } }
                 Button(t("關閉", "Close")) { controller.showOperation = false }.disabled(session.running || controller.isBusy)
             }
-        }.padding(20).frame(minWidth: 780, minHeight: 570).interactiveDismissDisabled(session.running || controller.isBusy)
+            if session.running || controller.isBusy { ProgressView().progressViewStyle(.linear) }
+            ExecutionCommandView(command: controller.operationCommand)
+            if !controller.lastOutcome.isEmpty { Text(controller.lastOutcome).font(.callout).textSelection(.enabled) }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    TerminalPanel(session: session, english: language == "en", engineName: "Homebrew",
+                                  isVisible: controller.operationDetailsExpanded, minimumTerminalHeight: 200)
+                    Text(t("停止會等待 Homebrew 的安全步驟。已完成的變更可能保留；密碼不會被記錄，互動畫面不會匯出。", "Cancellation waits for Homebrew's safe boundary. Completed changes may remain; passwords are not logged and the interactive screen is not exported."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .frame(height: controller.operationDetailsExpanded ? 320 : 0, alignment: .top)
+            .clipped().opacity(controller.operationDetailsExpanded ? 1 : 0).accessibilityHidden(!controller.operationDetailsExpanded)
+        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).moPanelGlass(cornerRadius: 18)
     }
 }

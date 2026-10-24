@@ -7,6 +7,7 @@ import os
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 spec = importlib.util.spec_from_file_location("mopanel_profile", pathlib.Path(__file__).with_name("profile.py"))
 profile = importlib.util.module_from_spec(spec)
@@ -14,6 +15,51 @@ spec.loader.exec_module(profile)
 
 
 class ProfileHarnessTests(unittest.TestCase):
+    def test_process_identity_keeps_space_in_path_and_disallows_system_pid(self):
+        with mock.patch.object(profile.subprocess, "check_output", return_value="Sat Oct 24 18:00:00 2026 /Applications/My Apps/MoPanel.app/Contents/MacOS/MoPanel\n") as read:
+            identity = profile.process_identity(123)
+            self.assertEqual(identity["executable"], "/Applications/My Apps/MoPanel.app/Contents/MacOS/MoPanel")
+            self.assertEqual(identity["started"], "Sat Oct 24 18:00:00 2026")
+            self.assertIn("-ww", read.call_args.args[0])
+        with self.assertRaises(ValueError): profile.process_identity(1)
+
+    def test_passive_observation_streams_samples_and_never_launches_or_kills_app(self):
+        identity = {"started": "Sat Oct 24 18:00:00 2026", "executable": "/Applications/MoPanel.app/Contents/MacOS/MoPanel"}
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / "hour.json"
+            with mock.patch.object(profile, "process_identity", return_value=identity), \
+                    mock.patch.object(profile, "process_tree", return_value={"cpu_percent": 0.5, "rss_bytes": 1024, "process_count": 1}), \
+                    mock.patch.object(profile.time, "monotonic", side_effect=[0, 0, 30, 60]), \
+                    mock.patch.object(profile.time, "sleep"), mock.patch.object(profile.subprocess, "Popen") as launch:
+                result = profile.observe_process(123, 60, 30, output, "menu-bar-only")
+            self.assertTrue(result["completed"])
+            self.assertEqual(result["sample_count"], 3)
+            self.assertEqual(result["rss_peak_bytes"], 1024)
+            self.assertEqual(len(output.with_suffix(".samples.jsonl").read_text().splitlines()), 3)
+            self.assertIsNone(result["energy_impact"])
+            self.assertFalse(result["leaks_verified"])
+            launch.assert_not_called()
+
+    def test_passive_observation_stops_when_pid_identity_changes(self):
+        identity = {"started": "first", "executable": "/Applications/MoPanel.app/Contents/MacOS/MoPanel"}
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(profile, "process_identity", side_effect=[identity, dict(identity, started="reused")]), \
+                mock.patch.object(profile, "process_tree") as sample:
+            result = profile.observe_process(123, 60, 30, pathlib.Path(directory) / "report.json", "idle")
+            self.assertFalse(result["completed"])
+            self.assertEqual(result["stop_reason"], "process_exited_or_identity_changed")
+            sample.assert_not_called()
+
+    def test_passive_observation_rejects_other_process_and_existing_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / "report.json"
+            with mock.patch.object(profile, "process_identity", return_value={"executable": "/bin/sh"}):
+                with self.assertRaises(ValueError): profile.observe_process(123, 60, 30, output, "idle")
+            output.write_text("prior evidence")
+            with mock.patch.object(profile, "process_identity", return_value={"executable": "/app/MoPanel"}):
+                with self.assertRaises(FileExistsError): profile.observe_process(123, 60, 30, output, "idle")
+            self.assertEqual(output.read_text(), "prior evidence")
+
     def test_fresh_flat_corpus_and_no_process_home_change(self):
         original_home = os.environ.get("HOME")
         with tempfile.TemporaryDirectory(prefix="mopanel-profile-test-") as temporary:

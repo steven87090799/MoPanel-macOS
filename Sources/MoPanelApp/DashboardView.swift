@@ -176,7 +176,7 @@ struct DashboardView: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .moPanelGlass(cornerRadius: 18)
     }
 
     private func hardwareSectionHeading(_ title: String, symbol: String, count: Int) -> some View {
@@ -198,7 +198,7 @@ struct DashboardView: View {
                 .font(.title2)
                 .foregroundStyle(.teal)
                 .frame(width: 44, height: 44)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .moPanelGlass(cornerRadius: 13)
             VStack(alignment: .leading, spacing: 5) {
                 Text(gpu.name ?? model.t("GPU", "GPU")).font(.headline)
                 if let note = gpu.note, !note.isEmpty {
@@ -219,7 +219,7 @@ struct DashboardView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .moPanelGlass(cornerRadius: 16)
     }
 
     private func bluetoothCard(_ device: BluetoothDevice) -> some View {
@@ -246,7 +246,7 @@ struct DashboardView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 76, alignment: .topLeading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .moPanelGlass(cornerRadius: 15)
     }
 
     private func sensorCard(_ sensor: SensorReading) -> some View {
@@ -262,7 +262,7 @@ struct DashboardView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .moPanelGlass(cornerRadius: 15)
     }
 
     private func gpuUsage(_ value: Double?) -> String {
@@ -291,7 +291,7 @@ struct DashboardView: View {
     private func bluetoothBattery(_ device: BluetoothDevice) -> String? {
         let rawValue = device.battery?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let raw = rawValue.flatMap({ $0.isEmpty ? nil : $0 }) ?? embeddedBluetoothBattery(device.name) else { return nil }
-        let detail = raw.range(of: "Battery Level:", options: .caseInsensitive).map { raw }
+        let detail = raw.range(of: "Battery Level:", options: .caseInsensitive).map { _ in raw }
             ?? embeddedBluetoothBattery(device.name)
             ?? raw
         guard let range = detail.range(of: "Battery Level:", options: .caseInsensitive) else {

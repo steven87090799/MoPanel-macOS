@@ -29,6 +29,12 @@ case "$command_name" in
         if [[ "$#" -eq 2 && "${2:-}" == "--dry-run" ]]; then
             trap 'exit 130' INT TERM HUP
             sleep 3
+        elif [[ "$#" -eq 1 ]]; then
+            # Keep the safe interactive fixture alive while the actual Details
+            # button is expanded/folded. No input or real file access occurs.
+            trap 'exit 130' INT TERM HUP
+            printf '%s\n' 'TEST FIXTURE: operation running; no system changes'
+            sleep 6
         fi
         printf '%s\n' 'TEST FIXTURE: no system changes performed'
         ;;

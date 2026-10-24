@@ -127,10 +127,8 @@ private enum NativeUIControl: String, CaseIterable {
     case confirm = "mopanel.confirmation.continue"
     case operationStop = "mopanel.operation.stop"
     case operationClose = "mopanel.operation.close"
+    case operationDetails = "mopanel.operation.details.toggle"
 
-    var requiresSheet: Bool {
-        [.confirmationCancel, .acknowledge, .confirm, .operationStop, .operationClose].contains(self)
-    }
     var allowedRoles: Set<String> {
         self == .acknowledge ? ["AXCheckBox", "AXSwitch"] : ["AXButton"]
     }
@@ -461,6 +459,7 @@ private enum NativeUIFailure: LocalizedError {
                 self.model.showOperation && self.model.operationSession.running && self.model.operationCommand == previewCommand
             }
             try record("preview_button_started_dry_run_without_confirmation", model.operationWasPreview && model.pending == nil)
+            try record("operation_progress_remained_in_main_window", window.attachedSheet == nil)
             try verifyLastPress(.preview)
             try await press(.operationStop)
             try await waitFor("operation cancellation settled") {
@@ -476,6 +475,7 @@ private enum NativeUIFailure: LocalizedError {
             let beforeReview = model.activities.first?.id
             try await press(.review)
             try await waitFor("review confirmation opened") { self.model.pending?.invocation.arguments == ["clean"] }
+            try record("confirmation_remained_in_main_window", window.attachedSheet == nil)
             let disabledContinue = try await find(.confirm, enabled: false)
             try record("confirmation_requires_acknowledgement", !disabledContinue.isAccessibilityEnabled() && !model.operationSession.running)
             try verifyLastPress(.review)
@@ -494,7 +494,21 @@ private enum NativeUIFailure: LocalizedError {
             let confirmationActivity = model.activities.first?.id
             try await press(.confirm)
             let cleanCommand = try MoleInvocation.make(command: .clean).displayCommand
-            try await waitFor("confirmed fixture action completed") {
+            try await waitFor("interactive fixture started inline") {
+                self.model.showOperation && self.model.operationSession.running && self.model.operationIsInteractive
+            }
+            try record("interactive_details_start_folded", !model.operationDetailsExpanded && window.attachedSheet == nil)
+            try verifyLastPress(.confirm)
+            try await press(.operationDetails)
+            try await waitFor("inline details expanded") { self.model.operationDetailsExpanded }
+            try record("inline_details_expanded_without_window", window.attachedSheet == nil && model.operationSession.running)
+            try verifyLastPress(.operationDetails)
+            try await press(.operationDetails)
+            try await waitFor("inline details folded") { !self.model.operationDetailsExpanded }
+            try await Task.sleep(for: .milliseconds(80))
+            try record("folding_details_did_not_cancel_interactive_child", model.operationSession.running && model.operationResult == nil)
+            try verifyLastPress(.operationDetails)
+            try await waitFor("confirmed fixture action completed", seconds: 8) {
                 self.completedActivity(after: confirmationActivity, command: cleanCommand) && self.model.showOperation &&
                     self.model.operationCommand == cleanCommand && self.model.operationResult?.succeeded == true
             }
@@ -504,12 +518,11 @@ private enum NativeUIFailure: LocalizedError {
             try validateContext()
             try record("confirmation_button_executed_only_mock", model.installation?.source == .fixture && model.pending == nil && !model.operationSession.running)
             try record("interactive_output_remained_unretained", model.operationIsInteractive && model.operationResult?.stdout.isEmpty == true && model.operationResult?.stderr.isEmpty == true)
-            try verifyLastPress(.confirm)
             try await press(.operationClose)
             try await waitFor("confirmed operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("confirmed_operation_returned_to_page", !model.hasRunningOperation && model.error == nil)
             try verifyLastPress(.operationClose)
-            try record("all_17_dispatches_have_verified_postconditions", actions.count == 17 &&
+            try record("all_19_dispatches_have_verified_postconditions", actions.count == 19 &&
                        actions.allSatisfy { $0.hasSingleSuccessfulDispatch && $0.postconditionVerified })
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true
@@ -591,7 +604,7 @@ private enum NativeUIFailure: LocalizedError {
         case .preview, .review: valid = model.section == .clean && model.canStart && model.pending == nil && !model.showOperation
         case .confirmationCancel, .acknowledge, .confirm:
             valid = model.section == .clean && model.pending?.invocation.arguments == ["clean"] && !model.showOperation
-        case .operationStop, .operationClose:
+        case .operationStop, .operationClose, .operationDetails:
             valid = model.section == .clean && model.showOperation && ["mo clean", "mo clean --dry-run"].contains(model.operationCommand)
         }
         guard valid else { throw NativeUIFailure.unexpectedState("action context for \(control.rawValue)") }
@@ -660,14 +673,6 @@ private enum NativeUIFailure: LocalizedError {
     }
 
     private func scopeWindow(for control: NativeUIControl) throws -> NSWindow {
-        if control.requiresSheet {
-            guard let sheet = window.attachedSheet, sheet.sheetParent === window,
-                  NSApp.windows.contains(where: { $0 === sheet }), sheet.contentView != nil,
-                  sheet.isVisible else {
-                throw NativeUIFailure.unavailableControl(control.rawValue)
-            }
-            return sheet
-        }
         guard window.attachedSheet == nil else { throw NativeUIFailure.unavailableControl(control.rawValue) }
         return window
     }

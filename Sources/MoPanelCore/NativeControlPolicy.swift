@@ -3,8 +3,8 @@ import Foundation
 /// A menu bar item is an explicit monitoring consumer, never a second collector.
 public enum MonitoringDemand {
     public static func isNeeded(dashboardSelected: Bool, windowActive: Bool, menuBarEnabled: Bool,
-                                paused: Bool, shuttingDown: Bool) -> Bool {
-        !paused && !shuttingDown && ((dashboardSelected && windowActive) || menuBarEnabled)
+                                paused: Bool, shuttingDown: Bool, systemSleeping: Bool = false) -> Bool {
+        !paused && !shuttingDown && !systemSleeping && ((dashboardSelected && windowActive) || menuBarEnabled)
     }
 }
 

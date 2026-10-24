@@ -59,6 +59,9 @@ private struct InstalledHomebrew {
     @Published var showOperation = false
     @Published private(set) var operationSession: ManagedProcess?
     @Published private(set) var operationTitle = ""
+    @Published private(set) var operationCommand = ""
+    @Published private(set) var activityCommand = ""
+    @Published var operationDetailsExpanded = false
     @Published private(set) var cancellationRequested = false
 
     let actionsAllowed: Bool
@@ -258,7 +261,7 @@ private struct InstalledHomebrew {
         guard externalOperationInProgress?() != true else {
             errorMessage = t("請先等待目前的 Mole 或系統作業結束。", "Wait for the current Mole or system operation to finish."); return false
         }
-        isBusy = true; activity = title; cancellationRequested = false; errorMessage = nil
+        isBusy = true; activity = title; activityCommand = ""; cancellationRequested = false; errorMessage = nil
         return true
     }
     private func endRead() { isBusy = false; activity = ""; captureSession = nil }
@@ -362,6 +365,7 @@ private struct InstalledHomebrew {
         guard !command.requiresConfirmation else { throw failure("變更指令只能從確認後的互動流程執行。", "Mutating commands require the confirmed interactive flow.") }
         let session = ManagedProcess(helperURL: helperURL)
         captureSession = session
+        activityCommand = ([executable.path] + command.arguments).joined(separator: " ")
         try session.start(request: ProcessRequest(executable: executable, arguments: command.arguments, environment: environment, timeout: timeout, outputLimit: limit))
         let result = await session.wait()
         captureSession = nil
@@ -380,6 +384,9 @@ private struct InstalledHomebrew {
         guard command.requiresConfirmation else { throw failure("無效的變更指令。", "Invalid mutation command.") }
         let session = ManagedProcess(helperURL: helperURL)
         mutationRunning = true; operationSession = session; operationTitle = title; lastOutcome = ""
+        operationCommand = ([brew.layout.executable.path] + command.arguments).joined(separator: " ")
+        activityCommand = operationCommand
+        operationDetailsExpanded = false
         activity = title; showOperation = true
         // No raw transcript is retained/exported, and password keystrokes are
         // never copied to a log. Keep Homebrew's native prompts and rollback.

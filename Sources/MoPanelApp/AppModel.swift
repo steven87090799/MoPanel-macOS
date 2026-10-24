@@ -13,27 +13,33 @@ import MoPanelProcess
     @Published var language: String { didSet { UserDefaults.standard.set(language, forKey: "language") } }
     @Published var appearance: String { didSet { UserDefaults.standard.set(appearance, forKey: "appearance") } }
     @Published var customPath: String { didSet { UserDefaults.standard.set(customPath, forKey: "cliPath") } }
-    @Published var monitoringInterval = 2
+    @Published var monitoringInterval = 2 { didSet { if oldValue != monitoringInterval { monitoringPreferencesChanged() } } }
+    @Published var menuBarMonitoringInterval = 5 { didSet { if oldValue != menuBarMonitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarEnabled = false {
         didSet {
             if !isTestLaunch { UserDefaults.standard.set(menuBarEnabled, forKey: "menuBarEnabled"); updateMonitoringDemand() }
         }
     }
     @Published private(set) var monitoringPaused = false
-    @Published var processAlertsEnabled = true
-    @Published var processCPUThreshold = 100.0
-    @Published var processCPUWindow = 300
+    @Published var processAlertsEnabled = true { didSet { if oldValue != processAlertsEnabled { monitoringPreferencesChanged() } } }
+    @Published var processCPUThreshold = 100.0 { didSet { if oldValue != processCPUThreshold { monitoringPreferencesChanged() } } }
+    @Published var processCPUWindow = 300 { didSet { if oldValue != processCPUWindow { monitoringPreferencesChanged() } } }
+    @Published private(set) var systemSleeping = false
+    @Published private(set) var lowPowerMode = false
     @Published var installation: CLIInstallation?
     @Published var release: ReleaseInfo?
     @Published var releaseError: String?
     @Published var isDetecting = false
     @Published var busy: String?
+    @Published private(set) var activeScanCommand: MoleCommand?
     @Published var error: String?
     @Published var status: StatusSnapshot?
     @Published var trends: [TrendSample] = []
     @Published var monitoring = false
     @Published var monitorWarnings = ""
-    @Published var selectedNetwork = ""
+    @Published var selectedNetwork = "" {
+        didSet { if !isTestLaunch, oldValue != selectedNetwork { UserDefaults.standard.set(selectedNetwork, forKey: "selectedNetwork") } }
+    }
     @Published var apps: [InstalledApp] = []
     @Published var analysis: AnalyzeSnapshot?
     @Published var history: HistorySnapshot?
@@ -43,6 +49,8 @@ import MoPanelProcess
     @Published var showOperation = false
     @Published var operationTitle = ""
     @Published var operationCommand = ""
+    @Published var operationDetailsExpanded = false
+    @Published private(set) var operationKind: MoleCommand?
     @Published var operationSession = ManagedProcess()
     @Published var operationResult: ProcessResult?
     @Published var operationIsInteractive = true
@@ -57,6 +65,10 @@ import MoPanelProcess
     private var operationTask: Task<Void, Never>?
     private var scanCancellationRequested = false
     private var monitorRestartRequested = false
+    private var runningWatchOptions: MonitoringWatchOptions?
+    private let workspaceCenter = NSWorkspace.shared.notificationCenter
+    private var workspaceObservers: [NSObjectProtocol] = []
+    private var powerObserver: NSObjectProtocol?
     private var shuttingDown = false
     private var validatedFingerprint: String?
     private var watchFramer = NDJSONFramer()
@@ -91,17 +103,81 @@ import MoPanelProcess
         testLaunchError = launchError
         fixtureURL = fixtureMode ? AppResources.bundle?.url(forResource: "mock-mo", withExtension: "sh", subdirectory: "Fixtures") : nil
         menuBarEnabled = !isTestLaunch && UserDefaults.standard.bool(forKey: "menuBarEnabled")
+        if !isTestLaunch {
+            let saved = MonitoringPreferences(defaults: .standard)
+            monitoringInterval = saved.interval
+            menuBarMonitoringInterval = saved.menuBarInterval
+            processAlertsEnabled = saved.processAlerts
+            processCPUThreshold = saved.processCPUThreshold
+            processCPUWindow = saved.processCPUWindow
+            selectedNetwork = UserDefaults.standard.string(forKey: "selectedNetwork") ?? ""
+            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+            installMonitoringObservers()
+        }
+    }
+
+    deinit {
+        for observer in workspaceObservers { workspaceCenter.removeObserver(observer) }
+        if let powerObserver { NotificationCenter.default.removeObserver(powerObserver) }
+    }
+
+    private var monitoringPreferences: MonitoringPreferences {
+        MonitoringPreferences(interval: monitoringInterval, menuBarInterval: menuBarMonitoringInterval,
+                              processAlerts: processAlertsEnabled, processCPUThreshold: processCPUThreshold,
+                              processCPUWindow: processCPUWindow)
+    }
+
+    private var requestedWatchOptions: MonitoringWatchOptions {
+        monitoringPreferences.watchOptions(dashboardVisible: section == .dashboard && windowActive, lowPowerMode: lowPowerMode)
+    }
+
+    private func monitoringPreferencesChanged() {
+        guard !isTestLaunch else { return }
+        monitoringPreferences.save(to: .standard)
+        updateMonitoringDemand()
+    }
+
+    private func installMonitoringObservers() {
+        workspaceObservers.append(workspaceCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.systemSleeping = true
+                self?.updateMonitoringDemand()
+            }
+        })
+        workspaceObservers.append(workspaceCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.systemSleeping = false
+                self?.lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+                self?.updateMonitoringDemand()
+            }
+        })
+        powerObserver = NotificationCenter.default.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+                self?.updateMonitoringDemand()
+            }
+        }
     }
 
     func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     var colorScheme: ColorScheme? { appearance == "dark" ? .dark : appearance == "light" ? .light : nil }
     var unavailable: String { t("不支援或尚未提供", "Unsupported or unavailable") }
+    var scanActivityTitle: String {
+        switch activeScanCommand {
+        case .analyze: return t("正在分析磁碟", "Analyzing disk")
+        case .uninstall: return t("正在讀取 App 清單", "Reading app inventory")
+        case .status: return t("正在取得系統狀態", "Reading system status")
+        case .history: return t("正在讀取操作歷史", "Reading operation history")
+        default: return t("正在準備作業", "Preparing operation")
+        }
+    }
     var canStart: Bool { installation != nil && !isDetecting && !hasRunningOperation && !shuttingDown }
     var moleOperationInProgress: Bool { busy != nil || scanSession?.running == true || operationSession.running || operationTask != nil }
     var hasRunningOperation: Bool { moleOperationInProgress || nativeOperationInProgress?() == true }
     var monitoringNeeded: Bool {
         MonitoringDemand.isNeeded(dashboardSelected: section == .dashboard, windowActive: windowActive,
-                                  menuBarEnabled: menuBarEnabled, paused: monitoringPaused, shuttingDown: shuttingDown)
+                                  menuBarEnabled: menuBarEnabled, paused: monitoringPaused, shuttingDown: shuttingDown,
+                                  systemSleeping: systemSleeping)
     }
     private var processEnvironment: [String: String] { benchmarkConfiguration?.childEnvironment(from: CLIProbe.environment) ?? CLIProbe.environment }
     var canRecoverStable: Bool {
@@ -185,8 +261,14 @@ import MoPanelProcess
         scanSession = session
         scanCancellationRequested = false
         busy = invocation.displayCommand
+        activeScanCommand = invocation.command
         error = nil
-        defer { if scanSession === session { scanSession = nil; busy = nil } }
+        defer {
+            if scanSession === session {
+                scanSession = nil; busy = nil; activeScanCommand = nil
+                if !isTestLaunch { updateMonitoringDemand() }
+            }
+        }
         await stopMonitoringAndWait()
         try Task.checkCancellation()
         guard !scanCancellationRequested, !shuttingDown else { throw MoleError.invalidOutput(t("作業已取消。", "Operation cancelled.")) }
@@ -245,19 +327,25 @@ import MoPanelProcess
 
     func startMonitoring() {
         guard monitoringNeeded, !hasRunningOperation, !isDetecting, !shuttingDown else { return }
+        let watchOptions = requestedWatchOptions
         if watchSession != nil {
             // Cancel is asynchronous. A new collector can begin only after the
             // guardian has reaped the old process and both pipes reached EOF.
-            if !monitoring { monitorRestartRequested = true }
+            if !monitoring || runningWatchOptions != watchOptions {
+                monitorRestartRequested = true
+                monitoring = false
+                watchSession?.cancel()
+            }
             return
         }
         do {
             let invocation: MoleInvocation
             if let benchmark = benchmarkConfiguration { invocation = try benchmark.watch }
-            else { invocation = try MoleInvocation.make(command: .status, options: [.watch, .intervalSeconds(monitoringInterval), .procCPUAlerts(processAlertsEnabled), .procCPUThreshold(processCPUThreshold), .procCPUWindowSeconds(processCPUWindow)]) }
+            else { invocation = try MoleInvocation.make(command: .status, options: [.watch, .intervalSeconds(watchOptions.interval), .procCPUAlerts(watchOptions.processAlerts), .procCPUThreshold(watchOptions.processCPUThreshold), .procCPUWindowSeconds(watchOptions.processCPUWindow)]) }
             let cli = try validatedInstallation(for: invocation)
             let session = ManagedProcess()
             watchSession = session
+            runningWatchOptions = watchOptions
             watchFramer = NDJSONFramer()
             monitorWarnings = ""
             session.onOutput = { [weak self, weak session] bytes in
@@ -279,7 +367,7 @@ import MoPanelProcess
             }
             session.onExit = { [weak self, weak session] result in
                 guard let self, let session, self.watchSession === session else { return }
-                self.watchSession = nil; self.monitoring = false
+                self.watchSession = nil; self.runningWatchOptions = nil; self.monitoring = false
                 if !result.cancelled, !self.shuttingDown {
                     do { try self.watchFramer.finish() }
                     catch { self.error = error.localizedDescription; self.invalidJSON.insert(.status) }
@@ -291,7 +379,7 @@ import MoPanelProcess
             }
             try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: processEnvironment, workingDirectory: benchmarkConfiguration?.home, timeout: 0, retainsOutput: false))
             monitoring = true
-        } catch { watchSession = nil; monitoring = false; self.error = error.localizedDescription }
+        } catch { watchSession = nil; runningWatchOptions = nil; monitoring = false; self.error = error.localizedDescription }
     }
 
     func stopMonitoring() {
@@ -315,7 +403,10 @@ import MoPanelProcess
 
     private func acceptStatus(_ snapshot: StatusSnapshot) {
         status = snapshot
-        if !snapshot.network.contains(where: { $0.name == selectedNetwork }) { selectedNetwork = snapshot.network.first?.name ?? "" }
+        if !snapshot.network.isEmpty, !snapshot.network.contains(where: { $0.name == selectedNetwork }) {
+            let fallback = snapshot.network.first?.name ?? ""
+            if selectedNetwork != fallback { selectedNetwork = fallback }
+        }
         let network = snapshot.network.first { $0.name == selectedNetwork }
         trends.append(TrendSample(date: Date(), cpu: snapshot.cpu.logicalCPU > 0 ? snapshot.cpu.usage : nil,
                                   memory: snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil,
@@ -330,6 +421,7 @@ import MoPanelProcess
             let invocation = try MoleInvocation.make(command: command, options: options)
             _ = try validatedInstallation(for: invocation)
             let name = title ?? command.rawValue.capitalized
+            showOperation = false
             if invocation.isDestructive {
                 pending = PendingOperation(invocation: invocation, title: name, details: riskDescription(invocation))
             } else { launch(invocation, title: name) }
@@ -360,7 +452,10 @@ import MoPanelProcess
         error = nil
         operationTask = Task { [weak self] in
             guard let self else { return }
-            defer { self.busy = nil; self.operationTask = nil }
+            defer {
+                self.busy = nil; self.operationTask = nil
+                if !self.isTestLaunch { self.updateMonitoringDemand() }
+            }
             await self.stopMonitoringAndWait()
             do {
                 try Task.checkCancellation()
@@ -379,6 +474,8 @@ import MoPanelProcess
         operationSession = session
         operationTitle = title
         operationCommand = invocation.displayCommand
+        operationDetailsExpanded = false
+        operationKind = invocation.command
         operationResult = nil
         operationWasPreview = invocation.isPreview
         operationIsInteractive = invocation.requiresPTY
@@ -399,7 +496,7 @@ import MoPanelProcess
             if invocation.command == .update || invocation.command == .remove || invocation.command == .menu {
                 self.installation = nil
                 Task { await self.detect() }
-            }
+            } else if !self.isTestLaunch { self.updateMonitoringDemand() }
         }
         var environment = processEnvironment
         if invocation.command == .purge && invocation.arguments.contains("--paths") {
@@ -513,6 +610,8 @@ import MoPanelProcess
         let session = ManagedProcess()
         operationSession = session; operationTitle = t("安裝官方 Mole CLI", "Install the official Mole CLI")
         operationCommand = brewURL.path + " install mole"; operationIsInteractive = true; operationWasPreview = false; operationResult = nil
+        operationDetailsExpanded = false
+        operationKind = nil
         rawResult = ""
         session.onExit = { [weak self, weak session] result in
             guard let self, let session, self.operationSession === session else { return }
