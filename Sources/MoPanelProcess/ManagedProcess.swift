@@ -159,23 +159,23 @@ public enum ManagedProcessError: LocalizedError {
     }
 
     private func startReader(_ handle: FileHandle, isError: Bool) {
-        // One bounded blocking read per stream. Backpressure limits in-flight
-        // callbacks to 64 KiB each; no main-thread I/O or dispatch-source fd race.
+        // POSIX read returns available bytes immediately. Foundation's
+        // read(upToCount:) can wait to fill its requested count, starving small
+        // watch frames and PTY prompts until EOF. Backpressure still permits
+        // only one <=64 KiB callback in flight for each stream.
         DispatchQueue.global(qos: .utility).async { [weak self] in
             defer {
                 try? handle.close()
                 DispatchQueue.main.async { [weak self] in self?.receive(Data(), isError: isError) }
             }
+            var buffer = [UInt8](repeating: 0, count: 65536)
             while true {
-                do {
-                    guard let data = try handle.read(upToCount: 65536), !data.isEmpty else { return }
-                    let consumed = DispatchSemaphore(value: 0)
-                    DispatchQueue.main.async { [weak self] in
-                        self?.receive(data, isError: isError)
-                        consumed.signal()
-                    }
-                    consumed.wait()
-                } catch {
+                let count = buffer.withUnsafeMutableBytes { storage in
+                    read(handle.fileDescriptor, storage.baseAddress, storage.count)
+                }
+                if count == 0 { return }
+                if count < 0 {
+                    if errno == EINTR { continue }
                     DispatchQueue.main.async { [weak self] in
                         self?.outputTruncated = true
                         self?.failure = "Unable to read the complete command output."
@@ -183,6 +183,13 @@ public enum ManagedProcessError: LocalizedError {
                     }
                     return
                 }
+                let data = Data(buffer.prefix(count))
+                let consumed = DispatchSemaphore(value: 0)
+                DispatchQueue.main.async { [weak self] in
+                    self?.receive(data, isError: isError)
+                    consumed.signal()
+                }
+                consumed.wait()
             }
         }
     }
@@ -287,9 +294,15 @@ public enum ManagedProcessError: LocalizedError {
         result["HOMEBREW_NO_ANALYTICS"] = "1"
         if interactive { result["COLORTERM"] = "truecolor" }
         // Only trusted, explicit caller data; reject all interpreter startup hooks.
-        let overrideKeys = Set(["HOME", "PATH", "LANG", "LC_ALL", "TMPDIR", "NO_COLOR", "HOMEBREW_NO_AUTO_UPDATE"])
+        let overrideKeys = Set(["HOME", "PATH", "LANG", "LC_ALL", "TMPDIR", "NO_COLOR"])
         for (key, value) in overrides ?? [:] where overrideKeys.contains(key) && !value.utf8.contains(0) {
             result[key] = value
+        }
+        // App Updates opts out of implicit Homebrew self-update, cleanup and
+        // unrelated dependent upgrades. These are fixed protective switches,
+        // never a general Homebrew environment or script-hook passthrough.
+        for key in ["HOMEBREW_NO_AUTO_UPDATE", "HOMEBREW_NO_INSTALL_CLEANUP", "HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK"] {
+            if overrides?[key] == "1" { result[key] = "1" }
         }
         let editorPath = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/MoPanelEditor").path
         if overrides?["EDITOR"] == editorPath, FileManager.default.isExecutableFile(atPath: editorPath) {

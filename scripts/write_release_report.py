@@ -83,6 +83,35 @@ for filename, label in [("cli-contract.json", "基準"), ("latest-cli-contract.j
         lines.append(f"- {label}：`{report['version']}`；read-only help/status/watch/analyze/history 合約檢查通過。")
     else:
         lines.append(f"- {label}：未執行；不可推定相容。")
+lines += ["", "## 原生擴充的唯讀平台契約", ""]
+homebrew_path = reports / "homebrew-readonly.json"
+if homebrew_path.exists():
+    homebrew = json.loads(homebrew_path.read_text())
+    if homebrew.get("status") not in {"passed", "read_only_compatible_upgrade_unavailable", "not_available"}:
+        raise RuntimeError("Homebrew read-only audit did not reach a supported final state")
+    if homebrew.get("mutations_executed") != [] or homebrew.get("real_app_updates_tested") is not False:
+        raise RuntimeError("Homebrew audit scope does not match the read-only release gate")
+    if homebrew["status"] == "not_available":
+        lines.append("- Homebrew：runner 未安裝指定位置的 Homebrew；此項是不可用，沒有當成通過。")
+    else:
+        contract = homebrew["json_contract"]
+        upgrade = homebrew["capabilities"]["upgrade_contract_compatible"]
+        lines.append(f"- Homebrew：`{homebrew['brew_version']}` 的唯讀 help／installed／outdated JSON 契約通過；觀察到 {contract['installed_cask_count']} 個已安裝 cask 與 {contract['outdated_cask_count']} 個過期 cask。未保存 App 名稱、路徑或網址。")
+        lines.append("- Homebrew 升級參數：" + ("必要參數在 help 中可用。" if upgrade else "缺少必要參數，原生升級入口必須停用。") + "沒有執行 upgrade、update、install 或真實 App 更新。")
+        if not contract["installed_record_fields_exercised"] or not contract["outdated_record_fields_exercised"]:
+            lines.append("- Runner 沒有涵蓋全部非空記錄類型；空陣列僅驗證 JSON 外層，不能當成實際 App 更新成功。詳細限制見 homebrew-readonly.json。")
+else:
+    lines.append("- Homebrew：本次沒有唯讀平台探測報告，不宣稱已驗證。")
+platform_path = reports / "platform-contracts.json"
+if platform_path.exists():
+    platform_contract = json.loads(platform_path.read_text())
+    if platform_contract.get("mutations_executed") != []:
+        raise RuntimeError("Platform probe did not remain read-only")
+    outcomes = [f"`{' '.join(command['arguments'])}` → exit {command['exit_code']}" + ("（逾時）" if command['timed_out'] else "") for command in platform_contract["commands"]]
+    lines.append("- launchctl 固定唯讀探測：" + "；".join(outcomes) + "。非零退出原樣保存，沒有推定服務存在或把錯誤當成功。")
+    lines.append("- 未執行 launchctl 啟用、停用、載入或卸載；未讀取或修改私有 BTM 資料庫。")
+else:
+    lines.append("- launchctl：本次沒有唯讀格式樣本，不宣稱已驗證。")
 lines += ["", "## Fixture 效能取樣", "", "以下使用合成資料，量測 GUI 與 Mock CLI，不代表真實 CLI 大型磁碟成本。CPU 是 ps 的程序平均值，峰值是觀察樣本最大值。", "",
           "| 狀態 | 平均 CPU % | 峰值 CPU % | 平均 RSS MiB | 峰值 RSS MiB |", "|---|---:|---:|---:|---:|"]
 for mode in performance["modes"]:

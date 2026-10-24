@@ -10,13 +10,14 @@ import MoPanelProcess
 public struct TerminalPanel: View {
     @ObservedObject private var session: ManagedProcess
     private let english: Bool
-    public init(session: ManagedProcess, english: Bool = false) {
-        self.session = session; self.english = english
+    private let engineName: String
+    public init(session: ManagedProcess, english: Bool = false, engineName: String = "Mole") {
+        self.session = session; self.english = english; self.engineName = engineName
     }
     public var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Label(english ? "Official Mole interactive session" : "官方 Mole 互動介面", systemImage: "terminal")
+                Label(english ? "Official \(engineName) interactive session" : "官方 \(engineName) 互動介面", systemImage: "terminal")
                     .font(.headline)
                 Spacer()
                 if session.running {
@@ -29,9 +30,9 @@ public struct TerminalPanel: View {
                 }
             }.padding(12)
             Divider()
-            NativeTerminal(session: session)
+            NativeTerminal(session: session, engineName: engineName)
                 .frame(minWidth: 600, minHeight: 340)
-                .accessibilityLabel(english ? "Mole terminal. Use arrow keys, Space, and Return." : "Mole 終端。使用方向鍵、空白鍵及 Return 操作。")
+                .accessibilityLabel(english ? "\(engineName) terminal. Use arrow keys, Space, and Return." : "\(engineName) 終端。使用方向鍵、空白鍵及 Return 操作。")
             Divider()
             HStack(spacing: 8) {
                 key(english ? "Up" : "上", bytes: [27, 91, 65])
@@ -40,7 +41,7 @@ public struct TerminalPanel: View {
                 key(english ? "Return" : "確認（Return）", bytes: [13])
                 key("Esc", bytes: [27])
                 Spacer()
-                Text(english ? "Read Mole's prompt before confirming. Passwords are not recorded." : "請先閱讀 Mole 提示再確認。密碼不會被記錄。")
+                Text(english ? "Read \(engineName)'s prompt before confirming. Passwords are not recorded." : "請先閱讀 \(engineName) 提示再確認。密碼不會被記錄。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(10)
         }
@@ -52,6 +53,7 @@ public struct TerminalPanel: View {
 
 private struct NativeTerminal: NSViewRepresentable {
     @ObservedObject var session: ManagedProcess
+    let engineName: String
     func makeCoordinator() -> Coordinator { Coordinator(session: session) }
     func makeNSView(context: Context) -> TerminalView {
         let options = TerminalOptions(cols: 110, rows: 32, cursorStyle: .steadyBlock, scrollback: 500,
@@ -61,7 +63,7 @@ private struct NativeTerminal: NSViewRepresentable {
         view.configureNativeColors()
         view.optionAsMetaKey = false
         view.allowMouseReporting = false
-        view.setAccessibilityLabel("Mole interactive terminal")
+        view.setAccessibilityLabel("\(engineName) interactive terminal")
         context.coordinator.view = view
         session.onOutput = { [weak view] data in view?.feed(byteArray: Array(data)[...]) }
         DispatchQueue.main.async { [weak view] in

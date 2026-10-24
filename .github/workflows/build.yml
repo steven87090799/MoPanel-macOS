@@ -28,6 +28,12 @@ jobs:
           test "$(sw_vers -productVersion | cut -d. -f1)" -ge 27
           xcodebuild -version
           xcrun swift --version
+      - name: Record read-only launchctl platform contracts
+        run: python3 scripts/audit_platform.py --output build/reports/platform-contracts.json
+      - name: Validate read-only Homebrew contracts
+        run: |
+          python3 scripts/test_audit_homebrew.py 2>&1 | tee build/reports/homebrew-audit-tests.log
+          python3 scripts/audit_homebrew.py --output build/reports/homebrew-readonly.json
       - name: Ensure Apple's Metal resource compiler is available
         run: |
           mkdir -p build/reports

@@ -1,0 +1,14 @@
+test_environment_does_not_forward_tokens_or_homebrew_hooks (__main__.HomebrewAuditTests.test_environment_does_not_forward_tokens_or_homebrew_hooks) ... ok
+test_missing_and_conflicting_json_cannot_pass (__main__.HomebrewAuditTests.test_missing_and_conflicting_json_cannot_pass) ... ok
+test_mutations_rejected_before_process_creation (__main__.HomebrewAuditTests.test_mutations_rejected_before_process_creation) ... ok
+test_non_ci_environment_never_launches_homebrew (__main__.HomebrewAuditTests.test_non_ci_environment_never_launches_homebrew) ... ok
+test_output_limit_stops_owned_child (__main__.HomebrewAuditTests.test_output_limit_stops_owned_child) ... ok
+test_safety_flag_loss_is_explicitly_read_only (__main__.HomebrewAuditTests.test_safety_flag_loss_is_explicitly_read_only) ... ok
+test_shared_homebrew_fixtures_match_native_contract (__main__.HomebrewAuditTests.test_shared_homebrew_fixtures_match_native_contract) ... ok
+test_small_stdout_and_stderr_are_drained (__main__.HomebrewAuditTests.test_small_stdout_and_stderr_are_drained) ... ok
+test_timeout_stops_owned_child (__main__.HomebrewAuditTests.test_timeout_stops_owned_child) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.254s
+
+OK

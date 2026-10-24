@@ -1,0 +1,84 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[2/4] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/6] Emitting module MoPanelCore
+[5/6] Compiling MoPanelCore StartupModels.swift
+[7/14] Compiling MoPanelCoreTests StartupModelsTests.swift
+[8/14] Emitting module MoPanelCoreTests
+[9/17] /workspace/scratch/295743c3c15b/MoPanel/.build-root-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[10/18] Write sources
+[11/18] Wrapping AST for MoPanelCoreTests for debugging
+[13/22] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[14/22] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[15/22] Emitting module MoPanelPackageDiscoveredTests
+[16/22] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[17/23] /workspace/scratch/295743c3c15b/MoPanel/.build-root-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[18/23] Write sources
+[19/23] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[21/25] Compiling MoPanelPackageTests runner.swift
+[22/25] Emitting module MoPanelPackageTests
+[23/25] Write Objects.LinkFileList
+[24/25] Linking MoPanelPackageTests.xctest
+Build complete! (3.69s)
+Test Suite 'Selected tests' started at 2026-10-24 15:11:33.047
+Test Suite 'ManagedProcessTests' started at 2026-10-24 15:11:33.049
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' started at 2026-10-24 15:11:33.049
+Test Case 'ManagedProcessTests.testCaptureCannotAnswerConfirmation' passed (0.011 seconds)
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' started at 2026-10-24 15:11:33.060
+Test Case 'ManagedProcessTests.testExactArgumentsWithoutInterpolation' passed (0.01 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' started at 2026-10-24 15:11:33.070
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' started at 2026-10-24 15:11:33.071
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' started at 2026-10-24 15:11:33.072
+Test Case 'ManagedProcessTests.testInvalidNULArgumentRejected' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' started at 2026-10-24 15:11:33.073
+Test Case 'ManagedProcessTests.testMissingCLIIsExplicitFailure' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' started at 2026-10-24 15:11:33.073
+Test Case 'ManagedProcessTests.testMissingHelperIsExplicitFailure' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' started at 2026-10-24 15:11:33.073
+Test Case 'ManagedProcessTests.testOutputLimitStopsCommand' passed (0.012 seconds)
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' started at 2026-10-24 15:11:33.085
+Test Case 'ManagedProcessTests.testPTYRetainsStartupPromptUntilViewAttaches' passed (0.154 seconds)
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' started at 2026-10-24 15:11:33.239
+Test Case 'ManagedProcessTests.testPermissionDeniedExecutable' passed (0.003 seconds)
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' started at 2026-10-24 15:11:33.242
+Test Case 'ManagedProcessTests.testSafeEnvironmentRejectsHooksAndCLIOverrides' passed (0.001 seconds)
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' started at 2026-10-24 15:11:33.243
+Test Case 'ManagedProcessTests.testStdoutStderrAndExitCode' passed (0.007 seconds)
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' started at 2026-10-24 15:11:33.250
+Test Case 'ManagedProcessTests.testStreamDoesNotAccumulateSnapshots' passed (0.009 seconds)
+Test Case 'ManagedProcessTests.testTaskCancellation' started at 2026-10-24 15:11:33.259
+Test Case 'ManagedProcessTests.testTaskCancellation' passed (0.084 seconds)
+Test Case 'ManagedProcessTests.testTimeout' started at 2026-10-24 15:11:33.343
+Test Case 'ManagedProcessTests.testTimeout' passed (2.122 seconds)
+Test Case 'ManagedProcessTests.testUserCancellation' started at 2026-10-24 15:11:35.465
+Test Case 'ManagedProcessTests.testUserCancellation' passed (0.089 seconds)
+Test Suite 'ManagedProcessTests' passed at 2026-10-24 15:11:35.554
+	 Executed 16 tests, with 0 failures (0 unexpected) in 2.505 (2.505) seconds
+Test Suite 'PurgePathsDocumentTests' started at 2026-10-24 15:11:35.554
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' started at 2026-10-24 15:11:35.554
+Test Case 'PurgePathsDocumentTests.testAtomicSavePreservesMode' passed (0.004 seconds)
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' started at 2026-10-24 15:11:35.559
+Test Case 'PurgePathsDocumentTests.testConcurrentChangeIsNotOverwritten' passed (0.002 seconds)
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' started at 2026-10-24 15:11:35.561
+Test Case 'PurgePathsDocumentTests.testPathsAndCommentsValidatedWithoutShellEvaluation' passed (0.008 seconds)
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' started awarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+t 2026-10-24 15:11:35.568
+Test Case 'PurgePathsDocumentTests.testReplacedFileRejected' passed (0.003 seconds)
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' started at 2026-10-24 15:11:35.571
+Test Case 'PurgePathsDocumentTests.testSymlinkRejected' passed (0.004 seconds)
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' started at 2026-10-24 15:11:35.575
+Test Case 'PurgePathsDocumentTests.testWrongFileRejected' passed (0.001 seconds)
+Test Suite 'PurgePathsDocumentTests' passed at 2026-10-24 15:11:35.576
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.022 (0.022) seconds
+Test Suite 'StreamingTests' started at 2026-10-24 15:11:35.576
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' started at 2026-10-24 15:11:35.576
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' passed (0.053 seconds)
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' started at 2026-10-24 15:11:35.629
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' passed (0.03 seconds)
+Test Suite 'StreamingTests' passed at 2026-10-24 15:11:35.660
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.083 (0.083) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 15:11:35.660
+	 Executed 24 tests, with 0 failures (0 unexpected) in 2.61 (2.61) seconds

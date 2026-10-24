@@ -60,6 +60,8 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
-[Run 40071932344](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40071932344) 的基礎版本已通過最新版 CLI 唯讀合約、主程式／SwiftTerm／兩個 helper 編譯、47 個 Core 加 20 個 Process／Editor Mac XCTest，以及 ARM64／ad-hoc bundle gate。UI smoke 隨後退出 1，尚未通過啟動驗收，也未建立發行 ZIP。當輪錯誤的詳細 JSON 未保存；後續腳本已修正，無論成功或失敗都會先保存 smoke JSON、stdout／stderr，App 也會盡力輸出自己的視窗截圖。
+[Run 40072470759](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40072470759) 已通過最新版 CLI 唯讀合約、包含 benchmark 的主程式／SwiftTerm／兩個 helper 編譯、57 個 Core 加 20 個 Process／Editor Mac XCTest，以及 ARM64／ad-hoc bundle gate。UI smoke 的 12 項檢查中 11 項通過，僅 `watch_ndjson_received` 為 false，因此尚未建立發行 ZIP。已保留完整 smoke JSON、stdout／stderr 與 App 自身視窗截圖，沒有以忽略錯誤的方式繼續打包。
 
-新增的真實唯讀效能模式正在接續 Mac 驗證。最新 Linux 來源的 Core 57 加 Process／Editor 20、Guardian 16，合計 93 個主要案例；這與上述基礎版本的 67 個 Mac XCTest 是不同範圍，不能相互替代。後續 run 會保留正在執行的驗證工作，避免新推送自動取消它。
+真實唯讀效能模式的程式已通過 Mac 編譯，實際三態測量因 smoke gate 中止而尚未執行。Linux Core 57 加 Process／Editor 20、Guardian 16，合計 93 個主要案例；這與上述 77 個 Mac XCTest 是不同範圍，不能相互替代。後續 run 會保留正在執行的驗證工作，避免新推送自動取消它。
+
+下一輪正常 CI 另會使用 `scripts/audit_platform.py` 保存四組固定、唯讀的 `launchctl` 公開介面輸出。這僅用於系統工具的格式驗證，不呼叫 enable、disable、bootstrap 或 bootout，也不讀取私有 BTM 資料庫。

@@ -38,20 +38,31 @@ ad-hoc 版本沒有 Apple Developer ID 或公證。若 macOS 因為來源驗證�
 
 | 頁面 | 操作方式 |
 |---|---|
-| 總覽 | 原生指標與趨勢圖；單一 `status --watch` 工作；離開頁面或視窗不活動時停止 |
+| 總覽 | 原生指標與趨勢圖；單一 `status --watch` 工作；預設離開頁面或視窗不活動時停止。可明確啟用共用串流的選單列監控 |
 | 系統清理 | Dry Run、支援選項及官方內嵌互動；清楚提示可能永久刪除和清空垃圾桶 |
 | 軟體卸載 | 官方清單的原生搜尋與選取；官方預覽與確認保留；個人資料預設保留 |
+| App 更新 | **MoPanel 新實作**；Homebrew 結構化版本、官方預覽、逐項確認與更新後檢查；Sparkle／App Store 交回原 App |
+| 啟動項目 | **MoPanel 新實作**；有界的 plist 中繼資料清單、目前使用者 LaunchAgent 的原生確認與狀態驗證；其他項目交由系統設定 |
 | 系統最佳化 | 官方項目、Dry Run、白名單與互動結果；不新增舊式調校 |
 | 磁碟分析 | 官方 JSON 逐層瀏覽、大小排序、搜尋、Finder 入口；保留不完整狀態 |
 | 專案清理 | 選擇掃描根目錄、Dry Run、paths 設定及官方選取 |
 | 安裝檔 | 官方掃描與選取；不假造無正式 API 的刪除計畫 |
 | App 瘦身 | 官方 Universal App 檢查、Dry Run、選取與簽章檢查結果 |
 | 操作歷史 | 原生 JSON 歷史與搜尋，保留未明確歸屬紀錄 |
+| 系統工具 | **MoPanel 新實作**；Keep Awake、Clean Screen 基本遮罩、確認後安全退出外接磁碟、Doctor 唯讀報告 |
 | 設定 | 路徑、更新、權限引導、白名單、Touch ID、completion、主選單與進階 remove |
 
 內嵌終端可直接用鍵盤，或點選箭頭、空白鍵、Enter、Esc 等按鈕。所有確認內容以當下官方畫面為準。管理員密碼走 CLI 的 TTY 密碼流程，不存入 MoPanel 日誌；終端輸入不被程式記錄。
 
 `⌘.` 停止目前作業；`⇧⌘P` 暫停監控；`⇧⌘R` 重新偵測 CLI；`⌘,` 開啟設定。取消會停止程序，已執行的變更不會自動復原。
+
+## 與官方付費 GUI 的功能差異
+
+使用者追加的比較範圍是官方 Mole for Mac **1.17 正式版**，1.18 Preview 另列。MoPanel 並未達到全部功能對等。免費 CLI 沒有公開任意逐項清理／卸載計畫 API，相關工作仍在內嵌官方互動介面完成；不能把它稱為與官方付費 App 完全相同的原生選取流程。
+
+以上三個新增頁面、選單列、行程搜尋／排序／置頂與受保護的 App 結束要求，都會標記 **MoPanel 新實作**。它們使用 Apple 原生 API 或其他已安裝的官方工具，各自需要維護相容性。Homebrew 直接更新只開放可驗證的一般官方 cask；其他來源不會被包裝成已實作的自動更新引擎。
+
+風扇模式、充電限制、AWDL 控制、AI sessions／worktrees 清理、Parallels VM compact，以及部分官方 GUI 細部互動與權限／硬體驗收仍未完成。本版本沒有提供無作用的控制項，也沒有對這些功能宣稱已測試通過。完整對照見 `Source/docs/GUI_PARITY.md`（來源 repository 中為 `docs/GUI_PARITY.md`），新增內容與限制見 `docs/MOPANEL_ADDITIONS.md`、`docs/APP_UPDATES.md`、`docs/STARTUP.md`、`docs/NATIVE_CONTROLS.md`。
 
 ## 安全與資料
 

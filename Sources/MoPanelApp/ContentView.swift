@@ -6,6 +6,9 @@ import MoPanelTerminal
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var systemTools: SystemToolsController
+    @EnvironmentObject private var appUpdates: AppUpdatesController
+    @EnvironmentObject private var startup: StartupController
     @Environment(\.scenePhase) private var scenePhase
     @State private var started = false
     var body: some View {
@@ -20,7 +23,9 @@ struct ContentView: View {
                     Spacer()
                 }.padding(20)
                 List(AppSection.allCases, selection: Binding<AppSection?>(get: { model.section }, set: { if let value = $0 { model.section = value } })) { section in
-                    Label(model.t(section.zh, section.en), systemImage: section.symbol).tag(section).padding(.vertical, 5)
+                    Label(model.t(section.zh, section.en), systemImage: section.symbol)
+                        .foregroundStyle(model.section == section ? Color.white : Color.primary)
+                        .tag(section).padding(.vertical, 5)
                 }.listStyle(.sidebar)
                 VStack(alignment: .leading, spacing: 5) {
                     Label(model.installation.map { "Mole \($0.version)" } ?? model.t("尚未連接 CLI", "CLI not connected"), systemImage: model.installation == nil ? "circle.dashed" : "checkmark.circle")
@@ -51,6 +56,19 @@ struct ContentView: View {
                     }.padding(12).background(.thinMaterial)
                 }
                 if model.section == .settings { SettingsView() }
+                else if model.section == .appUpdates {
+                    AppUpdatesView(controller: appUpdates, language: model.language,
+                                   operationInProgress: model.moleOperationInProgress || model.isDetecting || startup.isBusy || systemTools.ejectingVolumeID != nil)
+                }
+                else if model.section == .startup {
+                    StartupView(controller: startup, language: model.language,
+                                operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || systemTools.ejectingVolumeID != nil)
+                }
+                else if model.section == .tools {
+                    SystemToolsView(controller: systemTools, language: model.language,
+                                    operationInProgress: model.moleOperationInProgress || model.isDetecting || appUpdates.isBusy || startup.isBusy,
+                                    cliSummary: model.installation.map { "Mole \($0.version) · \($0.source.rawValue) · \($0.executable.path)" })
+                }
                 else if model.installation == nil { MissingEngineView() }
                 else {
                     switch model.section {
@@ -59,7 +77,7 @@ struct ContentView: View {
                     case .analyze: AnalyzeView()
                     case .history: HistoryView()
                     case .clean, .optimize, .purge, .installer, .slim: MaintenanceView(section: model.section).id(model.section)
-                    case .settings: EmptyView()
+                    case .settings, .tools, .appUpdates, .startup: EmptyView()
                     }
                 }
             }
@@ -84,19 +102,14 @@ struct ContentView: View {
         .task {
             guard !started else { return }
             started = true
-            if model.isTestLaunch { await SmokeHarness.run(model) }
+            if model.isTestLaunch { await SmokeHarness.run(model, systemTools: systemTools) }
             else { await model.detect() }
-        }
-        .onChange(of: model.section) { _, section in
-            guard !model.isTestLaunch else { return }
-            if section == .dashboard { model.startMonitoring() }
         }
         .onChange(of: scenePhase) { _, phase in
             guard !model.isTestLaunch else { return }
             model.windowActive = phase == .active
-            if phase == .active { model.startMonitoring() } else { model.stopMonitoring() }
         }
-        .onDisappear { model.stopMonitoring() }
+        .onDisappear { model.windowActive = false }
     }
 }
 

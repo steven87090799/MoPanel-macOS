@@ -38,6 +38,12 @@
 
 完整參數與 GUI／程式碼對照見 `CLI_COVERAGE.md`。
 
+## MoPanel 額外原生整合
+
+App Updates、Startup、System Tools、選單列與 App 結束要求不屬於 Mole CLI API。它們分別使用 Homebrew 公開 JSON／命令、Apple launchctl／ServiceManagement、IOKit／AppKit 與 SwiftUI。更新 Mole CLI 不會自動更新這些整合。
+
+CI 另保存 runner 的 Homebrew 唯讀介面與 launchctl 格式樣本；沒有執行真實 App 升級或修改真實啟動項目。Startup 的變更流程使用真暫存 plist＋注入 mock；不把 mock 證據冒充真 launchd 變更。原生硬體／權限與使用者機型驗收邊界見 `docs/GUI_PARITY.md`。
+
 ## 更新方法
 
 Homebrew 安裝以其公式更新機制處理；官方腳本安裝使用 `mo update`；nightly 只在安裝來源已確認支援時顯示。使用者明確確認後才會進行更新。完成後 MoPanel 重新偵測能力；官方引擎和 GUI 分開更新。

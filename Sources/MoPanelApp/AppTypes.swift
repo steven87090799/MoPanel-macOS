@@ -3,19 +3,22 @@ import AppKit
 import MoPanelCore
 
 enum AppSection: String, CaseIterable, Identifiable {
-    case dashboard, clean, uninstall, optimize, analyze, purge, installer, slim, history, settings
+    case dashboard, clean, uninstall, appUpdates, startup, optimize, analyze, purge, installer, slim, history, tools, settings
     var id: String { rawValue }
     var symbol: String {
         switch self {
         case .dashboard: return "gauge.with.dots.needle.67percent"
         case .clean: return "sparkles"
         case .uninstall: return "square.grid.2x2"
+        case .appUpdates: return "arrow.triangle.2.circlepath.circle"
+        case .startup: return "power.circle"
         case .optimize: return "slider.horizontal.3"
         case .analyze: return "chart.pie"
         case .purge: return "hammer"
         case .installer: return "shippingbox"
         case .slim: return "square.stack.3d.up"
         case .history: return "clock.arrow.circlepath"
+        case .tools: return "wrench.and.screwdriver"
         case .settings: return "gearshape"
         }
     }
@@ -24,20 +27,29 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .dashboard: return "系統總覽"
         case .clean: return "系統清理"
         case .uninstall: return "軟體卸載"
+        case .appUpdates: return "App 更新"
+        case .startup: return "啟動項目"
         case .optimize: return "系統最佳化"
         case .analyze: return "磁碟分析"
         case .purge: return "專案清理"
         case .installer: return "安裝檔管理"
         case .slim: return "App 瘦身"
         case .history: return "操作歷史"
+        case .tools: return "系統工具"
         case .settings: return "設定"
         }
     }
-    var en: String { rawValue.capitalized }
+    var en: String {
+        switch self {
+        case .appUpdates: return "App Updates"
+        case .tools: return "System Tools"
+        default: return rawValue.capitalized
+        }
+    }
     var command: MoleCommand? {
         switch self {
         case .dashboard: return .status
-        case .settings: return nil
+        case .settings, .tools, .appUpdates, .startup: return nil
         default: return MoleCommand(rawValue: rawValue)
         }
     }

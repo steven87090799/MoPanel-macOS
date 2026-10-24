@@ -103,11 +103,14 @@ struct SettingsView: View {
     private var monitor: some View {
         GroupBox(model.t("低負載監控", "Monitoring")) {
             VStack(alignment: .leading, spacing: 14) {
+                Toggle(model.t("在選單列顯示即時監控（MoPanel 新實作）", "Show live monitoring in menu bar (MoPanel addition)"), isOn: $model.menuBarEnabled)
+                Text(model.t("預設關閉。開啟後，即使切換頁面或使用其他 App，也會共用現有的單一監控串流。關閉最後一個 MoPanel 視窗或結束 App 時全部停止。", "Off by default. When enabled, the existing single stream continues across pages and while using other apps. Closing the last MoPanel window or quitting stops it."))
+                    .font(.caption).foregroundStyle(.secondary)
                 Picker(model.t("更新間隔", "Update Interval"), selection: $model.monitoringInterval) { ForEach([1, 2, 5, 10], id: \.self) { Text("\($0) s").tag($0) } }.pickerStyle(.segmented)
                 Toggle(model.t("官方高 CPU 行程警示", "Mole high-CPU process alerts"), isOn: $model.processAlertsEnabled)
                 Stepper(value: $model.processCPUThreshold, in: 0...3200, step: 25) { Text(model.t("CPU 門檻：", "CPU Threshold: ") + DisplayFormat.percent(model.processCPUThreshold)) }
                 Picker(model.t("持續時間視窗", "Sustained Window"), selection: $model.processCPUWindow) { ForEach([60, 120, 300, 600], id: \.self) { Text("\($0) s").tag($0) } }.pickerStyle(.segmented)
-                Text(model.t("返回總覽後套用。使用一個持續串流程序，保留最多 120 筆樣本；離開監控頁、視窗失去前景或 App 關閉時停止監控。", "Applied when returning to Dashboard. One streaming process retains at most 120 samples and pauses when away from Dashboard or the foreground."))
+                Text(model.t("暫停後重新開始監控即可套用。最多保留 120 筆樣本；未開啟選單列監控時，離開總覽或視窗失去前景就會停止。", "Pause and resume to apply changes. Retains at most 120 samples. Without menu bar monitoring, the stream stops away from Dashboard or the foreground."))
                     .font(.caption).foregroundStyle(.secondary)
                 Button(model.t("開啟官方 TUI 儀表板", "Open Official TUI Dashboard")) { model.request(.status) }.disabled(!model.canStart)
             }.padding(12)

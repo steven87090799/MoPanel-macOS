@@ -143,4 +143,26 @@ final class ManagedProcessTests: XCTestCase {
         XCTAssertTrue(environment["SHELL"]?.hasPrefix("/") == true)
         XCTAssertNotEqual(environment["SHELL"], "/evil")
     }
+
+    @MainActor func testHomebrewProtectiveOverridesAcceptOnlyExactOne() {
+        let keys = ["HOMEBREW_NO_AUTO_UPDATE", "HOMEBREW_NO_INSTALL_CLEANUP", "HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK"]
+        let accepted = ManagedProcess.safeEnvironment(overrides: Dictionary(uniqueKeysWithValues: keys.map { ($0, "1") }), interactive: true)
+        for key in keys { XCTAssertEqual(accepted[key], "1") }
+        for rejected in ["0", "", "true", "1\n", "1\0", "$(touch /tmp/never)", "--force"] {
+            let environment = ManagedProcess.safeEnvironment(overrides: Dictionary(uniqueKeysWithValues: keys.map { ($0, rejected) }), interactive: false)
+            for key in keys { XCTAssertNil(environment[key], "Rejected \(key) value \(rejected.debugDescription)") }
+        }
+    }
+
+    @MainActor func testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides() {
+        let environment = ManagedProcess.safeEnvironment(overrides: [
+            "HOMEBREW_NO_ANALYTICS": "0", "HOMEBREW_NO_AUTO_UPDATE": "1", "HOMEBREW_NO_INSTALL_CLEANUP": "1",
+            "HOMEBREW_BREW_GIT_REMOTE": "https://attacker.invalid/brew", "HOMEBREW_API_DOMAIN": "https://attacker.invalid",
+            "HOMEBREW_CASK_OPTS": "--no-quarantine", "HOMEBREW_NO_ASK": "1", "HOMEBREW_FORCE_API_AUTO_UPDATE": "1"
+        ], interactive: true)
+        XCTAssertEqual(environment["HOMEBREW_NO_ANALYTICS"], "1")
+        for key in ["HOMEBREW_BREW_GIT_REMOTE", "HOMEBREW_API_DOMAIN", "HOMEBREW_CASK_OPTS", "HOMEBREW_NO_ASK", "HOMEBREW_FORCE_API_AUTO_UPDATE"] {
+            XCTAssertNil(environment[key])
+        }
+    }
 }

@@ -5,12 +5,21 @@ import MoPanelProcess
 
 @MainActor final class AppModel: ObservableObject {
     @Published var section: AppSection = .dashboard {
-        didSet { if section != .dashboard { stopMonitoring() } }
+        didSet {
+            if isTestLaunch { if section != .dashboard { stopMonitoring() } }
+            else { updateMonitoringDemand() }
+        }
     }
     @Published var language: String { didSet { UserDefaults.standard.set(language, forKey: "language") } }
     @Published var appearance: String { didSet { UserDefaults.standard.set(appearance, forKey: "appearance") } }
     @Published var customPath: String { didSet { UserDefaults.standard.set(customPath, forKey: "cliPath") } }
     @Published var monitoringInterval = 2
+    @Published var menuBarEnabled = false {
+        didSet {
+            if !isTestLaunch { UserDefaults.standard.set(menuBarEnabled, forKey: "menuBarEnabled"); updateMonitoringDemand() }
+        }
+    }
+    @Published private(set) var monitoringPaused = false
     @Published var processAlertsEnabled = true
     @Published var processCPUThreshold = 100.0
     @Published var processCPUWindow = 300
@@ -38,8 +47,11 @@ import MoPanelProcess
     @Published var operationResult: ProcessResult?
     @Published var operationIsInteractive = true
     @Published var operationWasPreview = false
-    @Published var windowActive = true
+    @Published var windowActive = true { didSet { if !isTestLaunch { updateMonitoringDemand() } } }
     @Published var homebrewConfirmation = false
+    /// Queried synchronously by action guards, so a native operation cannot race
+    /// the next SwiftUI redraw. The app root excludes this model from callbacks.
+    var nativeOperationInProgress: (() -> Bool)?
     private var scanSession: ManagedProcess?
     private var watchSession: ManagedProcess?
     private var operationTask: Task<Void, Never>?
@@ -78,13 +90,19 @@ import MoPanelProcess
         benchmarkConfiguration = benchmark
         testLaunchError = launchError
         fixtureURL = fixtureMode ? AppResources.bundle?.url(forResource: "mock-mo", withExtension: "sh", subdirectory: "Fixtures") : nil
+        menuBarEnabled = !isTestLaunch && UserDefaults.standard.bool(forKey: "menuBarEnabled")
     }
 
     func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     var colorScheme: ColorScheme? { appearance == "dark" ? .dark : appearance == "light" ? .light : nil }
     var unavailable: String { t("不支援或尚未提供", "Unsupported or unavailable") }
     var canStart: Bool { installation != nil && !isDetecting && !hasRunningOperation && !shuttingDown }
-    var hasRunningOperation: Bool { busy != nil || scanSession?.running == true || operationSession.running }
+    var moleOperationInProgress: Bool { busy != nil || scanSession?.running == true || operationSession.running || operationTask != nil }
+    var hasRunningOperation: Bool { moleOperationInProgress || nativeOperationInProgress?() == true }
+    var monitoringNeeded: Bool {
+        MonitoringDemand.isNeeded(dashboardSelected: section == .dashboard, windowActive: windowActive,
+                                  menuBarEnabled: menuBarEnabled, paused: monitoringPaused, shuttingDown: shuttingDown)
+    }
     private var processEnvironment: [String: String] { benchmarkConfiguration?.childEnvironment(from: CLIProbe.environment) ?? CLIProbe.environment }
     var canRecoverStable: Bool {
         installation?.source == .script && installation?.resourceLocation != nil &&
@@ -97,7 +115,7 @@ import MoPanelProcess
         error = nil
         defer {
             isDetecting = false
-            if !isTestLaunch, installation != nil, section == .dashboard, windowActive, !shuttingDown { startMonitoring() }
+            if !isTestLaunch, installation != nil, monitoringNeeded { startMonitoring() }
         }
         do {
             // A test launch must never fall through to a real installed engine.
@@ -226,7 +244,7 @@ import MoPanelProcess
     }
 
     func startMonitoring() {
-        guard section == .dashboard, windowActive, !hasRunningOperation, !isDetecting, !shuttingDown else { return }
+        guard monitoringNeeded, !hasRunningOperation, !isDetecting, !shuttingDown else { return }
         if watchSession != nil {
             // Cancel is asynchronous. A new collector can begin only after the
             // guardian has reaped the old process and both pipes reached EOF.
@@ -280,6 +298,13 @@ import MoPanelProcess
         monitorRestartRequested = false
         monitoring = false
         watchSession?.cancel()
+    }
+
+    func pauseMonitoring() { monitoringPaused = true; stopMonitoring() }
+    func resumeMonitoring() { monitoringPaused = false; startMonitoring() }
+    func updateMonitoringDemand() {
+        if monitoringNeeded && !hasRunningOperation { startMonitoring() }
+        else { stopMonitoring() }
     }
 
     private func stopMonitoringAndWait() async {

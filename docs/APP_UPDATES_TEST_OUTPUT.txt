@@ -1,0 +1,75 @@
+[0/1] Planning build
+Building for debugging...
+[0/14] Write sources
+[3/14] Write swift-version--692D7D6F1AAC6E0F.txt
+[5/17] Compiling MoPanelCoreTests AppUpdateTests.swift
+[6/17] Emitting module MoPanelCoreTests
+[8/17] Emitting module MoPanelProcess
+[9/17] Compiling MoPanelProcess ManagedProcess.swift
+[11/19] Emitting module MoPanelProcessTests
+[12/19] Compiling MoPanelProcessTests StreamingTests.swift
+[13/20] /workspace/scratch/295743c3c15b/MoPanel/.build-updates/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[14/21] Write sources
+[15/21] Wrapping AST for MoPanelProcessTests for debugging
+[17/25] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[18/25] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[19/25] Emitting module MoPanelPackageDiscoveredTests
+[20/25] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[21/26] /workspace/scratch/295743c3c15b/MoPanel/.build-updates/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[22/27] Write sources
+[23/27] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[25/29] Compiling MoPanelPackageTests runner.swift
+[26/29] Emitting module MoPanelPackageTests
+[27/29] Write Objects.LinkFileList
+[28/29] Linking MoPanelPackageTests.xctest
+Build complete! (2.92s)
+Test Suite 'Selected tests' started at 2026-10-24 15:07:50.364
+Test Suite 'AppUpdateTests' started at 2026-10-24 15:07:50.366
+Test Case 'AppUpdateTests.testAbsentOutdatedEntryCannotFalselyClaimDifferentVersionIsCurrent' started at 2026-10-24 15:07:50.366
+Test Case 'AppUpdateTests.testAbsentOutdatedEntryCannotFalselyClaimDifferentVersionIsCurrent' passed (0.003 seconds)
+Test Case 'AppUpdateTests.testAdditiveSchemaChangesRemainReadable' started at 2026-10-24 15:07:50.368
+Test Case 'AppUpdateTests.testAdditiveSchemaChangesRemainReadable' passed (0.002 seconds)
+Test Case 'AppUpdateTests.testCommandUsesOneFullyQualifiedTokenAndNoShell' started at 2026-10-24 15:07:50.370
+Test Case 'AppUpdateTests.testCommandUsesOneFullyQualifiedTokenAndNoShell' passed (0.0 seconds)
+Test Case 'AppUpdateTests.testCustomInstallersHooksAndDependenciesCannotUpgrade' started at 2026-10-24 15:07:50.370
+Test Case 'AppUpdateTests.testCustomInstallersHooksAndDependenciesCannotUpgrade' passed (0.006 seconds)
+Test Case 'AppUpdateTests.testDisagreeingInstalledAndAvailableVersionsFailClosed' started at 2026-10-24 15:07:50.377
+Test Case 'AppUpdateTests.testDisagreeingInstalledAndAvailableVersionsFailClosed' passed (0.002 seconds)
+Test Case 'AppUpdateTests.testDiscoveryIgnoresRelativeAndEmptyPathEntries' started at 2026-10-24 15:07:50.379
+Test Case 'AppUpdateTests.testDiscoveryIgnoresRelativeAndEmptyPathEntries' passed (0.0 seconds)
+Test Case 'AppUpdateTests.testDuplicateTokensAcrossTapsCannotBindToFirstDisplayName' started at 2026-10-24 15:07:50.379
+Test Case 'AppUpdateTests.testDuplicateTokensAcrossTapsCannotBindToFirstDisplayName' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testHelpNegotiationRequiresRealFlagsAndSafetyOptions' started at 2026-10-24 15:07:50.381
+Test Case 'AppUpdateTests.testHelpNegotiationRequiresRealFlagsAndSafetyOptions' passed (0.003 seconds)
+Test Case 'AppUpdateTests.testIdentityRejectsFlagsTraversalURLsAndShellInjection' started at 2026-10-24 15:07:50.383
+Test Case 'AppUpdateTests.testIdentityRejectsFlagsTraversalURLsAndShellInjection' passed (0.0 seconds)
+Test Case 'AppUpdateTests.testLargeInventoryAndSpecialPathCharactersRemainData' started at 2026-10-24 15:07:50.383
+Test Case 'AppUpdateTests.testLargeInventoryAndSpecialPathCharactersRemainData' passed (0.767 seconds)
+Test Case 'AppUpdateTests.testLayoutResolvesActualHomebrewSymlinkWithoutExecution' started at 2026-10-24 15:07:51.151
+Test Case 'AppUpdateTests.testLayoutResolvesActualHomebrewSymlinkWithoutExecution' passed (0.007 seconds)
+Test Case 'AppUpdateTests.testMalformedFieldTypesDoNotReceiveGuessedDefaults' started at 2026-10-24 15:07:51.158
+Test Case 'AppUpdateTests.testMalformedFieldTypesDoNotReceiveGuessedDefaults' passed (0.002 seconds)
+Test Case 'AppUpdateTests.testOfficialJSONFixturePreservesSourceVersionAndExplicitCustomAppPath' started at 2026-10-24 15:07:51.160
+Test Case 'AppUpdateTests.testOfficialJSONFixturePreservesSourceVersionAndExplicitCustomAppPath' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testPlanRevalidationRejectsPathSourceChecksumAndVersionChanges' started at 2026-10-24 15:07:51.160
+Test Case 'AppUpdateTests.testPlanRevalidationRejectsPathSourceChecksumAndVersionChanges' passed (0.004 seconds)
+Test Case 'AppUpdateTests.testPublisherMetadataRequiresSignatureHTTPSAndNoCredentialsOrQueries' started at 2026-10-24 15:07:51.165
+Test Case 'AppUpdateTests.testPublisherMetadataRequiresSignatureHTTPSAndNoCredentialsOrQueries' passed (0.101 seconds)
+Test Case 'AppUpdateTests.testRequiredEnvelopeCannotBecomeEmptySuccess' started at 2026-10-24 15:07:51.266
+Test Case 'AppUpdateTests.testRequiredEnvelopeCannotBecomeEmptySuccess' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testUnknownOrRepeatedOutdatedIdentityIsRejected' started at 2026-10-24 15:07:51.267
+Test Case 'AppUpdateTests.testUnknownOrRepeatedOutdatedIdentityIsRejected' passed (0.001 seconds)
+Test Case 'AppUpdateTests.testUnknownTargetAndMissingChecksumAreExplicitlyUnsupported' started at 2026-10-24 15:07:51.268
+Test Case 'AppUpdateTests.testUnknownTargetAndMissingChecksumAreExplicitlyUnsupportewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+d' passed (0.004 seconds)
+Test Suite 'AppUpdateTests' passed at 2026-10-24 15:07:51.271
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.905 (0.905) seconds
+Test Suite 'ManagedProcessTests' started at 2026-10-24 15:07:51.271
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' started at 2026-10-24 15:07:51.272
+Test Case 'ManagedProcessTests.testHomebrewProtectionsDoNotPermitArbitraryHomebrewOverrides' passed (0.0 seconds)
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' started at 2026-10-24 15:07:51.272
+Test Case 'ManagedProcessTests.testHomebrewProtectiveOverridesAcceptOnlyExactOne' passed (0.002 seconds)
+Test Suite 'ManagedProcessTests' passed at 2026-10-24 15:07:51.274
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 15:07:51.274
+	 Executed 20 tests, with 0 failures (0 unexpected) in 0.908 (0.908) seconds

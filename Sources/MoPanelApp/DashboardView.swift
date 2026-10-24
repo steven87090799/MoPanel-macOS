@@ -7,7 +7,7 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                PageHeading(title: model.t("看見 Mac 的當下", "Your Mac, right now"), subtitle: model.t("資料由官方 Mole Status 提供。離開此頁或視窗不在前景時會暫停監控。", "Live data from Mole Status. Monitoring pauses away from this page or when the window is inactive."), symbol: "waveform.path.ecg")
+                PageHeading(title: model.t("看見 Mac 的當下", "Your Mac, right now"), subtitle: model.t("資料由官方 Mole Status 提供。離開此頁時停止監控；若自行開啟選單列監控，則共用同一個串流繼續更新。", "Live data from Mole Status. Monitoring pauses away from this page unless you enable menu bar monitoring, which shares the same stream."), symbol: "waveform.path.ecg")
                 HStack {
                     Label(model.monitoring ? model.t("即時監控中", "Live") : model.t("監控已暫停", "Paused"), systemImage: model.monitoring ? "record.circle" : "pause.circle")
                         .foregroundStyle(model.monitoring ? Color.teal : Color.secondary)
@@ -15,7 +15,7 @@ struct DashboardView: View {
                     Spacer()
                     Button(model.t("單次快照", "Snapshot")) { Task { await model.takeSnapshot() } }.disabled(!model.canStart)
                     Button(model.monitoring ? model.t("暫停", "Pause") : model.t("開始監控", "Start Monitoring")) {
-                        if model.monitoring { model.stopMonitoring() } else { model.startMonitoring() }
+                        if model.monitoring { model.pauseMonitoring() } else { model.resumeMonitoring() }
                     }.buttonStyle(.borderedProminent).disabled(model.installation == nil || model.hasRunningOperation)
                 }
                 if let s = model.status {
@@ -131,25 +131,7 @@ struct DashboardView: View {
             }.padding(10)
         }
         GroupBox(model.t("高資源使用率行程", "Top Processes")) {
-            VStack(alignment: .leading, spacing: 10) {
-                if s.processCollectedAt == nil { unavailableRow() }
-                else {
-                    if s.processStale == true { Notice(text: model.t("沿用上一筆行程樣本：", "Last successful process sample: ") + (s.processCollectedAt ?? "")) }
-                    Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
-                        GridRow { Text("PID"); Text(model.t("行程", "Process")); Text("CPU"); Text(model.t("記憶體", "Memory")) }.font(.caption.bold()).foregroundStyle(.secondary)
-                        ForEach(s.topProcesses) { process in
-                            GridRow {
-                                Text(String(process.pid)).font(.caption.monospaced())
-                                Text(process.name).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
-                                Text(DisplayFormat.percent(process.cpu)).monospacedDigit()
-                                Text(process.memoryBytes.map { DisplayFormat.bytes($0) } ?? DisplayFormat.percent(process.memory)).monospacedDigit()
-                            }.font(.callout)
-                        }
-                    }
-                    if let zombies = s.zombieCount { Text(model.t("殭屍行程：", "Zombie processes: ") + String(zombies)).font(.caption).foregroundStyle(.secondary) }
-                }
-                ForEach(s.processAlerts) { alert in Notice(text: alert.name + " · " + DisplayFormat.percent(alert.cpu) + " · " + alert.window + " · " + alert.status, warning: true) }
-            }.padding(10)
+            ProcessInspectorView(snapshot: s).padding(10)
         }
         DisclosureGroup(model.t("GPU 與其他硬體讀值", "GPU and Other Hardware")) {
             VStack(alignment: .leading, spacing: 8) {

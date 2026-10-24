@@ -1,0 +1,68 @@
+Building for debugging...
+[0/22] Write sources
+[2/22] Copying Fixtures
+[3/22] Copying Info.plist
+[4/22] Write sources
+[6/22] Write swift-version--692D7D6F1AAC6E0F.txt
+[7/31] Compiling MoPanelGuardian main.c
+[8/31] Write Objects.LinkFileList
+[9/31] Linking MoPanelGuardian
+[11/31] Compiling MoPanelCore Compatibility.swift
+[12/31] Compiling MoPanelCore MoleCommand.swift
+[13/31] Emitting module MoPanelCore
+[14/31] Compiling MoPanelCore MoleDiscovery.swift
+[15/31] Compiling MoPanelCore MoleModels.swift
+[16/31] Compiling MoPanelCore ReadOnlyBenchmark.swift
+[17/32] Compiling MoPanelProcess PurgePathsDocument.swift
+[18/32] Compiling MoPanelProcess ManagedProcess.swift
+[19/32] Emitting module MoPanelProcess
+[20/33] Wrapping AST for MoPanelProcess for debugging
+[22/36] Compiling MoPanelCore SystemToolsPolicy.swift
+[23/37] Wrapping AST for MoPanelCore for debugging
+[25/42] Compiling MoPanelProcessTests PurgePathsDocumentTests.swift
+[26/42] Compiling MoPanelProcessTests ManagedProcessTests.swift
+[27/42] Emitting module MoPanelProcessTests
+[28/43] Wrapping AST for MoPanelProcessTests for debugging
+[30/43] Compiling MoPanelCoreTests SystemToolsPolicyTests.swift
+[31/43] Compiling MoPanelCoreTests ReadOnlyBenchmarkTests.swift
+[32/44] Compiling MoPanelCoreTests resource_bundle_accessor.swift
+[33/44] Compiling MoPanelCoreTests DiscoveryTests.swift
+[34/44] Compiling MoPanelCoreTests MoleCoreTests.swift
+[35/44] Emitting module MoPanelCoreTests
+[36/45] /tmp/mopanel-systemtools-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[37/45] Write sources
+[38/45] Wrapping AST for MoPanelCoreTests for debugging
+[40/49] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[41/49] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[42/49] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[43/49] Emitting module MoPanelPackageDiscoveredTests
+[44/50] /tmp/mopanel-systemtools-build/x86_64-unknown-linux-gnu/debug/MoPanelPackageTests.derived/runner.swift
+[45/50] Write sources
+[46/50] Wrapping AST for MoPanelPackageDiscoveredTests for debugging
+[48/52] Compiling MoPanelPackageTests runner.swift
+[49/52] Emitting module MoPanelPackageTests
+[50/53] Wrapping AST for MoPanelPackageTests for debugging
+[51/53] Write Objects.LinkFileList
+[52/53] Linking MoPanelPackageTests.xctest
+Build complete! (13.36s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-24 14:58:38.475
+Test Suite 'SystemToolsPolicyTests' started at 2026-10-24 14:58:38.477
+Test Case 'SystemToolsPolicyTests.testEjectProtectsHomeAppAndPathBoundaries' started at 2026-10-24 14:58:38.477
+Test Case 'SystemToolsPolicyTests.testEjectProtectsHomeAppAndPathBoundaries' passed (0.002 seconds)
+Test Case 'SystemToolsPolicyTests.testEjectRequiresAffirmativeMetadata' started at 2026-10-24 14:58:38.479
+Test Case 'SystemToolsPolicyTests.testEjectRequiresAffirmativeMetadata' passed (0.001 seconds)
+Test Case 'SystemToolsPolicyTests.testFiniteSessionExpiresWithoutExtendingAfterPowerPause' started at 2026-10-24 14:58:38.480
+Test Case 'SystemToolsPolicyTests.testFiniteSessionExpiresWithoutExtendingAfterPowerPause' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testLowBatteryLatchOnlyResumesOnExternalPower' started at 2026-10-24 14:58:38.480
+Test Case 'SystemToolsPolicyTests.testLowBatteryLatchOnlyResumesOnExternalPower' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testStopIsFinalEvenIfExternalPowerArrives' started at 2026-10-24 14:58:38.480
+Test Case 'SystemToolsPolicyTests.testStopIsFinalEvenIfExternalPowerArrives' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testUPSAlsoHonorsBatteryCutoff' started at 2026-10-24 14:58:38.481
+Test Case 'SystemToolsPolicyTests.testUPSAlsoHonorsBatteryCutoff' passed (0.0 seconds)
+Test Case 'SystemToolsPolicyTests.testUnknownAndInvalidPowerNeverPretendBatteryIsSafe' started at 2026-10-24 14:58:38.481
+Test Case 'SystemToolsPolicyTests.testUnknownAndInvalidPowerNeverPretendBatteryIsSafe' passed (0.001 seconds)
+Test Suite 'SystemToolsPolicyTests' passed at 2026-10-24 14:58:38.482
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.004 (0.004) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 14:58:38.482
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.004 (0.004) seconds

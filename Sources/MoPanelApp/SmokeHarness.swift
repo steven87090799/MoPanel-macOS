@@ -4,7 +4,7 @@ import MoPanelCore
 
 /// An explicit test-launch mode. Normal launches never load these fixtures.
 @MainActor enum SmokeHarness {
-    static func run(_ model: AppModel) async {
+    static func run(_ model: AppModel, systemTools: SystemToolsController) async {
         let arguments = ProcessInfo.processInfo.arguments
         if let error = model.testLaunchError {
             // An invalid manifest has no trusted report destination. Log failure
@@ -37,6 +37,17 @@ import MoPanelCore
             return
         }
         checks["public_contracts_compatible"] = model.installation?.compatibility.allowsDestructive == true && model.installation?.incompatible.isEmpty == true
+        let toolsEvidence = await systemTools.runSafeSmokeTest()
+        checks["native_assertion_created_and_released"] = toolsEvidence.assertionCreated && toolsEvidence.assertionReadableBeforeRelease && toolsEvidence.assertionReleaseCode == 0 && toolsEvidence.assertionAbsentAfterRelease
+        checks["native_clean_screen_windows_constructed_and_closed"] = toolsEvidence.screenCount > 0 && toolsEvidence.overlayWindowsCreated == toolsEvidence.screenCount && toolsEvidence.overlayWindowsClosed == toolsEvidence.overlayWindowsCreated
+        checks["native_tools_no_input_interception_or_ejection"] = !toolsEvidence.overlayWasPresented && !toolsEvidence.inputWasIntercepted && !toolsEvidence.ejectWasCalled
+        checks["native_doctor_metadata_read"] = toolsEvidence.doctorEntryCount > 0
+        failures.append(contentsOf: toolsEvidence.errors)
+        let startupEvidence = await StartupController.runSafeSmokeTest()
+        checks["startup_mock_enable_disable_readback"] = startupEvidence.inventoryCount == 1 && startupEvidence.enableVerifiedWithMock && startupEvidence.disableVerifiedWithMock
+        checks["startup_mock_cancel_and_unknown_format"] = startupEvidence.cancelledReviewDidNotMutate && startupEvidence.unknownFormatDidNotMutate
+        checks["startup_no_real_mutation_or_persistent_job"] = startupEvidence.realLaunchctlMutations == 0 && startupEvidence.persistentJobsCreated == 0
+        failures.append(contentsOf: startupEvidence.errors)
         await model.takeSnapshot()
         checks["status_decoded"] = model.status?.host == "fixture-only"
         if let error = model.error { failures.append(error) }
@@ -63,9 +74,13 @@ import MoPanelCore
         checks["all_navigation_routes_rendered"] = NSApp.windows.contains { $0.isVisible }
         checks["no_real_engine_selected"] = model.installation?.source == .fixture
         let success = !checks.values.contains(false) && failures.isEmpty
+        let encodedTools = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(toolsEvidence))) ?? [:]
+        let encodedStartup = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(startupEvidence))) ?? [:]
         await finish(model, environmentKey: "MOPANEL_SMOKE_REPORT", report: [
             "success": success, "window_created": checks["window_created"] == true,
             "fixture_only": true, "checks": checks, "errors": failures,
+            "system_tools": encodedTools,
+            "startup_mock": encodedStartup,
             "note": "Window/route and adapter smoke only. This does not verify every physical button, TCC permission, real cleanup, or hardware reading."
         ], success: success)
     }

@@ -1,0 +1,29 @@
+{
+  "formulae": [],
+  "casks": [
+    {
+      "token": "example-editor", "full_token": "example-editor", "tap": "homebrew/cask",
+      "name": ["Example Editor"], "version": "2.4.1", "installed": "2.3.0",
+      "auto_updates": false, "pinned": false, "disabled": false,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "depends_on": {"macos": {">=": ["13"]}},
+      "artifacts": [{"app": ["Example Editor.app"], "target": "/Volumes/工作 Apps/Example Editor.app"}, {"zap": [{"trash": ["~/Library/Caches/example"]}]}]
+    },
+    {
+      "token": "current-app", "full_token": "current-app", "tap": "homebrew/cask",
+      "name": ["Current App"], "version": "4.0", "installed": "4.0",
+      "auto_updates": false, "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "artifacts": [{"app": ["Current App.app"], "target": "/Applications/Current App.app"}]
+    },
+    {
+      "token": "self-updater", "full_token": "self-updater", "tap": "homebrew/cask",
+      "name": ["Self Updater"], "version": "9", "installed": "8", "auto_updates": true,
+      "artifacts": [{"app": ["Self Updater.app"], "target": "/Applications/Self Updater.app"}]
+    },
+    {
+      "token": "unversioned", "full_token": "unversioned", "tap": "homebrew/cask",
+      "name": ["Unversioned"], "version": "latest", "installed": "latest", "auto_updates": false,
+      "artifacts": [{"app": ["Unversioned.app"], "target": "/Applications/Unversioned.app"}]
+    }
+  ]
+}

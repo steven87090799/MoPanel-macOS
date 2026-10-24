@@ -1,0 +1,28 @@
+[0/1] Planning build
+Building for debugging...
+[0/4] Write sources
+[2/4] Write swift-version--692D7D6F1AAC6E0F.txt
+[4/8] Emitting module MoPanelCoreTests
+[5/8] Compiling MoPanelCoreTests AppUpdateTests.swift
+[7/14] Emitting module MoPanelProcess
+[8/14] Compiling MoPanelProcess ManagedProcess.swift
+[9/14] /workspace/scratch/295743c3c15b/MoPanel/.build-root-native/x86_64-unknown-linux-gnu/debug/MoPanelPackageDiscoveredTests.derived/all-discovered-tests.swift
+[10/15] Write sources
+[12/19] Compiling MoPanelPackageDiscoveredTests all-discovered-tests.swift
+[13/19] Compiling MoPanelPackageDiscoveredTests MoPanelProcessTests.swift
+[14/19] Compiling MoPanelPackageDiscoveredTests MoPanelCoreTests.swift
+[15/19] Emitting module MoPanelPackageDiscoveredTests
+[16/18] Write Objects.LinkFileList
+[17/18] Linking MoPanelPackageTests.xctest
+Build complete! (2.32s)
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Test Suite 'Selected tests' started at 2026-10-24 15:07:43.323
+Test Suite 'StreamingTests' started at 2026-10-24 15:07:43.324
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' started at 2026-10-24 15:07:43.324
+Test Case 'StreamingTests.testPTYPromptWithoutNewlineArrivesBeforeExit' passed (0.028 seconds)
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' started at 2026-10-24 15:07:43.353
+Test Case 'StreamingTests.testSmallStdoutAndStderrArriveWhileChildRemainsRunning' passed (0.025 seconds)
+Test Suite 'StreamingTests' passed at 2026-10-24 15:07:43.378
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.053 (0.053) seconds
+Test Suite 'Selected tests' passed at 2026-10-24 15:07:43.378
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.053 (0.053) seconds

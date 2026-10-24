@@ -18,17 +18,24 @@
     "scripts/audit_cli.py": "f5b1f3517d8b0540e8deef55ddd14507083f0adb132393da7cf910854767e966",
     "scripts/prepare_mole_fixture.py": "f6bd170fdc2a61f2b9a10abb861ff6a874d1aae7506b4c03da686ec8aea08b5b",
     "scripts/package_source.py": "1f63a79500b824b3754175c4d56e14b7e7a104afaa990214a6d3a804ea7a9ee2",
-    "scripts/write_release_report.py": "067f479c5150812f5a72865606a49cead93771ddaa75a9e268261c8de46a1731",
+    "scripts/write_release_report.py": "71a11c948898c5c5aacd8d52750d38265beab1d87b0730bc086bae13ec211ba2",
     "scripts/build.sh": "f0d60c479d8b6699f5270daacd63cd58a371310bb980f0380e0cd83de21a9ba2",
     "scripts/verify-package.sh": "c2de346573687c060f6cf28f4b34cbc0a6bb78fde09805828b87ce32223a3a91",
     "scripts/profile.py": "eb617efb4e800cf5cb78bddba4a1f1e33f89c91a982dad05b55afcef5ce5aa60",
-    "scripts/test_profile.py": "66a10a2ea0a47ef55e848f8f6d09144b0be58eb38619930f043749b26a490bd2"
+    "scripts/test_profile.py": "66a10a2ea0a47ef55e848f8f6d09144b0be58eb38619930f043749b26a490bd2",
+    "scripts/smoke_test.py": "3c94505aeb2e65d6c1404ca33366f240d5c07ab33cc9efb834fc1411115809f1",
+    ".github/workflows/build.yml": "8ddb140ee15ad63bdce3f9ae57975672e2185de564372df0bffb6dbe64e9248e"
   },
-  "updated_at": "2026-10-24T06:55:59.252995+00:00",
+  "updated_at": "2026-10-24T07:00:21.678251+00:00",
   "separate_profile_harness_tests": {
     "passed": 5,
     "failed": 0,
     "evidence": "docs/PROFILE_HARNESS_TEST_OUTPUT.txt",
     "scope": "Python harness only; no actual macOS performance values"
+  },
+  "separate_smoke_failure_reporter_check": {
+    "passed": true,
+    "source": "scripts/smoke_test.py",
+    "scope": "Synthetic launcher exited1; JSON/stdout/stderr survived, smoke gate still failed; no macOS UI or Mole process launched"
   }
 }
