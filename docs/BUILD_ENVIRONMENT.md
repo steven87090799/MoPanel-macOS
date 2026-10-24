@@ -58,6 +58,8 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 ## 公開 GitHub Actions 建置狀態
 
+run40076809338在最前方的debug診斷harness出現一個fixture路徑別名斷言（7／8通過），尚未開始編譯或啟動App。測試已改用canonical期望並加入symlink別名fixture，Linux8／8通過；正式診斷與App沒有因此改動。等待下一次真正Mac執行，不能把這次當成已取得stack。
+
 公開 repository [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS) 已啟動免費標準 `xcode-27` runner。實際 image 為 `20261022.0305.3`，macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64。初次遇到的未認證 GitHub API rate limit 已透過僅限 API host、且不隨 redirect 的 read-only CI token 處理；binary 與 checksum 下載仍無授權 header。
 
 [Run 40076181707](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076181707) 已通過140個Mac XCTest（116 Core＋24 Process，0失敗／略過），及整合版App／helpers release編譯、ARM64與ad-hoc簽章驗證。Startup與installed receipt路徑修復已在Mac通過。15個Homebrew audit、6個獨立gate harness與5個smoke driver與5個crash辨識案例也在真Mac全過。

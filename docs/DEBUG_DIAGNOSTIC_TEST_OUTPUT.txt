@@ -8,6 +8,6 @@ test_signing_denial_is_recorded_without_debugger_or_security_changes (__main__.D
 test_unexpected_original_change_is_detected (__main__.DebugFailureTests.test_unexpected_original_change_is_detected) ... ok
 
 ----------------------------------------------------------------------
-Ran 8 tests in 0.014s
+Ran 8 tests in 0.019s
 
 OK

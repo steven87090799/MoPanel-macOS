@@ -50,11 +50,13 @@ class DebugFailureTests(unittest.TestCase):
 
     def test_only_copy_is_signed_original_hashes_preserved_and_report_is_separate(self):
         with tempfile.TemporaryDirectory(prefix="mopanel-debug-guard-") as temporary:
-            root = pathlib.Path(temporary); app, output, environment = self.fixture(root)
+            actual = pathlib.Path(temporary) / "actual"; actual.mkdir()
+            root = pathlib.Path(temporary) / "alias"; root.symlink_to(actual, target_is_directory=True)
+            app, output, environment = self.fixture(root)
             before = debug.original_hashes(app); commands = []
             def lldb(guardian, executable, child_environment, directory, seconds):
                 self.assertNotEqual(executable, app / "Contents/MacOS/MoPanel")
-                self.assertEqual(guardian, app / "Contents/Helpers/MoPanelGuardian")
+                self.assertEqual(guardian, app.resolve() / "Contents/Helpers/MoPanelGuardian")
                 self.assertNotEqual(child_environment["MOPANEL_SMOKE_REPORT"], environment["MOPANEL_SMOKE_REPORT"])
                 self.assertNotIn("MOPANEL_GITHUB_TOKEN", child_environment)
                 self.assertLessEqual(seconds, 43)
@@ -63,6 +65,7 @@ class DebugFailureTests(unittest.TestCase):
             with mock.patch.object(debug.platform, "system", return_value="Darwin"), mock.patch.object(debug.subprocess, "run", side_effect=self.commands(commands)), mock.patch.object(debug, "run_lldb", side_effect=lldb):
                 result = debug.diagnose(app, output, environment, failed=True)
             self.assertTrue(result["original_files_unchanged"])
+            self.assertEqual(result["status"], "diagnostic_finished_not_acceptance", result)
             self.assertTrue(result["original_smoke_still_failed"])
             self.assertEqual(debug.original_hashes(app), before)
             self.assertFalse(pathlib.Path(environment["MOPANEL_SMOKE_REPORT"]).exists())

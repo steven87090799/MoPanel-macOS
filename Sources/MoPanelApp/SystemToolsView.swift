@@ -64,6 +64,7 @@ struct SystemToolsView: View {
                         Button(t("停止", "Stop")) { controller.stopKeepAwake() }.buttonStyle(.borderedProminent)
                     } else {
                         Button(t("開始", "Start")) { controller.startKeepAwake(mode: mode, duration: duration) }.buttonStyle(.borderedProminent)
+                            .disabled(!controller.userToolActionsAllowed)
                     }
                 }
                 if !controller.keepAwakeMessage.isEmpty {
@@ -86,7 +87,7 @@ struct SystemToolsView: View {
                     Toggle(t("白色背景", "White background"), isOn: $lightScreen)
                     Spacer()
                     Button(t("開始清潔螢幕", "Start Clean Screen")) { controller.startCleanScreen(light: lightScreen) }
-                        .buttonStyle(.bordered).disabled(controller.isCleaningScreen)
+                        .buttonStyle(.bordered).disabled(controller.isCleaningScreen || !controller.userToolActionsAllowed)
                 }
                 Text(t("這個模式不鎖住系統鍵盤或滑鼠，不需要輔助使用權限。清潔鍵盤時仍可能觸發快捷鍵；請先儲存工作。", "This mode does not lock system keyboard or mouse input and requires no Accessibility permission. Keyboard shortcuts can still work; save your work first.")).font(.caption).foregroundStyle(.secondary)
             }.padding(12)

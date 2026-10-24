@@ -84,9 +84,13 @@ struct ProcessInspectorView: View {
                 if let zombies = snapshot.zombieCount { Text(model.t("殭屍行程：", "Zombie processes: ") + String(zombies)).font(.caption) }
                 Spacer()
                 Button(model.t("開啟系統活動監視器", "Open Activity Monitor")) {
+                    guard !model.isTestLaunch else {
+                        outcome = model.t("測試模式不會開啟真實活動監視器。", "Test mode does not open the real Activity Monitor.")
+                        return
+                    }
                     if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.ActivityMonitor") { NSWorkspace.shared.open(url) }
                     else { outcome = model.t("找不到系統活動監視器。", "Activity Monitor could not be located.") }
-                }
+                }.disabled(model.isTestLaunch)
             }
             ForEach(snapshot.processAlerts) { alert in
                 Notice(text: alert.name + " · " + DisplayFormat.percent(alert.cpu) + " · " + alert.window + " · " + alert.status, warning: true)

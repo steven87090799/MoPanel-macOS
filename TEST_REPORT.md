@@ -6,6 +6,8 @@
 
 ## 交付狀態
 
+後續 [run40076809338](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076809338) 在建置前的隔離debug harness中7／8通過，一個mock期望把`/var`與`/private/var`視為不同路徑，阻擋流程，沒有新App或LLDB結果。已將測試期望canonicalize並加入實際symlink別名fixture，8／8在Linux重新通過；正式診斷及產品碼未改動。下列140個Mac XCTest與SIGSEGV仍指最後實際執行App的run40076181707。
+
 **已取得真正的 macOS 27 ARM64 編譯與測試結果；最新整合版尚有 macOS 測試失敗，未產生可交付的 `MoPanel-macOS27-arm64.zip`。**
 
 公開 repository 為 [steven87090799/MoPanel-macOS](https://github.com/steven87090799/MoPanel-macOS)。最新的 [run 40076181707](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40076181707)（commit `e7eef21badb2ebf4a6b77232dcc7bccc96033c89`）使用 macOS 27.0.1、Xcode 27.1、Apple Swift 6.4 ARM64；**140／140 Mac XCTest 通過，0 failures／skipped**，其中116 Core及24 Process／Editor／Streaming。之前的Startup15項與installed receipt12項路徑回歸均已通過真Mac測試。

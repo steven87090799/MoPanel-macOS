@@ -87,6 +87,7 @@ struct SystemToolsSmokeReport: Codable, Sendable {
     init(language: String = "zh-Hant") { self.language = language }
 
     var hasKeepAwakeSession: Bool { session != nil || assertion != nil }
+    var userToolActionsAllowed: Bool { !ReadOnlyBenchmark.isTestLaunch(ProcessInfo.processInfo.arguments) }
     var keepsScreenAwake: Bool { keepAwakeDecision == .active && keepAwakeMode == .displayAndSystem }
     var assertionIsActive: Bool { assertion?.isActive == true }
     private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
@@ -96,6 +97,10 @@ struct SystemToolsSmokeReport: Codable, Sendable {
     }
 
     func startKeepAwake(mode: KeepAwakeMode, duration: KeepAwakeDuration) {
+        guard userToolActionsAllowed else {
+            errorMessage = t("測試模式不會啟動一般保持喚醒工作階段。", "Test mode does not start normal Keep Awake sessions.")
+            return
+        }
         stopKeepAwake()
         guard assertion == nil else { return } // A failed release must be retried first.
         keepAwakeMode = mode
@@ -221,6 +226,10 @@ struct SystemToolsSmokeReport: Codable, Sendable {
     // MARK: Clean Screen (no system-wide input lock)
 
     func startCleanScreen(light: Bool = false) {
+        guard userToolActionsAllowed else {
+            errorMessage = t("測試模式不會顯示清潔螢幕遮罩。", "Test mode does not present Clean Screen overlays.")
+            return
+        }
         stopCleanScreen()
         guard !NSScreen.screens.isEmpty else {
             errorMessage = t("找不到可用螢幕。", "No display is available."); return
