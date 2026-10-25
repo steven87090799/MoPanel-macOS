@@ -6,13 +6,14 @@ struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var editingLayout = false
+    @State private var scrolling = false
     @State private var layoutFrames: [DashboardDragTarget: CGRect] = [:]
     @State private var activeLayoutDrag: DashboardDragTarget?
     @State private var layoutDragPoint = CGPoint.zero
     var body: some View {
         ScrollViewReader { proxy in
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            LazyVStack(alignment: .leading, spacing: 20) {
                 PageHeader(title: model.t("看見 Mac 的當下", "Your Mac, right now"), subtitle: model.t("Mole 提供即時資源資料，macOS 補充記憶體壓力與硬體讀值。點選摘要卡可查看詳細資料。", "Live resources from Mole, with memory pressure and hardware readings from macOS. Select a summary card for details."), symbol: "waveform.path.ecg") {
                     NativeActionButton(model.t("單次快照", "Snapshot"), identifier: "mopanel.dashboard.snapshot") {
                         Task { await model.takeSnapshot() }
@@ -48,7 +49,7 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             if editingLayout { layoutControls(section, in: .sections) }
                             module(section, snapshot: s) { target in
-                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(target, anchor: .top) }
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(DashboardLayout.section(forDetailTarget: target), anchor: .top) }
                             }
                         }
                         .modifier(DashboardTargetFrame(target: DashboardDragTarget(group: .sections, item: section), enabled: editingLayout))
@@ -64,6 +65,8 @@ struct DashboardView: View {
             }.padding(26).scrollTargetLayout()
         }
         .scrollPosition(id: Binding(get: { model.dashboardScrollAnchor }, set: { model.dashboardScrollAnchor = $0 }))
+        .onScrollPhaseChange { _, phase in scrolling = phase != .idle }
+        .environment(\.dashboardScrolling, scrolling)
         .coordinateSpace(name: "dashboardLayout")
         .onPreferenceChange(DashboardFramePreference.self) { value in
             if layoutFrames != value { layoutFrames = value }
@@ -90,7 +93,7 @@ struct DashboardView: View {
         switch metric {
         case "cpu":
                 summaryCard("cpu-details", title: "CPU", navigate: navigate) {
-                    Text(s.cpu.logicalCPU > 0 ? DisplayFormat.percent(s.cpu.usage) : "—").font(.system(size: 42, weight: .light, design: .rounded))
+                    Text(s.cpu.logicalCPU > 0 ? DisplayFormat.percent(s.cpu.usage) : "—").font(.system(size: 42, weight: .light, design: .rounded)).monospacedDigit().lineLimit(1)
                     Text("\(s.cpu.logicalCPU) " + model.t("邏輯核心", "logical cores")).font(.callout).foregroundStyle(.secondary)
                     Text(model.t("1 分鐘負載 ", "1-minute load ") + DisplayFormat.number(s.cpu.load1, suffix: "")).font(.caption)
                     Text(model.t("溫度 ", "Temperature ") + positive(model.cpuTemperature, suffix: " °C")).font(.caption).foregroundStyle(.secondary)
@@ -98,14 +101,14 @@ struct DashboardView: View {
         case "gpu":
             summaryCard("gpu-details", title: "GPU", navigate: navigate) {
                 Text(DisplayFormat.percent(s.gpu.first.flatMap { model.gpuUsage($0) } ?? model.nativeHardware.gpuUsage))
-                    .font(.system(size: 42, weight: .light, design: .rounded))
+                    .font(.system(size: 42, weight: .light, design: .rounded)).monospacedDigit().lineLimit(1)
                 Text(s.gpu.first?.name ?? model.t("圖形處理器", "Graphics processor")).font(.callout).foregroundStyle(.secondary).lineLimit(1)
                 Text(s.gpu.first?.coreCount.map { "\($0) " + model.t("核心", "cores") } ?? "—").font(.caption)
                 Text(model.t("溫度 ", "Temperature ") + positive(model.gpuTemperature, suffix: " °C")).font(.caption).foregroundStyle(.secondary)
             }
         default:
                 summaryCard("memory-details", title: model.t("記憶體", "Memory"), navigate: navigate) {
-                    Text(s.memory.total > 0 ? DisplayFormat.percent(s.memory.usedPercent) : "—").font(.system(size: 42, weight: .light, design: .rounded))
+                    Text(s.memory.total > 0 ? DisplayFormat.percent(s.memory.usedPercent) : "—").font(.system(size: 42, weight: .light, design: .rounded)).monospacedDigit().lineLimit(1)
                     Text(DisplayFormat.bytes(s.memory.used) + " / " + DisplayFormat.bytes(s.memory.total)).font(.callout).foregroundStyle(.secondary)
                     Text(model.t("壓力：", "Pressure: ") + model.memoryPressureText).font(.caption).foregroundStyle(pressureColor)
                     Text(model.t("可用 ", "Available ") + DisplayFormat.bytes(s.memory.available) + " · Swap " + DisplayFormat.bytes(s.memory.swapUsed)).font(.caption).lineLimit(1)
@@ -546,8 +549,16 @@ enum MonitorFormat {
     }
 }
 
-enum TrendMetric { case cpu, memory, disk, network }
-struct TrendPoint: Identifiable {
+private struct DashboardScrollingKey: EnvironmentKey { static let defaultValue = false }
+private extension EnvironmentValues {
+    var dashboardScrolling: Bool {
+        get { self[DashboardScrollingKey.self] }
+        set { self[DashboardScrollingKey.self] = newValue }
+    }
+}
+
+enum TrendMetric: Hashable { case cpu, memory, disk, network }
+struct TrendPoint: Identifiable, Equatable {
     let id: String
     let sampleIndex: Int
     let date: Date
@@ -556,11 +567,25 @@ struct TrendPoint: Identifiable {
     let segment: String
     let isolated: Bool
 }
+private struct TrendRenderKey: Equatable {
+    let revision: UInt64
+    let metric: TrendMetric
+    let network: String
+    let language: String
+}
+private struct PreparedTrend: Equatable {
+    let points: [TrendPoint]
+    let gaps: [ResourceTrendGap]
+    let domain: ClosedRange<Date>?
+    let names: [String]
+}
 struct TrendCard: View {
     @EnvironmentObject private var model: AppModel
     let title: String
     let unit: String
     let metric: TrendMetric
+    @Environment(\.dashboardScrolling) private var scrolling
+    @State private var plotCache = DeferredRenderCache<TrendRenderKey, PreparedTrend>()
     private var isRate: Bool { metric == .disk || metric == .network }
     private var series: [(String, (TrendSample) -> Double?)] {
         switch metric {
@@ -572,7 +597,7 @@ struct TrendCard: View {
             return [(model.t("下載", "Download"), { $0.networkInterfaces[name]?.rxRateMbs }), (model.t("上傳", "Upload"), { $0.networkInterfaces[name]?.txRateMbs })]
         }
     }
-    private func plotData() -> (points: [TrendPoint], gaps: [ResourceTrendGap], domain: ClosedRange<Date>?, names: [String]) {
+    private func plotData() -> PreparedTrend {
         var points: [TrendPoint] = [], gaps = Set<ResourceTrendGap>()
         var domain: ClosedRange<Date>?
         let configuredSeries = self.series
@@ -585,7 +610,7 @@ struct TrendCard: View {
                            value: point.value, series: pair.0, segment: "\(seriesIndex):\(point.segment)", isolated: point.isolated)
             }
         }
-        return (points, gaps.sorted { $0.start < $1.start }, domain, configuredSeries.map { $0.0 })
+        return PreparedTrend(points: points, gaps: gaps.sorted { $0.start < $1.start }, domain: domain, names: configuredSeries.map { $0.0 })
     }
     private var currentText: String {
         guard let status = model.status else { return "—" }
@@ -608,7 +633,8 @@ struct TrendCard: View {
         }
     }
     var body: some View {
-        let data = plotData()
+        let key = TrendRenderKey(revision: model.trendRevision, metric: metric, network: model.selectedNetwork, language: model.language)
+        let data = plotCache.value(for: key, canUpdate: !scrolling) { plotData() }
         let points = data.points
         let peak = points.map(\.value).max() ?? 0
         let multiplier = isRate && peak < 1 ? 1024.0 : 1.0
@@ -624,26 +650,9 @@ struct TrendCard: View {
                 Text(context).font(.caption).foregroundStyle(.secondary).lineLimit(1).help(context)
                 if points.isEmpty { Text(model.t("等待讀值", "Waiting for readings")).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 125) }
                 else {
-                    Chart {
-                        if let gap = significantGap {
-                            RectangleMark(xStart: .value("Start", gap.start), xEnd: .value("End", gap.end), yStart: .value(chartUnit, 0), yEnd: .value(chartUnit, maximum))
-                                .foregroundStyle(.primary.opacity(0.025))
-                                .annotation(position: .overlay) { Text(model.t("未記錄", "No readings")).font(.caption2).foregroundStyle(.secondary) }
-                        }
-                        ForEach(points) { point in
-                            LineMark(x: .value(model.t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier), series: .value("Segment", point.segment))
-                                .foregroundStyle(by: .value(model.t("指標", "Metric"), point.series)).interpolationMethod(.linear)
-                            if point.isolated {
-                                PointMark(x: .value(model.t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier))
-                                    .foregroundStyle(by: .value(model.t("指標", "Metric"), point.series)).symbolSize(16)
-                            }
-                        }
-                    }
-                    .chartForegroundStyleScale(domain: data.names, range: Array([MoPanelTheme.accent, MoPanelTheme.chartSecondary].prefix(data.names.count)))
-                    .chartXScale(domain: domain)
-                    .chartYScale(domain: 0...maximum)
-                    .chartXAxis { AxisMarks(values: .automatic(desiredCount: 3)) { _ in AxisValueLabel(format: .dateTime.hour().minute().second()) } }
-                    .frame(height: 125)
+                    TrendChartGraphic(data: data, chartUnit: chartUnit, multiplier: multiplier,
+                                      maximum: maximum, significantGap: significantGap, language: model.language)
+                        .equatable()
                     .accessibilityLabel(title + " " + currentText + (data.gaps.isEmpty ? "" : model.t("，資料中斷處不連線", ", gaps are not connected")))
                 }
                 HStack {
@@ -655,5 +664,41 @@ struct TrendCard: View {
                     .font(.caption2).foregroundStyle(.secondary).frame(height: 14, alignment: .leading).accessibilityHidden(data.gaps.isEmpty)
             }.padding(8)
         }
+    }
+}
+
+/// This view does not subscribe to AppModel. Unrelated hardware/process values
+/// and live labels cannot rebuild an unchanged Swift Charts graph.
+private struct TrendChartGraphic: View, Equatable {
+    let data: PreparedTrend
+    let chartUnit: String
+    let multiplier: Double
+    let maximum: Double
+    let significantGap: ResourceTrendGap?
+    let language: String
+    private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
+    var body: some View {
+        Chart {
+            if let gap = significantGap {
+                RectangleMark(xStart: .value("Start", gap.start), xEnd: .value("End", gap.end),
+                              yStart: .value(chartUnit, 0), yEnd: .value(chartUnit, maximum))
+                    .foregroundStyle(.primary.opacity(0.025))
+                    .annotation(position: .overlay) { Text(t("未記錄", "No readings")).font(.caption2).foregroundStyle(.secondary) }
+            }
+            ForEach(data.points) { point in
+                LineMark(x: .value(t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier), series: .value("Segment", point.segment))
+                    .foregroundStyle(by: .value(t("指標", "Metric"), point.series)).interpolationMethod(.linear)
+                if point.isolated {
+                    PointMark(x: .value(t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier))
+                        .foregroundStyle(by: .value(t("指標", "Metric"), point.series)).symbolSize(16)
+                }
+            }
+        }
+        .chartForegroundStyleScale(domain: data.names, range: Array([MoPanelTheme.accent, MoPanelTheme.chartSecondary].prefix(data.names.count)))
+        .chartXScale(domain: data.domain ?? (Date()...Date().addingTimeInterval(1)))
+        .chartYScale(domain: 0...maximum)
+        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 3)) { _ in AxisValueLabel(format: .dateTime.hour().minute().second()) } }
+        .frame(height: 125)
+        .transaction { $0.animation = nil }
     }
 }

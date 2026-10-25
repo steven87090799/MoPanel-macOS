@@ -53,7 +53,8 @@ import MoPanelProcess
     private var nativeSampleTask: Task<Void, Never>?
     private var lastNativeRequest = Date.distantPast
     private var nativePrimaryInterface: String?
-    @Published var trends: [TrendSample] = []
+    private(set) var trendRevision: UInt64 = 0
+    @Published var trends: [TrendSample] = [] { didSet { trendRevision &+= 1 } }
     private var nextTrendStartsSegment = false
     @Published var monitoring = false
     @Published var monitorWarnings = ""
@@ -468,6 +469,15 @@ import MoPanelProcess
         let session = watchSession
         stopMonitoring()
         if let session { _ = await session.wait() }
+    }
+
+    /// Bounded, explicitly synthetic manual UI preview; never accepts data in
+    /// normal launches and never starts a second collector.
+    func receiveScrollPreview(_ snapshot: StatusSnapshot) {
+        guard fixtureMode, isTestLaunch,
+              Array(ProcessInfo.processInfo.arguments.dropFirst()) == ["--smoke-test"],
+              ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates" else { return }
+        acceptStatus(snapshot)
     }
 
     private func acceptStatus(_ snapshot: StatusSnapshot) {

@@ -152,6 +152,15 @@ import MoPanelCore
         model.cleanupReview.sourceDate = Date()
         model.cleanupReview.message = "合成掃描結果；此模式無法移除檔案。"
         model.cleanupReview.recommend()
+        if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates" {
+            model.stopMonitoring(); model.monitoring = true
+            let now = Date()
+            model.trends = (0..<120).map { index in
+                TrendSample(date: now.addingTimeInterval(Double(index - 119) * 2), cpu: Double(15 + (index * 17) % 70), memory: Double(60 + index % 20),
+                            diskRead: Double(index % 9), diskWrite: Double(index % 4), down: nil, up: nil, gpu: 20,
+                            networkInterfaces: [:], sampleInterval: 2)
+            }
+        }
         if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "trend-gaps" {
             model.stopMonitoring()
             let start = Date().addingTimeInterval(-424)
@@ -294,7 +303,24 @@ import MoPanelCore
                     previewWindow = panel
                 }
                 checkpoint("manual_preview.ready")
-                try? await Task.sleep(for: .seconds(seconds))
+                if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates",
+                   let source = AppResources.bundle?.url(forResource: "status", withExtension: "json", subdirectory: "Fixtures"),
+                   let bytes = try? Data(contentsOf: source),
+                   let original = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any] {
+                    // Exact fixture launch plus the existing 300-second bound.
+                    // No timer or synthetic values are installed in production.
+                    for index in 0..<((seconds + 1) / 2) {
+                        var object = original
+                        var cpu = object["cpu"] as? [String: Any] ?? [:]
+                        cpu["usage"] = 10 + (index * 23) % 80
+                        object["cpu"] = cpu
+                        object["collected_at"] = ISO8601DateFormatter().string(from: Date())
+                        if let data = try? JSONSerialization.data(withJSONObject: object), let snapshot = try? MoleJSON.decodeStatus(data) {
+                            model.receiveScrollPreview(snapshot)
+                        }
+                        try? await Task.sleep(for: .seconds(min(2, seconds - index * 2)))
+                    }
+                } else { try? await Task.sleep(for: .seconds(seconds)) }
                 previewWindow?.close()
                 model.section = .dashboard
             }

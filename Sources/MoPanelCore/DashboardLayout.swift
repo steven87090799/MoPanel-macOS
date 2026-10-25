@@ -24,6 +24,13 @@ public struct DashboardLayout: Equatable, Sendable {
         }))
     }
     public func items(in group: Group) -> [String] { orders[group] ?? [] }
+    /// Lazy stacks know their direct section IDs before constructing nested
+    /// detail views. Navigation must target those stable, top-level IDs.
+    public static func section(forDetailTarget target: String) -> String {
+        if target == "gpu-details" { return "hardware" }
+        let candidate = target.hasSuffix("-details") ? String(target.dropLast(8)) : target
+        return defaults[.sections]!.contains(candidate) ? candidate : "summary"
+    }
     public func save(to defaults: UserDefaults) {
         for group in Group.allCases { defaults.set(items(in: group), forKey: "dashboardLayout." + group.rawValue) }
     }
