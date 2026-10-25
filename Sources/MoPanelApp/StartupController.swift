@@ -135,9 +135,13 @@ private struct StartupCommandResult {
                 catch { rows[index].loadState = .unknown(error.localizedDescription) }
             }
             progress = 1
-            statusMessage = backgroundReadAt != nil
-                ? t("已讀取登入項目、背景 App 與服務。點右側詳細資訊可查看來源與設定。", "Login items, background apps and services loaded. Use Details to inspect their source and settings.")
-                : t("已讀取 ", "Read ") + String(rows.count) + t(" 個背景服務；登入項目與背景 App 尚未完成讀取。", " background services; login items and background apps have not been read.")
+            if backgroundReadError != nil && backgroundReadAt != nil {
+                statusMessage = t("背景服務已更新；登入項目與背景 App 保留上次清單。", "Services updated; the previous login and background-app list is retained.")
+            } else {
+                statusMessage = backgroundReadAt != nil
+                    ? t("已讀取登入項目、背景 App 與服務。點右側詳細資訊可查看來源與設定。", "Login items, background apps and services loaded. Use Details to inspect their source and settings.")
+                    : t("已讀取 ", "Read ") + String(rows.count) + t(" 個背景服務；登入項目與背景 App 尚未完成讀取。", " background services; login items and background apps have not been read.")
+            }
         } catch is CancellationError {
             statusMessage = t("已取消；已顯示的項目可能只是部分結果。", "Cancelled; displayed rows may be partial results.")
         } catch { errorMessage = error.localizedDescription }
@@ -147,6 +151,15 @@ private struct StartupCommandResult {
         guard begin(t("讀取完整登入與背景清單…", "Reading login and background items…")) else { return }
         defer { finish() }
         await readBackgroundItems()
+        if cancelled || Task.isCancelled {
+            statusMessage = t("已停止讀取，保留原有清單。", "Reading stopped; the existing list is retained.")
+        } else if backgroundReadError != nil {
+            statusMessage = backgroundReadAt != nil
+                ? t("未能更新；已保留上次系統清單。", "Could not update; the previous system list is retained.")
+                : t("未能讀取完整系統清單。", "Could not read the complete system list.")
+        } else {
+            statusMessage = t("登入項目與背景 App 已更新。", "Login items and background apps updated.")
+        }
     }
 
     private func readBackgroundItems() async {
@@ -162,6 +175,8 @@ private struct StartupCommandResult {
             guard result.exitCode == 0, !result.timedOut, !result.outputTruncated else { throw StartupContractError.unverifiableState }
             let items = try BackgroundStartupParser.parse(String(decoding: result.stdout, as: UTF8.self), userID: userID)
             backgroundItems = items; backgroundReadAt = Date(); backgroundIsImported = false; backgroundReadError = nil
+        } catch is CancellationError {
+            backgroundReadError = nil
         } catch {
             backgroundReadError = (backgroundReadAt != nil ? t("目前保留上次清單。", "Keeping the previous report. ") : "") + t("macOS 尚未提供完整清單。目前仍可查看背景服務；登入項目與背景 App 可在系統設定查看，或從更多選項匯入系統清單。", "macOS has not provided the complete list. Background services remain available. View login and background apps in System Settings, or import a system report under More Options.")
         }

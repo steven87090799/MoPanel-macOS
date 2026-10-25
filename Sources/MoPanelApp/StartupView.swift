@@ -51,7 +51,7 @@ struct StartupView: View {
                 ExecutionCommandView(command: "sfltool dumpbtm")
                 HStack {
                     TextField(t("搜尋 App、服務或路徑", "Search app, service or path"), text: $search).textFieldStyle(.roundedBorder)
-                    Picker(t("來源", "Source"), selection: $scope) {
+                    Picker(t("服務範圍", "Service scope"), selection: $scope) {
                         Text(t("全部", "All")).tag("all")
                         ForEach(StartupScope.allCases, id: \.rawValue) { value in Text(scopeTitle(value)).tag(value.rawValue) }
                     }.frame(width: 210)
@@ -131,7 +131,8 @@ struct StartupView: View {
                     .font(.caption).foregroundStyle(item.enabled == true ? MoPanelTheme.positive : Color.secondary)
                 Button { toggleExpanded(item.id) } label: { Image(systemName: "info.circle") }.buttonStyle(.plain)
                     .accessibilityLabel(t("查看 ", "Details for ") + item.name)
-                Button(t("管理…", "Manage…")) { controller.openLoginItemsSettings() }.buttonStyle(.borderless)
+                Button(t("系統設定", "System Settings")) { controller.openLoginItemsSettings() }.buttonStyle(.borderless)
+                    .help(t("在 macOS 登入項目設定調整這個項目", "Manage this item in macOS Login Items settings"))
             }
             if expandedRows.contains(item.id) {
                 Text(item.kind == .login ? t("登入 Mac 時可自動開啟；由 macOS 登入項目設定管理。", "May open automatically when you log in. Managed by macOS Login Items.") : item.kind == .service ? t("提供 App 的背景功能，依登入、排程或需求啟動；已啟用不代表現在正在執行。", "Provides app background features at login, on a schedule or on demand. Enabled does not mean currently running.") : t("允許這個 App 的背景功能執行，不代表它現在正在使用 CPU。由系統設定管理。", "Allows this app's background features; it does not mean it is currently using CPU. Managed in System Settings."))
