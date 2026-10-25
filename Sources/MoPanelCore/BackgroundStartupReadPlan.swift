@@ -9,7 +9,7 @@ public enum BackgroundStartupReadPlan {
     public static let outputLimit = 2 * 1024 * 1024
     // alarm survives exec: even if the GUI/authorization client disappears,
     // the root query cannot continue indefinitely. No files are written.
-    public static let rootCommand = #"/usr/bin/env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin LC_ALL=C LANG=C /usr/bin/perl -T -e 'alarm 12; exec {"/usr/bin/sfltool"} "/usr/bin/sfltool", "dumpbtm"; exit 127;'"#
+    public static let rootCommand = #"/usr/bin/env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin LC_ALL=C LANG=C /usr/bin/perl -T -e '$ENV{PATH}="/usr/bin:/bin:/usr/sbin:/sbin"; alarm 12; exec {"/usr/bin/sfltool"} "/usr/bin/sfltool", "dumpbtm"; exit 127;'"#
     public static func authorizationScript(english: Bool) -> String {
         let prompt = english
             ? "MoPanel needs to read the complete login and background-item list. This read-only check does not change settings."
