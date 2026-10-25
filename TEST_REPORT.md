@@ -1,6 +1,6 @@
-> 最新本機驗證：`c53bcc1` 完成 release 建置、236 項 XCTest（0 失敗／略過）、20 項 fixture 檢查、46 項原生介面斷言、29 次已驗證按鈕派送、17 項 Guardian 測試及 App／ZIP 檢查。啟動清單與官方逐項核對為 4／14／24，詳細結果與限制見 [啟動清單驗證](docs/audit-2026-10-25/startup-inventory.md)。依使用者要求，**尚未替換已安裝版本**。
+> 最新本機驗證：`145ede9` 完成 release 建置、248 項 XCTest（0 失敗／略過）、20 項 fixture 檢查、46 項原生介面斷言、29 次已驗證按鈕派送、17 項 Guardian 測試及 App／ZIP 檢查。一次授權完整清單與圖表分段修正見 [最新驗證](docs/audit-2026-10-25/authorization-and-chart-gaps.md)。依使用者要求，**尚未替換已安裝版本**。
 >
-> 開發審查見 [PRODUCT_READINESS_AUDIT.md](docs/PRODUCT_READINESS_AUDIT.md)。以下保留歷史報告，不能當成目前版本已全面驗收。
+> 啟動清單逐項比對見 [前一輪驗證](docs/audit-2026-10-25/startup-inventory.md)。開發審查見 [PRODUCT_READINESS_AUDIT.md](docs/PRODUCT_READINESS_AUDIT.md)。以下保留歷史報告，不能當成目前版本已全面驗收。
 
 # 實際建置與驗證報告
 
