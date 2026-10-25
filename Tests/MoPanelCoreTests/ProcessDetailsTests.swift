@@ -17,5 +17,12 @@ final class ProcessDetailsTests: XCTestCase {
         XCTAssertNil(ProcessDetailsReader.read(pid: 0))
         XCTAssertNil(ProcessDetailsReader.read(pid: getpid(), expectedAppPath: "/Applications/Not-This-Process.app"))
     }
+    func testLaunchLabelRequiresUniqueExactPIDAndSafeJobName() {
+        let listing = "PID\tStatus\tLabel\n1221\t0\tapplication.com.apple.Safari.example\n1222\t0\torg.example.other\n"
+        XCTAssertEqual(ProcessLaunchEvidence.serviceLabel(in: listing, pid: 1221), "application.com.apple.Safari.example")
+        XCTAssertNil(ProcessLaunchEvidence.serviceLabel(in: listing, pid: 12))
+        XCTAssertNil(ProcessLaunchEvidence.serviceLabel(in: listing + "1221 0 duplicate.job\n", pid: 1221))
+        XCTAssertNil(ProcessLaunchEvidence.serviceLabel(in: "1221 0 bad/job", pid: 1221))
+    }
 }
 #endif

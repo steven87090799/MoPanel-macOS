@@ -6,7 +6,9 @@ struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var editingLayout = false
-    @State private var dragSession = UUID().uuidString
+    @State private var layoutFrames: [DashboardDragTarget: CGRect] = [:]
+    @State private var activeLayoutDrag: DashboardDragTarget?
+    @State private var layoutDragPoint = CGPoint.zero
     var body: some View {
         ScrollViewReader { proxy in
         ScrollView {
@@ -28,16 +30,13 @@ struct DashboardView: View {
                     }
                     Spacer()
 
-                }
-                HStack {
-                    Spacer()
                     if editingLayout {
                         NativeActionButton(model.t("重設排列", "Reset Layout"), identifier: "mopanel.dashboard.layout.reset") {
                             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { model.dashboardLayout = DashboardLayout() }
                         }
                     }
                     NativeActionButton(model.t(editingLayout ? "完成排列" : "編輯排列", editingLayout ? "Done" : "Edit Layout"), identifier: "mopanel.dashboard.layout.edit", systemImage: editingLayout ? "checkmark" : "slider.horizontal.3") {
-                        editingLayout.toggle()
+                        editingLayout.toggle(); activeLayoutDrag = nil
                     }
                 }
                 if editingLayout {
@@ -52,7 +51,8 @@ struct DashboardView: View {
                                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(target, anchor: .top) }
                             }
                         }
-                        .dropDestination(for: String.self) { payloads, _ in _ = acceptDrop(payloads, before: section, in: .sections) }
+                        .modifier(DashboardTargetFrame(target: DashboardDragTarget(group: .sections, item: section), enabled: editingLayout))
+                        .overlay { dropHighlight(section, in: .sections) }
                     }
                     if !model.monitorWarnings.isEmpty {
                         Notice(text: model.t("部分指標可能無法取得；官方診斷：\n", "Some metrics may be unavailable. Mole diagnostics:\n") + model.monitorWarnings, warning: true)
@@ -61,6 +61,10 @@ struct DashboardView: View {
                     ContentUnavailableView(model.t("等待第一筆真實資料", "Waiting for real metrics"), systemImage: "waveform.path.ecg", description: Text(model.t("可開始監控或取得單次快照；尚未提供的數據不會以假數字代替。", "Start monitoring or request a snapshot. Missing data is never replaced by invented values.")))
                 }
             }.padding(26)
+        }
+        .coordinateSpace(name: "dashboardLayout")
+        .onPreferenceChange(DashboardFramePreference.self) { value in
+            if layoutFrames != value { layoutFrames = value }
         }
         }
     }
@@ -73,7 +77,8 @@ struct DashboardView: View {
                         if editingLayout { layoutControls(metric, in: .summary) }
                         summaryMetric(metric, snapshot: s, navigate: navigate)
                     }.frame(maxWidth: .infinity)
-                    .dropDestination(for: String.self) { payloads, _ in _ = acceptDrop(payloads, before: metric, in: .summary) }
+                    .modifier(DashboardTargetFrame(target: DashboardDragTarget(group: .summary, item: metric), enabled: editingLayout))
+                        .overlay { dropHighlight(metric, in: .summary) }
                 }
             }
         }
@@ -271,13 +276,14 @@ struct DashboardView: View {
             if !model.fixtureMode || !model.applicationUsage.isEmpty { GroupBox { ApplicationUsageList().padding(10) } }
         case "trends":
             VStack(alignment: .leading, spacing: 10) {
-                Text(model.t("資源趨勢", "Resource Trends")).font(.headline)
+                if !editingLayout { Text(model.t("資源趨勢", "Resource Trends")).font(.headline) }
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                     ForEach(model.dashboardLayout.items(in: .trends), id: \.self) { metric in
                         VStack(alignment: .leading, spacing: 8) {
                             if editingLayout { layoutControls(metric, in: .trends) }
                             trend(metric)
-                        }.dropDestination(for: String.self) { payloads, _ in _ = acceptDrop(payloads, before: metric, in: .trends) }
+                        }.modifier(DashboardTargetFrame(target: DashboardDragTarget(group: .trends, item: metric), enabled: editingLayout))
+                        .overlay { dropHighlight(metric, in: .trends) }
                     }
                 }
             }
@@ -315,12 +321,7 @@ struct DashboardView: View {
     private func layoutControls(_ item: String, in group: DashboardLayout.Group) -> some View {
         let order = model.dashboardLayout.items(in: group)
         return HStack(spacing: 8) {
-            Image(systemName: "line.3.horizontal")
-                .padding(6).contentShape(Rectangle())
-                .draggable("mopanel-dashboard:" + dragSession + ":" + group.rawValue + ":" + item) {
-                    Label(layoutTitle(item), systemImage: "line.3.horizontal").padding(12)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                }
+            dragHandle(item, in: group)
                 .help(model.t("拖曳調整位置", "Drag to rearrange"))
             Text(layoutTitle(item)).font(.caption.weight(.medium)).lineLimit(1)
             Spacer(minLength: 0)
@@ -333,14 +334,34 @@ struct DashboardView: View {
         }.foregroundStyle(.secondary)
     }
 
-    private func acceptDrop(_ payloads: [String], before target: String, in group: DashboardLayout.Group) -> Bool {
-        guard editingLayout, payloads.count == 1 else { return false }
-        let prefix = "mopanel-dashboard:" + dragSession + ":" + group.rawValue + ":"
-        guard let payload = payloads.first, payload.hasPrefix(prefix) else { return false }
-        let source = String(payload.dropFirst(prefix.count))
-        guard source != target, model.dashboardLayout.items(in: group).contains(source) else { return false }
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { model.dashboardLayout.move(source, before: target, in: group) }
-        return true
+    private func dragHandle(_ item: String, in group: DashboardLayout.Group) -> some View {
+        let key = DashboardDragTarget(group: group, item: item)
+        return Image(systemName: "line.3.horizontal")
+            .padding(8).contentShape(Rectangle())
+            .foregroundStyle(activeLayoutDrag == key ? MoPanelTheme.accent : Color.secondary)
+            .gesture(DragGesture(minimumDistance: 3, coordinateSpace: .named("dashboardLayout"))
+                .onChanged { value in
+                    activeLayoutDrag = key
+                    layoutDragPoint = value.location
+                }
+                .onEnded { value in
+                    defer { activeLayoutDrag = nil }
+                    let targets = layoutFrames.filter { $0.key.group == group && $0.key != key && $0.value.contains(value.location) }
+                    guard let target = targets.first?.key.item else { return }
+                    let order = model.dashboardLayout.items(in: group)
+                    guard let from = order.firstIndex(of: item), let to = order.firstIndex(of: target) else { return }
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                        model.dashboardLayout.move(item, by: to - from, in: group)
+                    }
+                })
+    }
+
+    @ViewBuilder private func dropHighlight(_ item: String, in group: DashboardLayout.Group) -> some View {
+        let key = DashboardDragTarget(group: group, item: item)
+        if editingLayout, let source = activeLayoutDrag, source.group == group, source != key,
+           layoutFrames[key]?.contains(layoutDragPoint) == true {
+            RoundedRectangle(cornerRadius: 18).stroke(MoPanelTheme.accent, lineWidth: 2).allowsHitTesting(false)
+        }
     }
 
     private func quickResources(_ s: StatusSnapshot, navigate: @escaping (String) -> Void) -> some View {

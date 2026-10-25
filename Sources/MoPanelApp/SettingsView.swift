@@ -100,7 +100,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(model.t("目前版本 ", "Installed ") + (model.installation?.version ?? model.t("尚未安裝", "Not installed")))
                         if let release = model.releaseCheck.release {
-                            Text(model.t("官方最新穩定版 ", "Latest official stable ") + release.tagName)
+                            Text((model.releaseCheck.isChecking || model.releaseCheck.failure != nil ? model.t("上次查到的穩定版 ", "Previously checked stable ") : model.t("官方最新穩定版 ", "Latest official stable ")) + release.tagName)
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }

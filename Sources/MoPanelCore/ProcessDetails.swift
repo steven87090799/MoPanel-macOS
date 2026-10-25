@@ -16,6 +16,24 @@ public struct ProcessDetails: Sendable {
     public let collectedAt: Date
 }
 
+public struct ProcessLaunchEvidence: Sendable {
+    public let service: String
+    public let reason: String
+    public init(service: String, reason: String) { self.service = service; self.reason = reason }
+    /// Use only the unique launchd job for the sampled PID. This metadata never
+    /// becomes a quit/enable/delete instruction.
+    public static func serviceLabel(in listing: String, pid: Int32) -> String? {
+        guard pid > 0, listing.utf8.count <= 1024 * 1024 else { return nil }
+        let labels = listing.split(separator: "\n").compactMap { line -> String? in
+            let columns = line.split(whereSeparator: \.isWhitespace)
+            guard columns.count == 3, Int32(columns[0]) == pid else { return nil }
+            let label = String(columns[2])
+            return StartupCommandPlan.isSafeLabel(label) ? label : nil
+        }
+        return labels.count == 1 ? labels[0] : nil
+    }
+}
+
 /// On-demand metadata, with no collector, timer, command-line/environment dump,
 /// launchctl mutation or signal sent to a process.
 public enum ProcessDetailsReader {

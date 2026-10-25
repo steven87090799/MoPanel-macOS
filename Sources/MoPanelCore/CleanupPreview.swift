@@ -63,7 +63,7 @@ public enum CleanupItemKind: Equatable, Sendable {
         if inside("Library/Caches") || inside(".cache") { return .appCache }
         return .unknown
     }
-    public var recommended: Bool { self != .unknown && self != .trash }
+    public var recommended: Bool { self == .appCache || self == .logs }
     public var explanation: String {
         switch self {
         case .appCache: return "App 暫存資料；清理後，下次使用可能需要重新載入。"

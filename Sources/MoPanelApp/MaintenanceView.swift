@@ -23,6 +23,7 @@ struct MaintenanceView: View {
                     scanAction
                 }
                 if section == .clean && (model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty || !model.cleanupReview.errors.isEmpty) { FileReviewView(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation) }
+                if section != .clean || model.cleanupReview.sourceDate == nil || model.fixtureMode {
                 GlassEffectContainer(spacing: 18) {
                     GlassCard {
                         Label(model.t("先看結果，再決定", "Preview before making changes"), systemImage: "eye").font(.title3.bold())
@@ -42,6 +43,7 @@ struct MaintenanceView: View {
                             Button(model.t("官方說明", "CLI Help")) { model.request(command, options: [.help]) }
                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))
                     }
+                }
                 }
                 if section == .clean, model.cleanupReview.files.contains(where: { !$0.selectable }) {
                     HStack {

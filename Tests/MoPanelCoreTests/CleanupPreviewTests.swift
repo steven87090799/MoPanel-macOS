@@ -28,12 +28,13 @@ final class CleanupPreviewTests: XCTestCase {
         for path in [".npm/_cacache/content-v2", ".npm/_logs/last.log", ".gradle/caches/modules-2", "Library/Developer/Xcode/DerivedData/Example"] {
             let full = "/Users/test/" + path
             XCTAssertTrue(ReviewPathPolicy.permits(full, home: "/Users/test"), full)
-            XCTAssertTrue(CleanupItemKind.classify(full, home: "/Users/test").recommended)
+            XCTAssertNotEqual(CleanupItemKind.classify(full, home: "/Users/test"), .unknown)
         }
         for path in [".npm", ".npmrc", ".npm/_cacache", ".npm/_cacache-credentials/file", ".gradle", ".gradle/gradle.properties", "Library/Developer/Xcode/Archives", "Library/Developer/Xcode/DerivedData/../Archives"] {
             XCTAssertFalse(ReviewPathPolicy.permits("/Users/test/" + path, home: "/Users/test"), path)
         }
         XCTAssertEqual(CleanupItemKind.classify("/Users/test/.npm/_cacache/content-v2", home: "/Users/test"), .packageCache)
+        XCTAssertFalse(CleanupItemKind.classify("/Users/test/.npm/_cacache/content-v2", home: "/Users/test").recommended, "Development caches need review, as in Mole's review list")
         XCTAssertEqual(CleanupItemKind.classify("/Users/test/.npmrc", home: "/Users/test"), .unknown)
         XCTAssertFalse(CleanupItemKind.classify("/Users/test/.Trash/file", home: "/Users/test").recommended)
     }

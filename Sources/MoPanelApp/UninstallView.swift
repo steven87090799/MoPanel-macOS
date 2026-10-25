@@ -86,7 +86,7 @@ struct UninstallView: View {
                         DisclosureGroup(model.t("進階刪除方式", "Advanced Removal Mode")) {
                             Toggle(model.t("永久刪除，不放入垃圾桶（--permanent）", "Delete permanently, bypassing Trash (--permanent)"), isOn: $permanent)
                         }
-                        Text(model.t("由 Homebrew 安裝的 App 請使用下方完整卸載流程，讓套件紀錄一併更新。執行前會再次確認 App 與移除範圍。", "For duplicate app names, ambiguous cask aliases or special filenames, use the official selector. Actual paths in its final review determine the removal scope."))
+                        Text(model.t("由 Homebrew 安裝的 App 請使用下方完整卸載流程，讓套件紀錄一併更新。執行前會再次確認 App 與移除範圍。", "Use Full Uninstall for Homebrew-installed apps so package records are updated too. Review the apps and removal scope again before execution."))
                             .font(.caption).foregroundStyle(.secondary)
                     }.padding(8)
                 }

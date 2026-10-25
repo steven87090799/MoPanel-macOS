@@ -139,7 +139,7 @@ import MoPanelCore
         let examples: [(String, String, String, String, Bool)] = [
             ("App 快取與紀錄", "範例瀏覽器快取", "280 MB", "網頁暫存，下次開啟時會重新建立。", true),
             ("App 快取與紀錄", "範例 App 診斷紀錄", "12 MB", "舊的問題紀錄；不包含個人文件。", true),
-            ("開發工具", "範例建置快取", "1.2 GB", "可重新產生的編譯快取，首次建置會較慢。", true),
+            ("開發工具", "範例建置快取", "1.2 GB", "可重新產生的編譯快取，首次建置會較慢。", false),
             ("需確認用途", "範例 App 個人資料", "65 MB", "可能包含設定與登入資料，建議先保留。", false)]
         model.cleanupReview.files = examples.enumerated().map { index, item in
             ReviewFile(url: URL(fileURLWithPath: "/MoPanel-synthetic-preview/\(index)/" + item.1), category: item.0,

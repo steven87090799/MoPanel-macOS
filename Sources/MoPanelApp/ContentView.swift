@@ -99,7 +99,7 @@ struct ContentView: View {
                 .toolbar {
                     ToolbarItem {
                         if model.isDetecting { ProgressView().controlSize(.small) }
-                        else { Button { Task { await model.detect() } } label: { Label(model.t("重新偵測", "Re-detect"), systemImage: "arrow.clockwise") }.disabled(model.hasRunningOperation) }
+                        else if model.section == .settings { Button { Task { await model.detect() } } label: { Label(model.t("重新偵測 Mole 引擎", "Re-detect Mole Engine"), systemImage: "arrow.clockwise") }.disabled(model.hasRunningOperation) }
                     }
                 }
             }

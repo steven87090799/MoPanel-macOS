@@ -114,6 +114,8 @@ struct ApplicationUsageList: View {
     @State private var expanded: String?
     @State private var processDetails: ProcessDetails?
     @State private var readingDetails = false
+    @State private var launchEvidence: ProcessLaunchEvidence?
+    @State private var detailTask: Task<Void, Never>?
     var compact = false
     private var rows: [ApplicationUsage] {
         let rows = model.applicationUsage.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }
@@ -156,6 +158,14 @@ struct ApplicationUsageList: View {
                             LabeledContent("PID", value: String(row.pid))
                             if readingDetails { ProgressView().controlSize(.small) }
                             if let details = processDetails, details.pid == row.pid {
+                                if let evidence = launchEvidence {
+                                    LabeledContent(model.t("最近啟動原因", "Latest launch trigger"), value: evidence.reason == "launch job demand" ? model.t("收到啟動要求", "Launch request received") : evidence.reason)
+                                    Text(model.t("macOS 回報的最近一次觸發；不代表完整的啟動歷史。", "The most recent trigger reported by macOS, rather than a complete launch history.")).font(.caption2).foregroundStyle(.secondary)
+                                    DisclosureGroup(model.t("診斷來源", "Diagnostic Source")) {
+                                        Text(evidence.reason).font(.caption2.monospaced()).textSelection(.enabled)
+                                        ExecutionCommandView(command: "launchctl blame gui/\(getuid())/" + evidence.service)
+                                    }
+                                }
                                 LabeledContent(model.t("上層程序", "Parent process"), value: (details.parentName ?? "—") + " · \(details.parentPID)")
                                 LabeledContent(model.t("啟動時間", "Started"), value: details.startedAt.formatted(date: .abbreviated, time: .standard))
                                 LabeledContent(model.t("執行緒", "Threads"), value: String(details.threads))
@@ -188,17 +198,23 @@ struct ApplicationUsageList: View {
                     if let date = model.nativeCollectedAt { Text(date.formatted(date: .abbreviated, time: .standard)).font(.caption2).foregroundStyle(.secondary) }
                 }
             }
-        }
+        }.onDisappear { detailTask?.cancel() }
     }
     private func toggleDetails(_ row: ApplicationUsage) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { expanded = expanded == row.id ? nil : row.id }
-        processDetails = nil
+        detailTask?.cancel(); processDetails = nil; launchEvidence = nil
         guard expanded == row.id, !model.isTestLaunch else { readingDetails = false; return }
         readingDetails = true
-        Task {
+        detailTask = Task {
             let value = await Task.detached(priority: .utility) { ProcessDetailsReader.read(pid: row.pid, expectedAppPath: row.appPath) }.value
-            guard expanded == row.id else { return }
-            processDetails = value; readingDetails = false
+            guard !Task.isCancelled, expanded == row.id else { return }
+            processDetails = value
+            if let value {
+                let evidence = await ProcessLaunchReasonReader.read(value)
+                guard !Task.isCancelled, expanded == row.id else { return }
+                launchEvidence = evidence
+            }
+            readingDetails = false
         }
     }
     private func processPurpose(_ row: ApplicationUsage) -> String {
@@ -209,7 +225,7 @@ struct ApplicationUsageList: View {
         case "launchd": return model.t("macOS 的程序與服務管理程式，負責依需要啟動背景工作。", "The macOS process and service manager starts background jobs when needed.")
         default:
             return row.appPath != nil
-                ? model.t("這個 App 目前正在執行，用量包含可確認屬於它的背景程序。macOS 未提供可驗證的手動或自動啟動原因。", "This app is running. Usage includes background processes with a verified association. macOS has not provided a verifiable manual or automatic launch reason.")
+                ? model.t("這個 App 目前正在執行，用量包含可確認屬於它的背景程序。可查看下方 macOS 回報的啟動資訊。", "This app is running. Usage includes background processes with a verified association. Available macOS launch details appear below.")
                 : model.t("這是一個獨立背景程序。下方可查看執行位置與上層程序；目前無法確認觸發它的具體原因。", "This is a separate background process. Its executable and parent are shown below; the specific launch trigger has not been verified.")
         }
     }

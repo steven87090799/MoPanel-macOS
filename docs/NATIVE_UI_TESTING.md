@@ -99,6 +99,14 @@ The runner has a 20-second whole-sequence deadline, two-second element lookup de
 
 Linux Swift syntax parsing and `bash -n` pass. `docs/NATIVE_UI_FIXTURE_TEST_OUTPUT.txt` records actual mock script JSON/no-change outputs and process-group interrupt tests. Those checks are **not macOS compilation or UI interaction evidence**. The macOS CI smoke report is the authority for whether the public accessibility bridge actually exposes and operates these controls. Until a run passes, the correct status is **implemented; native UI action verification pending**.
 
+### Dashboard and update workflow follow-up (2026-10-25)
+
+The local Apple Silicon runner now verifies 29 real accessibility presses, including opening layout editing, moving GPU before CPU, resetting the layout, and checking the same stable release twice. It also checks that Snapshot, app inventory, disk analysis and cleanup scan actions occupy the upper-right portion of the window. Release-check fixtures use a bundled release document and never access GitHub; loading, completion, repeated checks and version comparison have separate coverage.
+
+Manual computer-use checks additionally dragged a summary card, an entire dashboard section and an individual trend chart, then verified the changed order in the real accessibility tree and restored defaults. Dashboard movement uses a local SwiftUI drag gesture with geometry captured only while editing; section and card targets are separate. Keyboard-accessible move buttons use the same persisted layout model. These checks supplement the accessibility harness; physical dragging is not claimed as part of its 29 presses.
+
+Startup metadata now has login, background-app and service categories. The background-task adapter reads Apple's `sfltool dumpbtm` report, with bounded output, cancellation and current-user/system filtering. Adapter tests do not establish live completeness. If the system read is unavailable, the UI explicitly distinguishes the service files that were read from the login/background inventory that is missing. Imported reports retain their source timestamp; registered states do not bypass the existing fresh-state checks before service changes. Local inventory reports remain outside distributed reports and source control.
+
 If SwiftUI does not expose a usable own-process accessibility tree on the tested SDK, record the failure and keep it unresolved. A separate Xcode XCTest UI runner launching only this fixture-mode app is the appropriate next test mechanism; do not silently replace these checks with direct model calls or bypass system permissions.
 
 ## Apple references
