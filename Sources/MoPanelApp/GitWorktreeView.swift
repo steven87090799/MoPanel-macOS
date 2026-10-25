@@ -72,21 +72,21 @@ struct GitWorktreeView: View {
     }
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Git Worktrees", systemImage: "arrow.triangle.branch").font(.largeTitle.bold())
-            Text(t("MoPanel 新實作 · 使用正式 Git 命令的原生介面；不是 Mole CLI 指令，也不判讀 AI session 或猜測閒置天數。",
-                   "MoPanel implementation · A native interface to official Git commands; not a Mole CLI command. It does not inspect AI sessions or guess inactivity thresholds.")).foregroundStyle(.secondary)
-            Text(t("只檢查你選擇的倉庫。保護主目錄、鎖定、變更、未追蹤／已忽略內容與無法驗證的狀態；移除前保留 HEAD 分支，且不使用 force。",
-                   "Only the selected repository is inspected. Main, locked, changed, untracked, ignored and unverifiable worktrees are protected. A branch retaining HEAD is created before removal, and force is never used.")).font(.callout)
-            HStack {
-                Button(t("選擇倉庫…", "Choose Repository…")) { controller.chooseRepository() }.disabled(disabled)
-                    .accessibilityIdentifier("mopanel.worktrees.choose")
+            PageHeader(title: t("Git 工作目錄", "Git Worktrees"),
+                        subtitle: t("只檢查你選擇的倉庫。保護主目錄、未提交內容與無法驗證的狀態；移除前保留復原分支，不使用 force。", "Inspects only your selected repository. Main, modified and unverifiable worktrees stay protected. A recovery branch is retained before removal; force is never used."), symbol: "arrow.triangle.branch") {
                 Button(t("重新掃描", "Scan Again")) { Task { await controller.refresh() } }
                     .buttonStyle(.borderedProminent).disabled(disabled || controller.selectedRepository == nil)
                     .accessibilityIdentifier("mopanel.worktrees.scan")
+            }
+            HStack {
+                Button(t("選擇倉庫…", "Choose Repository…")) { controller.chooseRepository() }.disabled(disabled)
+                    .accessibilityIdentifier("mopanel.worktrees.choose")
                 Spacer()
             }
+            Text(t("工作目錄是同一專案的額外工作副本，例如 AI 為不同任務建立的副本。掃描後可查看是否有修改、是否能安全移除。", "A worktree is an extra working copy of the same project, such as one created for an AI task. Scan to inspect changes and removal eligibility."))
+                .font(.callout).foregroundStyle(.secondary)
             if let repository = controller.selectedRepository { Text(repository.path).font(.caption.monospaced()).textSelection(.enabled) }
-            if let path = controller.gitPath { Text((controller.gitVersion ?? "Git") + " · " + path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
+            if let path = controller.gitPath { DisclosureGroup(t("Git 工具詳細資訊", "Git Tool Details")) { Text((controller.gitVersion ?? "Git") + " · " + path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) } }
             if operationInProgress { Text(t("其他作業執行中，暫停 Git 操作。", "Git actions are paused while another operation is running.")).foregroundStyle(.orange) }
             if !controller.actionsAllowed { Text(t("測試／效能模式不會存取真實 Git 倉庫。", "Test and benchmark launches do not access real Git repositories.")).foregroundStyle(.orange) }
         }
@@ -109,12 +109,14 @@ struct GitWorktreeView: View {
                                     Text(URL(fileURLWithPath: row.entry.path).lastPathComponent).font(.headline)
                                     Text(row.entry.branch ?? (row.entry.bare ? "bare" : "detached HEAD")).font(.caption.monospaced())
                                     Text(row.entry.path).font(.caption.monospaced()).textSelection(.enabled)
-                                    if let head = row.entry.head { Text("HEAD: " + head).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
+
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                                 Button("Finder") { controller.reveal(row.entry.path) }.disabled(!controller.actionsAllowed)
                                 Button(t("移除預覽…", "Preview Removal…")) { Task { await controller.prepareRemoval(row) } }
                                     .disabled(disabled || !row.canRemove)
                             }
+                            DisclosureGroup(t("詳細資訊與保護原因", "Details and Protection Reasons")) {
+                            if let head = row.entry.head { Text("HEAD: " + head).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
                             ForEach(row.protection, id: \.self) { reason in
                                 Label(reason.explanation(language: language), systemImage: "shield").font(.caption).foregroundStyle(.secondary)
                             }
@@ -124,6 +126,7 @@ struct GitWorktreeView: View {
                             if row.canRemove {
                                 Text(t("目前通過檢查。確認前與執行前會再次驗證；這不是 Git 原生 dry-run。",
                                        "Currently passes checks. State is revalidated before review and execution; this is not a Git-provided dry run.")).font(.caption).foregroundStyle(.secondary)
+                            }
                             }
                         }.padding(.vertical, 13)
                         Divider()

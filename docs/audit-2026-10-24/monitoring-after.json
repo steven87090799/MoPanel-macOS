@@ -1,0 +1,35 @@
+{
+  "checks" : [
+    {
+      "delivered_stderr_bytes" : 131082,
+      "name" : "stream-diagnostics-bounded-without-cancelling",
+      "passed" : true,
+      "retained_stderr_bytes" : 2048,
+      "retained_stdout_bytes" : 0
+    },
+    {
+      "name" : "capture-stderr-limit-still-cancels",
+      "passed" : true,
+      "retained_stderr_bytes" : 2048
+    },
+    {
+      "name" : "preference-persistence-and-normalization",
+      "passed" : true
+    },
+    {
+      "name" : "sleep-pause-and-adaptive-demand",
+      "passed" : true
+    },
+    {
+      "cached_seconds" : 0.13215508300000001,
+      "iterations" : 2000,
+      "name" : "timestamp-format-and-cache-cost",
+      "output_characters" : 84000,
+      "passed" : true,
+      "scope" : "formatter microbenchmark, not App CPU\/RSS\/Energy",
+      "uncached_seconds" : 1.5092268339999999
+    }
+  ],
+  "passed" : true,
+  "platform" : "Version 27.0.1 (Build 26A434)"
+}

@@ -113,7 +113,16 @@ struct NativeUISmokeAccessibilityEnvironment: ViewModifier {
 }
 
 private enum NativeUIControl: String, CaseIterable {
+    case sidebarToggle = "mopanel.sidebar.toggle"
+    case sidebarRegion = "mopanel.sidebar"
+    case sidebarDashboard = "mopanel.sidebar.route.dashboard"
+    case sidebarUninstall = "mopanel.sidebar.route.uninstall"
     case snapshot = "mopanel.dashboard.snapshot"
+    case layoutEdit = "mopanel.dashboard.layout.edit"
+    case layoutReset = "mopanel.dashboard.layout.reset"
+    case layoutGPUUp = "mopanel.dashboard.layout.summary.gpu.up"
+    case releaseCheck = "mopanel.settings.release.check"
+    case officialDashboard = "mopanel.settings.dashboard.open"
     case appScan = "mopanel.uninstall.scan"
     case overview = "mopanel.analyze.overview"
     case rescan = "mopanel.analyze.rescan"
@@ -127,12 +136,14 @@ private enum NativeUIControl: String, CaseIterable {
     case confirm = "mopanel.confirmation.continue"
     case operationStop = "mopanel.operation.stop"
     case operationClose = "mopanel.operation.close"
+    case operationDetails = "mopanel.operation.details.toggle"
 
-    var requiresSheet: Bool {
-        [.confirmationCancel, .acknowledge, .confirm, .operationStop, .operationClose].contains(self)
-    }
     var allowedRoles: Set<String> {
-        self == .acknowledge ? ["AXCheckBox", "AXSwitch"] : ["AXButton"]
+        switch self {
+        case .acknowledge: return ["AXCheckBox", "AXSwitch"]
+        case .sidebarRegion: return ["AXGroup"]
+        default: return ["AXButton"]
+        }
     }
 }
 
@@ -345,7 +356,7 @@ private enum NativeUIFailure: LocalizedError {
 @MainActor private final class OwnWindowRunner {
     private let model: AppModel
     private let window: NSWindow
-    private let deadline = ContinuousClock.now.advanced(by: .seconds(20))
+    private let deadline = ContinuousClock.now.advanced(by: .seconds(35))
     private var contextWasValidated = false
     private var publicAccessibilityEnvironmentEnabled: Bool?
     private var environmentWasObserved = false
@@ -388,6 +399,31 @@ private enum NativeUIFailure: LocalizedError {
             // distinguished from the user-facing actions asserted below.
             model.pauseMonitoring()
 
+            try await waitFor("expanded sidebar is readable") { (self.sidebarWidth() ?? 0) >= 210 }
+            try await press(.sidebarToggle)
+            try await waitFor("sidebar shrinks to its icon rail") {
+                guard let width = self.sidebarWidth() else { return false }
+                return (68...76).contains(width)
+            }
+            try record("sidebar_compacts_to_icon_width", true)
+            try record("sidebar_button_remains_momentary_without_focus_ring", try await sidebarButtonIsNeutral())
+            try verifyLastPress(.sidebarToggle)
+            try await press(.sidebarToggle)
+            try await waitFor("sidebar expands for icons and text") { (self.sidebarWidth() ?? 0) >= 210 }
+            try record("sidebar_expands_to_text_width", true)
+            try verifyLastPress(.sidebarToggle)
+
+            try await press(.sidebarUninstall)
+            try await waitFor("sidebar opens Uninstall") { self.model.section == .uninstall }
+            _ = try await find(.appScan, enabled: true)
+            try record("sidebar_route_opens_uninstall_controls", true)
+            try verifyLastPress(.sidebarUninstall)
+            try await press(.sidebarDashboard)
+            try await waitFor("sidebar returns to Dashboard") { self.model.section == .dashboard }
+            _ = try await find(.snapshot, enabled: true)
+            try record("sidebar_route_opens_dashboard_controls", true)
+            try verifyLastPress(.sidebarDashboard)
+
             model.section = .dashboard
             let statusActivity = model.activities.first?.id
             try await press(.snapshot)
@@ -396,7 +432,71 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: statusActivity, command: statusCommand) && self.model.status?.host == "fixture-only"
             }
             try record("snapshot_button_loaded_fixture_metrics", model.error == nil)
+            try record("snapshot_action_is_at_top_right", try await isTopRight(.snapshot))
             try verifyLastPress(.snapshot)
+
+            try record("dashboard_defaults_cpu_gpu_memory_and_trends_second", model.dashboardLayout.items(in: .summary) == ["cpu", "gpu", "memory"] && model.dashboardLayout.items(in: .sections).prefix(2) == ["summary", "trends"])
+            try await press(.layoutEdit)
+            _ = try await find(.layoutGPUUp, enabled: true)
+            try verifyLastPress(.layoutEdit)
+            try await press(.layoutGPUUp)
+            try await waitFor("GPU summary moves before CPU") { self.model.dashboardLayout.items(in: .summary) == ["gpu", "cpu", "memory"] }
+            try record("dashboard_layout_buttons_reorder_real_cards", true)
+            try verifyLastPress(.layoutGPUUp)
+            try await press(.layoutReset)
+            try await waitFor("default dashboard layout restored") { self.model.dashboardLayout == DashboardLayout() }
+            try record("dashboard_layout_reset_restores_defaults", true)
+            try verifyLastPress(.layoutReset)
+            try await press(.layoutEdit)
+            try record("layout_editing_does_not_change_monitoring_or_metrics", model.status?.host == "fixture-only" && !model.monitoring)
+            try verifyLastPress(.layoutEdit)
+
+            model.section = .settings
+            try await press(.releaseCheck)
+            try await waitFor("release check shows progress") { self.model.releaseCheck.isChecking }
+            _ = try await find(.releaseCheck, enabled: false)
+            try await waitFor("release check completed visibly") { self.model.releaseCheck.outcome(installed: self.model.installation?.version) != nil }
+            let checkedAt = model.releaseCheck.checkedAt
+            try record("release_button_finishes_even_when_already_current", model.releaseCheck.outcome(installed: model.installation?.version) == .upToDate && checkedAt != nil)
+            try verifyLastPress(.releaseCheck)
+            try await press(.releaseCheck)
+            try await waitFor("second release check produces a new completion") { self.model.releaseCheck.checkedAt != checkedAt && !self.model.releaseCheck.isChecking }
+            try record("release_button_can_check_same_version_again", model.releaseCheck.failure == nil)
+            try verifyLastPress(.releaseCheck)
+
+            try await press(.officialDashboard)
+            try await waitFor("status TUI opens its own window") { self.model.officialDashboardWindow?.window?.isVisible == true && self.model.operationSession.running }
+            guard let dashboard = model.officialDashboardWindow, let dashboardWindow = dashboard.window else { throw NativeUIFailure.missingWindow }
+            let dashboardSession = model.operationSession
+            try record("official_dashboard_is_separate_not_bottom_panel", dashboardWindow !== window && !model.showOperation && !model.monitoring)
+            try verifyLastPress(.officialDashboard)
+            try await waitFor("large terminal viewport laid out") {
+                dashboardWindow.contentView?.layoutSubtreeIfNeeded()
+                return self.terminalViewport(in: dashboardWindow).map { $0.bounds.width >= 850 && $0.bounds.height >= 440 } == true
+            }
+            try record("official_dashboard_has_large_resizable_terminal", dashboardWindow.styleMask.contains(.resizable) && dashboardWindow.collectionBehavior.contains(.fullScreenPrimary))
+            var terminalOutput = ""
+            dashboardSession.onActivity = { data in terminalOutput = String((terminalOutput + String(decoding: data, as: UTF8.self)).suffix(4096)) }
+            dashboardSession.send(Data("r".utf8))
+            try await waitFor("fixture reports real PTY dimensions") { self.ptyDimensions(terminalOutput) != nil }
+            let firstSize = ptyDimensions(terminalOutput)
+            try record("official_dashboard_pty_receives_input", firstSize.map { $0[0] >= 25 && $0[1] >= 100 } == true)
+            terminalOutput = ""
+            dashboardWindow.setContentSize(NSSize(width: 1000, height: 700))
+            dashboardWindow.contentView?.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(120))
+            dashboardSession.send(Data("r".utf8))
+            try await waitFor("resized PTY dimensions differ") { self.ptyDimensions(terminalOutput).map { $0 != firstSize } == true }
+            try record("official_dashboard_resize_reaches_pty", true)
+            try await press(.officialDashboard)
+            try record("official_dashboard_reopen_reuses_session_and_window", model.operationSession === dashboardSession && model.officialDashboardWindow === dashboard && NSApp.windows.filter { $0.identifier?.rawValue == "MoPanel.officialDashboard" && $0.isVisible }.count == 1)
+            try verifyLastPress(.officialDashboard)
+            guard let closeButton = dashboardWindow.standardWindowButton(.closeButton) else { throw NativeUIFailure.missingWindow }
+            closeButton.performClick(nil)
+            try await waitFor("closing TUI stops its owned child") { !dashboardSession.running && self.model.officialDashboardWindow == nil && !self.model.hasRunningOperation }
+            try record("official_dashboard_close_cancels_session_and_releases_view", dashboardWindow.contentView == nil && !dashboardWindow.isVisible)
+            dashboardSession.onActivity = nil
+            window.makeKeyAndOrderFront(nil)
 
             model.section = .uninstall
             let inventoryActivity = model.activities.first?.id
@@ -406,6 +506,7 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: inventoryActivity, command: inventoryCommand) && self.model.apps.count == 3
             }
             try record("inventory_button_loaded_fixture_apps", model.error == nil && model.apps.allSatisfy { $0.bundleID.hasPrefix("org.example.fixture.") })
+            try record("inventory_scan_is_at_top_right", try await isTopRight(.appScan))
             try verifyLastPress(.appScan)
 
             model.section = .analyze
@@ -417,6 +518,7 @@ private enum NativeUIFailure: LocalizedError {
             }
             try record("overview_button_preserved_partial_and_unavailable", model.error == nil && model.analysis?.scanStatus == .partial &&
                        model.analysis?.entries.contains(where: { $0.scanStatus == .unavailable && $0.measuredBytes == nil }) == true)
+            try record("analysis_scan_is_at_top_right", try await isTopRight(.overview))
             try verifyLastPress(.overview)
 
             let rescanActivity = model.activities.first?.id
@@ -455,12 +557,14 @@ private enum NativeUIFailure: LocalizedError {
             try verifyLastPress(.dismissError)
 
             model.section = .clean
+            try record("cleanup_scan_is_at_top_right", try await isTopRight(.preview))
             try await press(.preview)
             let previewCommand = try MoleInvocation.make(command: .clean, options: [.dryRun]).displayCommand
             try await waitFor("dry-run operation sheet opened") {
                 self.model.showOperation && self.model.operationSession.running && self.model.operationCommand == previewCommand
             }
             try record("preview_button_started_dry_run_without_confirmation", model.operationWasPreview && model.pending == nil)
+            try record("operation_progress_remained_in_main_window", window.attachedSheet == nil)
             try verifyLastPress(.preview)
             try await press(.operationStop)
             try await waitFor("operation cancellation settled") {
@@ -476,6 +580,7 @@ private enum NativeUIFailure: LocalizedError {
             let beforeReview = model.activities.first?.id
             try await press(.review)
             try await waitFor("review confirmation opened") { self.model.pending?.invocation.arguments == ["clean"] }
+            try record("confirmation_remained_in_main_window", window.attachedSheet == nil)
             let disabledContinue = try await find(.confirm, enabled: false)
             try record("confirmation_requires_acknowledgement", !disabledContinue.isAccessibilityEnabled() && !model.operationSession.running)
             try verifyLastPress(.review)
@@ -494,7 +599,21 @@ private enum NativeUIFailure: LocalizedError {
             let confirmationActivity = model.activities.first?.id
             try await press(.confirm)
             let cleanCommand = try MoleInvocation.make(command: .clean).displayCommand
-            try await waitFor("confirmed fixture action completed") {
+            try await waitFor("interactive fixture started inline") {
+                self.model.showOperation && self.model.operationSession.running && self.model.operationIsInteractive
+            }
+            try record("interactive_details_start_folded", !model.operationDetailsExpanded && window.attachedSheet == nil)
+            try verifyLastPress(.confirm)
+            try await press(.operationDetails)
+            try await waitFor("inline details expanded") { self.model.operationDetailsExpanded }
+            try record("inline_details_expanded_without_window", window.attachedSheet == nil && model.operationSession.running)
+            try verifyLastPress(.operationDetails)
+            try await press(.operationDetails)
+            try await waitFor("inline details folded") { !self.model.operationDetailsExpanded }
+            try await Task.sleep(for: .milliseconds(80))
+            try record("folding_details_did_not_cancel_interactive_child", model.operationSession.running && model.operationResult == nil)
+            try verifyLastPress(.operationDetails)
+            try await waitFor("confirmed fixture action completed", seconds: 8) {
                 self.completedActivity(after: confirmationActivity, command: cleanCommand) && self.model.showOperation &&
                     self.model.operationCommand == cleanCommand && self.model.operationResult?.succeeded == true
             }
@@ -504,12 +623,11 @@ private enum NativeUIFailure: LocalizedError {
             try validateContext()
             try record("confirmation_button_executed_only_mock", model.installation?.source == .fixture && model.pending == nil && !model.operationSession.running)
             try record("interactive_output_remained_unretained", model.operationIsInteractive && model.operationResult?.stdout.isEmpty == true && model.operationResult?.stderr.isEmpty == true)
-            try verifyLastPress(.confirm)
             try await press(.operationClose)
             try await waitFor("confirmed operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("confirmed_operation_returned_to_page", !model.hasRunningOperation && model.error == nil)
             try verifyLastPress(.operationClose)
-            try record("all_17_dispatches_have_verified_postconditions", actions.count == 17 &&
+            try record("all_31_dispatches_have_verified_postconditions", actions.count == 31 &&
                        actions.allSatisfy { $0.hasSingleSuccessfulDispatch && $0.postconditionVerified })
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true
@@ -583,7 +701,12 @@ private enum NativeUIFailure: LocalizedError {
         try validateContext()
         let valid: Bool
         switch control {
-        case .snapshot: valid = model.section == .dashboard && model.canStart
+        case .sidebarToggle, .sidebarDashboard, .sidebarUninstall:
+            valid = !model.hasRunningOperation && model.pending == nil && !model.showOperation
+        case .sidebarRegion: valid = false // Geometry only; never an action target.
+        case .snapshot, .layoutEdit, .layoutReset, .layoutGPUUp: valid = model.section == .dashboard && model.canStart
+        case .releaseCheck: valid = model.section == .settings && !model.releaseCheck.isChecking
+        case .officialDashboard: valid = model.section == .settings && model.canOpenOfficialDashboard
         case .appScan: valid = model.section == .uninstall && model.canStart
         case .overview, .rescan, .parent: valid = model.section == .analyze && model.canStart
         case .scanStop: valid = model.section == .analyze && model.busy == "mo analyze --json"
@@ -591,16 +714,73 @@ private enum NativeUIFailure: LocalizedError {
         case .preview, .review: valid = model.section == .clean && model.canStart && model.pending == nil && !model.showOperation
         case .confirmationCancel, .acknowledge, .confirm:
             valid = model.section == .clean && model.pending?.invocation.arguments == ["clean"] && !model.showOperation
-        case .operationStop, .operationClose:
+        case .operationStop, .operationClose, .operationDetails:
             valid = model.section == .clean && model.showOperation && ["mo clean", "mo clean --dry-run"].contains(model.operationCommand)
         }
         guard valid else { throw NativeUIFailure.unexpectedState("action context for \(control.rawValue)") }
+    }
+
+    private func isTopRight(_ control: NativeUIControl) async throws -> Bool {
+        guard let frame = try await find(control, enabled: true).accessibilityFrame() else { return false }
+        return frame.midX > window.frame.midX && frame.maxY > window.frame.maxY - 220
     }
 
     private func record(_ name: String, _ value: Bool) throws {
         checks[name] = value
         breadcrumb(value ? "postcondition.pass" : "postcondition.fail")
         if !value { throw NativeUIFailure.unexpectedState(name) }
+    }
+
+    private func ptyDimensions(_ text: String) -> [Int]? {
+        guard text.contains("FIXTURE_SIZE="), let tail = text.components(separatedBy: "FIXTURE_SIZE=").last else { return nil }
+        let values = tail.split(whereSeparator: { $0.isWhitespace }).prefix(2).compactMap { Int($0) }
+        return values.count == 2 && values.allSatisfy { $0 > 0 } ? values : nil
+    }
+
+    private func terminalViewport(in target: NSWindow) -> NSView? {
+        guard let content = target.contentView else { return nil }
+        var pending = [content], visited = 0
+        while let view = pending.popLast() {
+            visited += 1
+            guard visited <= 4096 else { return nil }
+            if view.identifier?.rawValue == "mopanel.terminal.viewport" { return view }
+            pending.append(contentsOf: view.subviews)
+        }
+        return nil
+    }
+
+    private func sidebarWidth() -> CGFloat? {
+        guard let content = window.contentView else { return nil }
+        content.layoutSubtreeIfNeeded()
+        var pending: [(NSView, Int)] = [(content, 0)]
+        var visited = Set<ObjectIdentifier>()
+        var widths: [CGFloat] = []
+        while let (view, depth) = pending.popLast() {
+            guard visited.insert(ObjectIdentifier(view)).inserted else { continue }
+            guard visited.count <= 4096, depth <= 40, view.window === window else { return nil }
+            // Read the real visible sidebar material's rendered bounds. A
+            // drawer's clipped labels can extend its AX group's union rect.
+            if view is NSVisualEffectView, view.identifier?.rawValue == "mopanel.sidebar.surface" {
+                widths.append(view.bounds.width)
+            }
+            guard pending.count + view.subviews.count <= 4096 else { return nil }
+            pending.append(contentsOf: view.subviews.map { ($0, depth + 1) })
+        }
+        return widths.count == 1 ? widths.first : nil
+    }
+
+    private func sidebarButtonIsNeutral() async throws -> Bool {
+        let node = try await find(.sidebarToggle, enabled: true)
+        let button = (node.object as? NSButton) ?? ((node.object as? NSCell)?.controlView as? NSButton)
+        guard let button else { checks["sidebar_native_button_found"] = false; return false }
+        checks["sidebar_native_button_found"] = true
+        checks["sidebar_button_in_supplied_window"] = button.window === window
+        checks["sidebar_button_state_off"] = button.state == .off
+        checks["sidebar_button_not_highlighted"] = button.cell?.isHighlighted == false
+        checks["sidebar_button_has_no_focus_ring"] = button.focusRingType == .none
+        checks["sidebar_button_borderless"] = !button.isBordered
+        return button.window === window && button.state == .off && button.cell?.isHighlighted == false &&
+            button.focusRingType == .none && !button.isBordered
     }
 
     private func completedActivity(after previousID: UUID?, command: String) -> Bool {
@@ -660,14 +840,6 @@ private enum NativeUIFailure: LocalizedError {
     }
 
     private func scopeWindow(for control: NativeUIControl) throws -> NSWindow {
-        if control.requiresSheet {
-            guard let sheet = window.attachedSheet, sheet.sheetParent === window,
-                  NSApp.windows.contains(where: { $0 === sheet }), sheet.contentView != nil,
-                  sheet.isVisible else {
-                throw NativeUIFailure.unavailableControl(control.rawValue)
-            }
-            return sheet
-        }
         guard window.attachedSheet == nil else { throw NativeUIFailure.unavailableControl(control.rawValue) }
         return window
     }

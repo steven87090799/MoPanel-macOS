@@ -3,6 +3,7 @@
 .guardian-test
 build/
 .swiftpm/
+.venv/
 .DS_Store
 __pycache__/
 *.pyc

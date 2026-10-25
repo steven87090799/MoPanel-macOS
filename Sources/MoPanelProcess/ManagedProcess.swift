@@ -80,6 +80,8 @@ public enum ManagedProcessError: LocalizedError {
         }
     }
     public var onError: ((Data) -> Void)?
+    /// Optional bounded-summary observer. It never replaces the terminal consumer.
+    public var onActivity: ((Data) -> Void)?
     public var onExit: ((ProcessResult) -> Void)?
 
     private let helperURL: URL
@@ -196,15 +198,29 @@ public enum ManagedProcessError: LocalizedError {
 
     /// Pipe output is bounded. Stream consumers use retainsOutput=false.
     private func receive(_ data: Data, isError: Bool) {
+        onActivity?(data)
         if data.isEmpty {
             if isError { errorClosed = true } else { outputClosed = true }
             finishIfReady(); return
         }
         guard let request else { return }
         if isError {
-            let remaining = max(0, request.outputLimit - stderr.count)
-            stderr.append(data.prefix(remaining)); onError?(data)
-            if data.count > remaining { outputTruncated = true; cancel() }
+            if request.retainsOutput {
+                let remaining = max(0, request.outputLimit - stderr.count)
+                stderr.append(data.prefix(remaining))
+                if data.count > remaining { outputTruncated = true; cancel() }
+            } else {
+                // A watch can run for days. Diagnostics are a bounded tail,
+                // not a growing capture or a reason to cancel healthy data.
+                let limit = min(request.outputLimit, 16 * 1024)
+                if data.count >= limit { stderr = Data(data.suffix(limit)) }
+                else {
+                    let excess = stderr.count + data.count - limit
+                    if excess > 0 { stderr.removeFirst(excess) }
+                    stderr.append(data)
+                }
+            }
+            onError?(data)
         } else {
             if request.retainsOutput && !interactive {
                 let remaining = max(0, request.outputLimit - stdout.count)

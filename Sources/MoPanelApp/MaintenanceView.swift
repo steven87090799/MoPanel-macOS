@@ -9,6 +9,7 @@ struct MaintenanceView: View {
     @State private var volume = ""
     @State private var includeEmpty = false
     @State private var unattended = false
+    @State private var aiMode = false
     private var command: MoleCommand { section.command ?? .help }
     private var options: [MoleOption] {
         var value: [MoleOption] = debug ? [.debug] : []
@@ -17,30 +18,64 @@ struct MaintenanceView: View {
         return value
     }
     var body: some View {
+        if section == .clean && (aiMode || model.aiReview.busy || model.aiReview.preparing) {
+            AICleanupView(controller: model.aiReview, onBack: { aiMode = false }).onAppear { aiMode = true }
+        } else {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                PageHeading(title: model.t(section.zh, section.en), subtitle: subtitle, symbol: section.symbol)
+                PageHeader(title: model.t(section.zh, section.en), subtitle: subtitle, symbol: section.symbol) {
+                    if section == .clean {
+                        NativeActionButton(model.t("AI 清理", "AI Cleanup"), identifier: "mopanel.cleanup.ai", systemImage: "moon.stars") { aiMode = true }
+                            .disabled(model.hasRunningOperation)
+                    }
+                    scanAction
+                }
+                if model.nativeSelectionOnPage {
+                    MoleSelectorView(controller: model.moleSelector, language: model.language, running: true,
+                                     preview: model.operationWasPreview, showsActions: false, listHeight: nil)
+                }
+                if section == .clean {
+                    if model.cleanupReview.cleanupScanInProgress {
+                        Label(model.t("正在掃描，完成後會顯示這次的結果…", "Scanning. This run's results will appear when complete…"), systemImage: "magnifyingglass")
+                            .foregroundStyle(.secondary).padding(.vertical, 12)
+                    } else if let run = model.cleanupReview.lastRun, !run.hasUnresolvedItems {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(model.t("清理成功", "Cleanup Complete"), systemImage: "checkmark.circle.fill")
+                                .font(.title2.bold()).foregroundStyle(MoPanelTheme.positive)
+                            Text(model.t("已將 \(run.moved) 項移至垃圾桶，可從垃圾桶還原。需要再次檢查時，按右上角「掃描」。", "Moved \(run.moved) items to Trash, where they can be restored. Use Scan at the top right to check again."))
+                                .foregroundStyle(.secondary)
+                        }.padding(20).frame(maxWidth: .infinity, alignment: .leading).moPanelGlass(cornerRadius: 16)
+                    } else if model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty || !model.cleanupReview.errors.isEmpty {
+                        FileReviewView(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation)
+                    }
+                }
+                if !model.nativeSelectionOnPage && (section != .clean || (model.cleanupReview.sourceDate == nil && model.cleanupReview.lastRun == nil && !model.cleanupReview.cleanupScanInProgress && model.cleanupReview.errors.isEmpty) || (model.fixtureMode && !model.cleanupReview.cleanupScanInProgress)) {
                 GlassEffectContainer(spacing: 18) {
                     GlassCard {
                         Label(model.t("先看結果，再決定", "Preview before making changes"), systemImage: "eye").font(.title3.bold())
-                        Text(model.t("預覽由官方 Mole 執行，介面保留它實際提供的項目、容量、保護狀態與原因。部分路徑或略過原因需開啟下方「詳細診斷（--debug）」；官方未提供的明細不會補造。", "Mole performs the preview. The interface preserves the items, sizes, protection status and reasons it actually reports. Some paths or skip reasons require Detailed Diagnostics (--debug) below; missing details are not invented."))
+                        Text(model.t(section == .clean ? "掃描後勾選要移除的項目，再移至垃圾桶；未勾選的內容會保留。" : "先檢查建議與工作範圍，再開始操作。需要調整時展開進階選項。", section == .clean ? "Scan, select items and move them to Trash. Unchecked items stay in place." : "Review the suggested scope, then start. Expand advanced options for more control."))
                             .foregroundStyle(.secondary)
                         HStack {
-                            NativeActionButton(model.t("掃描並預覽", "Scan and Preview"),
-                                               identifier: "mopanel.maintenance.\(command.rawValue).preview",
-                                               systemImage: "magnifyingglass", appearance: .prominent) {
-                                model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en))
-                            }.controlSize(.large)
-                            NativeActionButton(model.t("檢查並開始操作", "Review and Start"),
+                            if !model.canOpenSelection(command) {
+                            if section != .clean || model.fixtureMode {
+                            NativeActionButton(model.t("開始操作…", "Start…"),
                                                identifier: "mopanel.maintenance.\(command.rawValue).review",
-                                               systemImage: "play.fill") {
+                                               systemImage: "play.fill", appearance: .prominent) {
                                 model.request(command, options: options + (section == .purge && unattended ? [.yes] : []), title: model.t(section.zh, section.en))
                             }.controlSize(.large)
+                            }
+                            }
                             Spacer()
                             Button(model.t("官方說明", "CLI Help")) { model.request(command, options: [.help]) }
                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))
                     }
                 }
+                }
+                DisclosureGroup(model.t("更多選項", "More Options")) {
+                if model.canOpenSelection(command) {
+                    Button(model.t("只做預覽，不變更檔案", "Preview Only")) { model.request(command, options: options + [.dryRun]) }.disabled(!model.canStart)
+                }
+                if section == .clean { Button(model.t("完整清理（含需要授權的項目）…", "Full Cleanup (including items requiring approval)…")) { model.request(.clean, options: options) }.disabled(!model.canStart) }
                 Notice(text: safetyText, warning: section != .optimize)
                 GroupBox(model.t("操作選項", "Options")) {
                     VStack(alignment: .leading, spacing: 16) {
@@ -80,15 +115,42 @@ struct MaintenanceView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }.padding(12)
                 }
-                Notice(text: model.t("這些指令沒有穩定的逐項 JSON 刪除 API。MoPanel 保留官方選取與確認，不會把文字解析成自訂刪除計畫，也不會代送選取編號。", "These commands have no stable per-item JSON deletion API. MoPanel preserves official selection and confirmation and never converts text or guessed item numbers into a deletion plan."))
+                Text(model.t("一般清理將勾選項目移至垃圾桶。「完整清理」使用 Mole 的完整檢查與確認流程，範圍需重新選擇。", "Standard cleanup moves checked items to Trash. Full Cleanup uses Mole's full review and confirmation flow, with its scope selected separately.")).font(.caption).foregroundStyle(.secondary)
                 HStack {
                     Button(model.t("查看操作歷史與實際結果", "View History and Actual Results")) { model.section = .history; Task { await model.loadHistory() } }
                         .disabled(!model.canStart)
                     Spacer()
-                    Text(model.t("執行中的停止按鈕位於操作視窗。", "Stop is available in the operation window.")).font(.caption).foregroundStyle(.secondary)
+                    Text(model.t("執行進度與停止按鈕會顯示在本頁下方。", "Progress and Stop appear at the bottom of this page.")).font(.caption).foregroundStyle(.secondary)
+                }
                 }
             }.padding(26)
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if model.nativeSelectionOnPage {
+                HStack {
+                    Button(model.t("取消", "Cancel")) { model.operationSession.cancel() }
+                    Button(model.t("詳細資訊", "Details")) { model.operationDetailsExpanded = true; model.moleSelector.suspend() }
+                    Spacer()
+                    MoleSelectorActions(controller: model.moleSelector, language: model.language, preview: model.operationWasPreview)
+                }.padding(16).moPanelGlass(cornerRadius: 18).padding(.horizontal, 20).padding(.vertical, 12)
+            } else if section == .clean, !model.cleanupReview.cleanupScanInProgress && !model.cleanupReview.files.isEmpty {
+                FileReviewActionBar(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation)
+            }
+        }
+        }
+    }
+    @ViewBuilder private var scanAction: some View {
+        Group {
+            if model.canOpenSelection(command) {
+                NativeActionButton(model.t("掃描並選擇", "Scan and Choose"), identifier: "mopanel.maintenance.\(command.rawValue).preview", systemImage: "magnifyingglass", appearance: .prominent) {
+                    model.openSelection(command, options: options, title: model.t(section.zh, section.en))
+                }
+            } else {
+                NativeActionButton(model.t("掃描", "Scan"), identifier: "mopanel.maintenance.\(command.rawValue).preview", systemImage: "magnifyingglass", appearance: .prominent) {
+                    model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en))
+                }
+            }
+        }.controlSize(.large).disabled(!model.canStart || (section == .clean && (model.cleanupReview.preparing || model.cleanupReview.cleanupScanInProgress || (external && volume.isEmpty))))
     }
     private var subtitle: String {
         switch section {

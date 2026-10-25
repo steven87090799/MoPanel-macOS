@@ -1,0 +1,26 @@
+{
+  "retrieved_on": "2026-10-24",
+  "mole_stable": {
+    "tag_name": "V1.62.0",
+    "target_commitish": "main",
+    "published_at": "2026-10-21T05:15:14Z",
+    "prerelease": false,
+    "draft": false,
+    "html_url": "https://github.com/tw93/Mole/releases/tag/V1.62.0"
+  },
+  "mole_stable_commit": "91a7bf44f96995361b10b5a0e9efae36a1490bf9",
+  "mole_main_commit": "6f6dcbdc47aeec63ac4a09b235e583bd5f81a4c6",
+  "stats_master_commit": "7d3f70dcd6a07177d0a529a1b907021eef740158",
+  "stats_license": "MIT, Copyright (c) 2019 Serhiy Mytrovtsiy",
+  "stats_code_incorporated": false,
+  "references": [
+    "https://github.com/tw93/Mole",
+    "https://github.com/tw93/Mole/blob/main/README_TW.md",
+    "https://github.com/tw93/Mole/blob/main/llms.txt",
+    "https://github.com/exelban/stats",
+    "https://mole.fit/",
+    "https://mole.fit/docs",
+    "https://github.com/tw93/Mole-App",
+    "https://mole.fit/blog/mole-cli-vs-mac-app"
+  ]
+}

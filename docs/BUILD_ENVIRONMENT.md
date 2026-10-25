@@ -1,4 +1,4 @@
-> 最新成功產物：macOS [run 40082801624](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082801624)，來源 `5e3d84a13e4a01caa1576f0d8585d92e18138955`。177 XCTest、20／20 smoke、17 次實際按鈕及效果、Guardian 17、兩組三模式效能、ARM64／ad-hoc 簽章及 ZIP 解壓驗證均完成。下文較早失敗與進度是歷史紀錄；當版結果及限制見根目錄 `TEST_REPORT.md`，不是官方付費 GUI 全功能或完整權限驗收。
+> 過往成功產物：macOS [run 40082801624](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082801624)，來源 `5e3d84a13e4a01caa1576f0d8585d92e18138955`。177 XCTest、20／20 smoke、17 次實際按鈕及效果、Guardian 17、兩組三模式效能、ARM64／ad-hoc 簽章及 ZIP 解壓驗證均完成。本輪審查分支另有成功的 [run 40090538651](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40090538651)（來源 `e01892325c06f132c63f15ebab4265f6fd4f7723`）。以下歷史紀錄不代表本機完整驗收，功能差距見 `PRODUCT_READINESS_AUDIT.md`。
 
 # 建置環境與產物驗證
 
@@ -56,7 +56,9 @@ CI 另外以 `--real-cli` 指定已校驗的官方 baseline，經 App 的唯讀 
 
 ## 本次本地環境
 
-本地工作環境為 Linux x86_64，沒有 Xcode、AppKit 或 macOS SDK。已另外在暫存工作區安裝官方 Swift 6.4.1 Linux toolchain 及本地 libncurses runtime，供 Foundation 和程序測試。Linux 通過不等於 macOS GUI 編譯通過；最終 macOS 建置結果須以實際 Actions run 或 Mac 執行紀錄為準。
+2026-10-24 的目前工作機為 Apple M1 Pro、macOS 27.0.1 ARM64，原先僅有 Command Line Tools／Swift 6.4。已安裝 Python 3.15、GitHub CLI、ShellCheck、ripgrep、Go 與 mas，並建立專案 `.venv`。完整 Xcode 與 Metal Toolchain 的可用性以 `bash scripts/dev-run.sh bash scripts/doctor-environment.sh` 實際結果為準；安裝流程及使用方式見 [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)。工具安裝與 Python 測試通過不等於完整 App 已在本機建置。
+
+較早的 Linux x86_64／Swift 6.4.1 測試為歷史工作環境，不代表目前 Mac 的開發工具狀態。Linux 通過不等於 macOS GUI 編譯通過；最終 macOS 建置結果須以實際 Actions run 或 Mac 執行紀錄為準。
 
 ## 公開 GitHub Actions 建置狀態
 

@@ -17,24 +17,25 @@ struct AnalyzeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                PageHeading(title: model.t("空間用在哪裡", "See where space goes"), subtitle: model.t("資料來自 mo analyze --json；未知容量與部分掃描會明確保留。", "Uses mo analyze --json. Unknown sizes and partial scans remain explicit."), symbol: "chart.pie")
-                HStack {
-                    NativeActionButton(model.t("掃描總覽", "Scan Overview"), identifier: "mopanel.analyze.overview") {
+                PageHeader(title: model.t("空間用在哪裡", "See where space goes"), subtitle: model.t("資料來自 mo analyze --json；未知容量與部分掃描會明確保留。", "Uses mo analyze --json. Unknown sizes and partial scans remain explicit."), symbol: "chart.pie") {
+                    Button(model.t("選擇位置…", "Choose Location…")) { model.chooseFolder { url in Task { await model.analyze(path: url.path) } } }.disabled(!model.canStart)
+                    NativeActionButton(model.t("掃描總覽", "Scan Overview"), identifier: "mopanel.analyze.overview", systemImage: "magnifyingglass", appearance: .prominent) {
                         Task { await model.analyze(path: nil) }
-                    }
-                    Button(model.t("選擇資料夾／外接磁碟…", "Choose Folder / External Drive…")) { model.chooseFolder { url in Task { await model.analyze(path: url.path) } } }.buttonStyle(.borderedProminent)
+                    }.disabled(!model.canStart)
                     if let scan = model.analysis {
-                        NativeActionButton(model.t("重新掃描", "Rescan"), identifier: "mopanel.analyze.rescan") {
+                        NativeActionButton(model.t("重新掃描", "Rescan"), identifier: "mopanel.analyze.rescan", systemImage: "arrow.clockwise") {
                             Task { await model.analyze(path: scan.overview ? nil : scan.path) }
-                        }
-                        if !scan.overview, scan.path != "/" {
-                            NativeActionButton(model.t("上一層", "Parent"), identifier: "mopanel.analyze.parent", systemImage: "arrow.up") {
-                                Task { await model.analyze(path: URL(fileURLWithPath: scan.path).deletingLastPathComponent().path) }
-                            }
-                        }
+                        }.disabled(!model.canStart)
+                    }
+                }
+                HStack {
+                    if let scan = model.analysis, !scan.overview, scan.path != "/" {
+                        NativeActionButton(model.t("上一層", "Parent"), identifier: "mopanel.analyze.parent", systemImage: "arrow.up") {
+                            Task { await model.analyze(path: URL(fileURLWithPath: scan.path).deletingLastPathComponent().path) }
+                        }.disabled(!model.canStart)
                     }
                     Spacer()
-                }.disabled(!model.canStart)
+                }
                 if let scan = model.analysis {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 5) {
@@ -71,7 +72,7 @@ struct AnalyzeView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(entries) { entry in
                             HStack(spacing: 12) {
-                                Image(systemName: entry.isDir ? "folder" : "doc").foregroundStyle(entry.isDir ? Color.teal : Color.secondary)
+                                Image(systemName: entry.isDir ? "folder" : "doc").foregroundStyle(entry.isDir ? MoPanelTheme.accent : Color.secondary)
                                 Button {
                                     if entry.isDir { Task { await model.analyze(path: entry.path) } } else { model.reveal(entry.path) }
                                 } label: {
@@ -137,7 +138,7 @@ private struct TreemapTile: Identifiable {
 private struct Treemap: View {
     let entries: [AnalyzeEntry]
     let select: (AnalyzeEntry) -> Void
-    private let colors: [Color] = [.teal, .blue, .indigo, .cyan, .mint]
+    private let colors: [Color] = [MoPanelTheme.accent, MoPanelTheme.chartSecondary, .indigo, .orange, MoPanelTheme.positive]
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .topLeading) {

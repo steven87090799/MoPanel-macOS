@@ -10,7 +10,7 @@ MoPanel 是獨立、非官方的 Mole 操作介面。Mole 名稱用於說明 CLI
 
 來源：<https://github.com/tw93/Mole>。基準版本 V1.62.0。授權：GPL-3.0。
 
-Mole CLI 由使用者獨立安裝及更新，未隨 MoPanel App bundle 散佈。MoPanel 呼叫外部官方執行檔，沒有複製另一套清理引擎。命令及資料格式的實作依官方公開介面；公開來源參考與固定 commit 記載於相容性文件。
+Mole CLI 由使用者獨立安裝及更新，未隨 MoPanel App bundle 散佈。MoPanel 呼叫外部官方執行檔。預設可勾選的使用者檔案清理與精確 App ID 相關檔案，另以 macOS 原生移至垃圾桶處理；這與 Mole 的官方完整清理／永久刪除模式是不同的操作。命令及資料格式的實作依官方公開介面；公開來源參考與固定 commit 記載於相容性文件。
 
 `Tests/MoPanelCoreTests/Fixtures/help-contract.json` 中的官方 help 文字抽取自 Tw93／Mole contributors 的 V1.62.0 GPL-3.0 來源；該測試資料保留其來源與授權。history fixture 由官方 GPL-3.0 renderer 對合成日誌生成。這些文字與測試輸出僅作相容性驗證，並非隨 App 內建另一套清理核心。
 
@@ -53,6 +53,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## 建置工具相依來源
 
 成功建置的發行包會在 `Source/Vendor` 放入實際 SwiftPM checkout 的完整來源與原始授權。SwiftTerm 的 manifest 還會解析 Swift Argument Parser、Swift DocC plugin 等建置／工具依賴；它們不因出現在 resolver 中就被宣稱連結進 MoPanel。確切來源以 Package.resolved 與各 checkout 授權檔為準。僅原始碼審閱包尚未在 macOS resolve 時，不會假造這些相依下載結果。
+
+## Stats 唯讀 SMC 參考實作
+
+來源：<https://github.com/exelban/stats>，研究版本 `7d3f70dcd6a07177d0a529a1b907021eef740158`，`SMC/smc.swift`。上游 MIT，`Copyright (c) 2019 Serhiy Mytrovtsiy`，完整授權隨附於 `ThirdParty/Stats-LICENSE.txt`。
+
+`Sources/MoPanelApp/NativeSystemReadings.swift` 的 SMC 封包結構、讀取協定與 M1 溫度 key 參考並改寫自該來源。`NativeNetworkReader.swift` 的 `NET_RT_IFLIST2` 網卡計數器讀取方式另參考並改寫自 `Modules/Net/readers.swift`，增加容量、訊息長度與計數器重設檢查。MoPanel 只使用讀取 key 資訊及數值的命令，不包含 SMC 寫入、風扇控制、提權 helper 或 Stats App。記憶體壓力、單一 GPU 使用率、網路介面中繼資料及 App 程序彙整由 MoPanel 透過 macOS 系統 API 自行實作。這是有限的感測補充，並非整合完整 Stats 模組。
 
 ## Apple 系統元件
 

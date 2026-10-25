@@ -1,0 +1,11 @@
+{
+  "checks" : [
+    {
+      "error" : "Failure(reason: \"Collector stopped or dropped delivery: exit=130, truncated=true, observed=131082\")",
+      "name" : "stream-diagnostics-bounded-without-cancelling",
+      "passed" : false
+    }
+  ],
+  "passed" : false,
+  "platform" : "Version 27.0.1 (Build 26A434)"
+}

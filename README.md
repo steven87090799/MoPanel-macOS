@@ -89,6 +89,8 @@ CLI 更新後重新偵測版本、help 與結構化輸出。相容性不是固�
 
 ## 原始碼與建置
 
-原始碼與建置說明一同提供。`scripts/build.sh` 與 `.github/workflows/build.yml` 實作真正 macOS 27 ARM64 編譯、測試、ad-hoc 簽章、原生視窗 smoke test、資源取樣、ZIP 解壓驗證及 SHA-256。完整環境要求見 `docs/BUILD_ENVIRONMENT.md`。
+抽屜式側欄、光影玻璃材質與 Mole 式選單列面板的使用方式、資料來源及驗證範圍見 [NATIVE_INTERFACE.md](docs/NATIVE_INTERFACE.md)。
+
+原始碼與建置說明一同提供。`scripts/build.sh` 與 `.github/workflows/build.yml` 實作真正 macOS 27 ARM64 編譯、測試、ad-hoc 簽章、原生視窗 smoke test、資源取樣、ZIP 解壓驗證及 SHA-256。本機工具安裝與環境檢查見 [LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md)，完整建置要求與歷史驗證見 `docs/BUILD_ENVIRONMENT.md`。
 
 官方 CLI：<https://github.com/tw93/Mole>。研究參考 GUI：<https://github.com/michaelcspeed/mole-ui>。MoPanel 與官方 Mole 商業 App 沒有從屬關係。授權與來源見 `LICENSE`、`THIRD_PARTY_NOTICES.md`。

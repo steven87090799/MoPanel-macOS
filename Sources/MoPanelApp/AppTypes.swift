@@ -74,14 +74,6 @@ struct CLIInstallation {
     var stableVersion: Bool { !version.lowercased().contains("nightly") && !version.lowercased().contains("main") }
 }
 
-struct ReleaseInfo: Decodable {
-    let tagName: String
-    let htmlUrl: URL
-    let prerelease: Bool
-    let draft: Bool
-    let publishedAt: String?
-}
-
 struct PendingOperation: Identifiable {
     let id = UUID()
     let invocation: MoleInvocation
@@ -99,6 +91,13 @@ struct TrendSample: Identifiable {
     let diskWrite: Double?
     let down: Double?
     let up: Double?
+    var gpu: Double? = nil
+    var networkInterfaces: [String: NetworkStatus] = [:]
+    var sampleInterval: TimeInterval = 2
+    var startsNewSegment = false
+    func observation(_ value: Double?) -> ResourceTrendObservation {
+        .init(date: date, value: value, interval: sampleInterval, startsNewSegment: startsNewSegment)
+    }
 }
 
 struct ActivityEntry: Identifiable {
@@ -109,6 +108,21 @@ struct ActivityEntry: Identifiable {
 }
 
 enum DisplayFormat {
+    static func healthMessage(_ value: String?, language: String) -> String {
+        guard let value else { return "—" }
+        guard language != "en" else { return value }
+        let meanings = ["Excellent": "狀態很好", "Good": "良好", "Fair": "需留意", "Needs Attention": "需要關注",
+                        "High CPU": "CPU 負載偏高", "High Memory": "記憶體用量偏高", "Memory Pressure": "記憶體壓力偏高",
+                        "Critical Memory": "記憶體壓力過高", "Disk Almost Full": "磁碟空間不足", "Disk SMART Failing": "磁碟健康出現異常",
+                        "Overheating": "溫度過高", "Heavy Disk IO": "磁碟讀寫繁忙", "Battery Service Soon": "電池需要留意", "Restart Recommended": "建議重新啟動"]
+        return value.components(separatedBy: ": ").map { part in
+            part.components(separatedBy: ", ").map { meanings[$0] ?? $0 }.joined(separator: "、")
+        }.joined(separator: "：")
+    }
+    static func storage(_ value: UInt64?) -> String {
+        guard let value else { return "—" }
+        return ByteCountFormatter.string(fromByteCount: Int64(clamping: value), countStyle: .decimal)
+    }
     static func bytes(_ value: UInt64?) -> String {
         guard let value else { return "—" }
         return ByteCountFormatter.string(fromByteCount: Int64(clamping: value), countStyle: .binary)
@@ -125,25 +139,29 @@ enum DisplayFormat {
         guard let value, value.isFinite else { return "—" }
         return String(format: "%.1f", value) + suffix
     }
-    static func timestamp(_ value: String, language: String) -> String {
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = isoFormatter.date(from: value) ?? ISO8601DateFormatter().date(from: value) else {
-            // Keep a useful date and second-level time even if a newer CLI
-            // changes fractional precision or a platform parser rejects it.
-            guard let separator = value.firstIndex(of: "T") else { return value }
-            let datePart = String(value[..<separator])
-                .replacingOccurrences(of: "-", with: language == "en" ? "-" : "/")
-            let timePart = String(value[value.index(after: separator)...].prefix(8))
-            return datePart + " " + timePart
+    @MainActor static func timestamp(_ value: String, language: String) -> String {
+        StatusTimestampDisplay.string(from: value, language: language)
+    }
+}
+
+struct MoPanelGlassSurface: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if reduceTransparency {
+            content
+                .background(Color(nsColor: .controlBackgroundColor), in: shape)
+                .overlay { shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 1) }
+        } else {
+            content.glassEffect(.regular.interactive(), in: shape)
         }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: language == "en" ? "en_US" : "zh_TW")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = .current
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .medium
-        return formatter.string(from: date)
+    }
+}
+
+extension View {
+    func moPanelGlass(cornerRadius: CGFloat) -> some View {
+        modifier(MoPanelGlassSurface(cornerRadius: cornerRadius))
     }
 }
 
@@ -160,7 +178,7 @@ struct GlassCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) { content }
             .padding(18)
             .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .moPanelGlass(cornerRadius: 20)
     }
 }
 
@@ -172,24 +190,43 @@ struct MoPanelGroupBoxStyle: GroupBoxStyle {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .moPanelGlass(cornerRadius: 18)
     }
 }
 
 struct PageHeading: View {
+    @EnvironmentObject private var model: AppModel
     let title: String
     let subtitle: String
     let symbol: String
+    @State private var showingInfo = false
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(.teal)
-                .frame(width: 48, height: 48).glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            Image(systemName: symbol).font(.system(size: 26, weight: .medium)).foregroundStyle(MoPanelTheme.accent)
+                .frame(width: 48, height: 48).moPanelGlass(cornerRadius: 14)
             VStack(alignment: .leading, spacing: 5) {
                 Text(title).font(.system(.largeTitle, design: .rounded).weight(.bold))
-                Text(subtitle).font(.callout).foregroundStyle(.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                DisclosureGroup(isExpanded: $showingInfo) {
+                    Text(subtitle).font(.callout).foregroundStyle(.secondary).lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+                } label: { Text(model.t("更多資訊", "More info")).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer()
         }.padding(.bottom, 8)
+    }
+}
+
+/// Keep page-level scan actions in the same top-right location on every page.
+struct PageHeader<Actions: View>: View {
+    let title: String
+    let subtitle: String
+    let symbol: String
+    @ViewBuilder var actions: () -> Actions
+    var body: some View {
+        HStack(alignment: .top, spacing: 20) {
+            PageHeading(title: title, subtitle: subtitle, symbol: symbol)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 10, content: actions).fixedSize().padding(.top, 8)
+        }
     }
 }
 
@@ -201,10 +238,10 @@ struct Notice: View {
             icon: { Image(systemName: warning ? "exclamationmark.shield" : "info.circle") }
             .font(.callout).foregroundStyle(warning ? Color.orange : Color.secondary)
             .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(warning ? Color.orange.opacity(0.08) : Color.teal.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(warning ? Color.orange.opacity(0.08) : MoPanelTheme.accent.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 1, style: .continuous)
-                    .fill(warning ? Color.orange.opacity(0.65) : Color.teal.opacity(0.45))
+                    .fill(warning ? Color.orange.opacity(0.65) : MoPanelTheme.accent.opacity(0.45))
                     .frame(width: 3)
                     .padding(.vertical, 8)
             }

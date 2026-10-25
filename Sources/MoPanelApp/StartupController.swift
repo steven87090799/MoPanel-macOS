@@ -3,6 +3,7 @@ import AppKit
 import Combine
 import Darwin
 import ServiceManagement
+import UniformTypeIdentifiers
 import MoPanelCore
 import MoPanelProcess
 
@@ -39,6 +40,12 @@ private struct StartupCommandResult {
     @Published private(set) var isBusy = false
     @Published private(set) var progress: Double = 0
     @Published private(set) var statusMessage = ""
+    @Published private(set) var backgroundItems: [BackgroundStartupItem] = []
+    @Published private(set) var backgroundReadAt: Date?
+    @Published private(set) var backgroundIsImported = false
+    @Published private(set) var backgroundUsedAuthorization = false
+    @Published private(set) var backgroundNeedsAuthorization = false
+    @Published private(set) var backgroundReadError: String?
     @Published var pendingPlan: StartupCommandPlan?
     @Published var errorMessage: String?
     var language: String
@@ -103,6 +110,8 @@ private struct StartupCommandResult {
             rows = inventory.items.map { .init(item: $0, override: nil, loadState: .unknown("Not queried"), duplicateLabel: false) }
             markDuplicateLabels()
             hasLoaded = true
+            if mockRunner == nil { _ = await readBackgroundItems() }
+            try checkCancellation()
             var maps: [String: [String: StartupOverride]] = [:]
             for domain in Set(rows.map { domain(for: $0.item.scope) }).sorted() {
                 do { maps[domain] = try await readOverrides(domain: domain) }
@@ -128,10 +137,103 @@ private struct StartupCommandResult {
                 catch { rows[index].loadState = .unknown(error.localizedDescription) }
             }
             progress = 1
-            statusMessage = t("已讀取 ", "Read ") + String(rows.count) + t(" 個 plist。載入狀態和啟動覆寫分開顯示。", " plists. Loaded state and startup overrides are shown separately.")
+            if backgroundReadError != nil && backgroundReadAt != nil {
+                statusMessage = t("背景服務已更新；登入項目與背景 App 保留上次清單。", "Services updated; the previous login and background-app list is retained.")
+            } else {
+                statusMessage = backgroundReadAt != nil
+                    ? t("已讀取登入項目、背景 App 與服務。點右側詳細資訊可查看來源與設定。", "Login items, background apps and services loaded. Use Details to inspect their source and settings.")
+                    : t("已讀取 ", "Read ") + String(rows.count) + t(" 個背景服務；登入項目與背景 App 尚未完成讀取。", " background services; login items and background apps have not been read.")
+            }
         } catch is CancellationError {
             statusMessage = t("已取消；已顯示的項目可能只是部分結果。", "Cancelled; displayed rows may be partial results.")
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    func refreshBackgroundItems(authorized: Bool = false) async {
+        let description = authorized
+            ? t("請在 macOS 視窗完成授權，接著讀取完整清單…", "Authorize in the macOS dialog to read the complete list…")
+            : t("讀取完整登入與背景清單…", "Reading login and background items…")
+        guard begin(description) else { return }
+        defer { finish() }
+        let outcome = await readBackgroundItems(authorized: authorized)
+        if outcome == .cancelled || cancelled || Task.isCancelled {
+            statusMessage = authorized
+                ? t("已取消授權讀取，保留原有清單。", "Authorized reading cancelled; the existing list is retained.")
+                : t("已停止讀取，保留原有清單。", "Reading stopped; the existing list is retained.")
+        } else if backgroundReadError != nil {
+            statusMessage = backgroundReadAt != nil
+                ? t("未能更新；已保留上次系統清單。", "Could not update; the previous system list is retained.")
+                : t("未能讀取完整系統清單。", "Could not read the complete system list.")
+        } else {
+            statusMessage = t("登入項目與背景 App 已更新。", "Login items and background apps updated.")
+        }
+    }
+
+    private enum BackgroundReadOutcome { case updated, cancelled, failed }
+
+    private func readBackgroundItems(authorized: Bool = false) async -> BackgroundReadOutcome {
+        guard !testLaunchBlocked, mockRunner == nil else { return .failed }
+        let process = ManagedProcess()
+        activeProcess = process
+        defer { activeProcess = nil }
+        do {
+            if authorized {
+                guard FileManager.default.isExecutableFile(atPath: "/usr/bin/perl") else { throw StartupContractError.unverifiableState }
+                // The script requests a single fixed read through the standard
+                // macOS authorization dialog. Credentials never enter this app.
+                try process.start(request: .init(executable: URL(fileURLWithPath: "/usr/bin/osascript"),
+                    arguments: ["-e", BackgroundStartupReadPlan.authorizationScript(english: language == "en")],
+                    environment: ["LC_ALL": "C", "LANG": "C"], timeout: BackgroundStartupReadPlan.authorizedTimeout,
+                    outputLimit: BackgroundStartupReadPlan.outputLimit))
+            } else {
+                try process.start(request: .init(executable: URL(fileURLWithPath: "/usr/bin/sfltool"), arguments: ["dumpbtm"],
+                    environment: ["LC_ALL": "C", "LANG": "C"], timeout: 8, outputLimit: BackgroundStartupReadPlan.outputLimit))
+            }
+            let result = await process.wait()
+            try checkCancellation()
+            if authorized, result.exitCode != 0, BackgroundStartupReadPlan.authorizationWasCancelled(stderr: result.stderrText) { throw CancellationError() }
+            guard result.succeeded else { throw StartupContractError.unverifiableState }
+            let items = try BackgroundStartupParser.parse(String(decoding: result.stdout, as: UTF8.self), userID: userID)
+            backgroundItems = items; backgroundReadAt = Date(); backgroundIsImported = false
+            backgroundUsedAuthorization = authorized; backgroundNeedsAuthorization = false; backgroundReadError = nil
+            return .updated
+        } catch is CancellationError {
+            backgroundReadError = nil
+            return .cancelled
+        } catch {
+            if !authorized { backgroundNeedsAuthorization = true }
+            let problem = authorized
+                ? t("授權讀取未完成，請重試；也可以從更多選項匯入清單。", "The authorized read did not finish. Retry or import a report under More Options.")
+                : t("macOS 需要授權才能提供完整清單。請按右上角「授權讀取完整清單」。", "macOS requires authorization for the complete list. Choose Authorize Complete Read at the top right.")
+            backgroundReadError = (backgroundReadAt != nil ? t("目前保留上次清單。", "Keeping the previous report. ") : "") + problem
+            return .failed
+        }
+    }
+
+    func importBackgroundItems() {
+        guard !testLaunchBlocked, !isBusy, externalOperationInProgress?() != true else { return }
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
+        panel.message = t("選擇 macOS sfltool dumpbtm 產生的清單；只讀取，不會變更設定。", "Choose a report produced by macOS sfltool dumpbtm. It is read only; no settings are changed.")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey, .contentModificationDateKey])
+            guard values.isRegularFile == true, let size = values.fileSize, size <= 2 * 1024 * 1024 else { throw StartupContractError.invalidOutput }
+            let items = try BackgroundStartupParser.parse(String(contentsOf: url, encoding: .utf8), userID: userID)
+            backgroundItems = items; backgroundReadAt = values.contentModificationDate ?? Date(); backgroundIsImported = true; backgroundUsedAuthorization = false; backgroundNeedsAuthorization = false; backgroundReadError = nil
+            statusMessage = t("已匯入系統清單；啟用狀態以清單產生時間為準。", "System report imported. Its enabled states reflect the report's creation time.")
+        } catch { errorMessage = t("無法讀取這份系統清單，請確認是 sfltool dumpbtm 的完整輸出。", "This report could not be read. Use complete sfltool dumpbtm output.") }
+    }
+
+    func backgroundItem(matching row: StartupRow) -> BackgroundStartupItem? {
+        let candidates = backgroundItems.filter { $0.matchesPlist(url: row.item.url, label: row.item.snapshot?.label, scope: row.item.scope) }
+        return candidates.first { $0.url?.standardizedFileURL == row.item.url.standardizedFileURL } ?? (candidates.count == 1 ? candidates[0] : nil)
+    }
+
+    func plistRow(matching item: BackgroundStartupItem) -> StartupRow? {
+        let candidates = rows.filter { item.matchesPlist(url: $0.item.url, label: $0.item.snapshot?.label, scope: $0.item.scope) }
+        return candidates.first { $0.item.url.standardizedFileURL == item.url?.standardizedFileURL } ?? (candidates.count == 1 ? candidates[0] : nil)
     }
 
     func inspectState(id: String) async {

@@ -125,6 +125,8 @@ def main():
     with tempfile.TemporaryDirectory(prefix="mopanel-smoke-") as temporary:
         report_path = pathlib.Path(temporary) / "ui.json"
         environment = dict(os.environ)
+        environment.pop("MOPANEL_SMOKE_PREVIEW_SECONDS", None)
+        environment.pop("MOPANEL_SMOKE_PREVIEW_KIND", None)
         environment["MOPANEL_SMOKE_REPORT"] = str(report_path)
         environment["MOPANEL_SMOKE_SCREENSHOT"] = str(screenshot_path)
         environment["MOPANEL_TEST_MODE"] = "1"

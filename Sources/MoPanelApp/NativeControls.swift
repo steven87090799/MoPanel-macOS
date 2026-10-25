@@ -15,17 +15,20 @@ import SwiftUI
     let appearance: Appearance
     let destructive: Bool
     let shortcut: Shortcut?
+    let showsFocusRing: Bool
     let action: () -> Void
 
     init(_ title: String, identifier: String, systemImage: String? = nil,
          appearance: Appearance = .standard, destructive: Bool = false,
-         shortcut: Shortcut? = nil, action: @escaping () -> Void) {
+         shortcut: Shortcut? = nil, showsFocusRing: Bool = true,
+         action: @escaping () -> Void) {
         self.title = title
         self.identifier = identifier
         self.systemImage = systemImage
         self.appearance = appearance
         self.destructive = destructive
         self.shortcut = shortcut
+        self.showsFocusRing = showsFocusRing
         self.action = action
     }
 
@@ -50,8 +53,11 @@ import SwiftUI
         button.controlSize = nativeControlSize(context.environment.controlSize)
         button.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: button.controlSize))
         button.isBordered = appearance != .icon
+        button.state = .off
         button.hasDestructiveAction = destructive
-        button.bezelColor = appearance == .prominent ? .systemTeal : appearance == .warning ? .systemOrange : nil
+        button.bezelColor = appearance == .prominent ? MoPanelTheme.nativeAccent : appearance == .warning ? .systemOrange : nil
+        button.contentTintColor = appearance == .prominent ? MoPanelTheme.nativeAccentText : appearance == .icon ? .labelColor : nil
+        button.focusRingType = showsFocusRing ? .default : .none
         button.image = systemImage.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: appearance == .icon ? title : nil) }
         button.imagePosition = appearance == .icon ? .imageOnly : button.image == nil ? .noImage : .imageLeading
         button.setAccessibilityIdentifier(identifier)
@@ -84,6 +90,7 @@ import SwiftUI
         @objc func activate(_ sender: NSButton) {
             guard sender.isEnabled else { return }
             action()
+            sender.state = .off
         }
     }
 }

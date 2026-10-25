@@ -1,0 +1,62 @@
+{
+  "code_revision": "145ede975ac19f245002db4c743aa1b1c2f826a1",
+  "installation_on_hold": true,
+  "private_reports_packaged": false,
+  "validation": {
+    "xctest_passed": 248,
+    "skipped": 0,
+    "fixture_smoke": 20,
+    "native_assertions": 46,
+    "verified_native_actions": 29,
+    "guardian_tests": 17,
+    "strict_app_and_zip": true
+  },
+  "authorized_startup_read": {
+    "validation_code_revision": "b236031",
+    "native_system_verification_completed_by_user": true,
+    "direct_read_succeeded": true,
+    "used_imported_snapshot": false,
+    "counts": {
+      "login": 4,
+      "background_app": 14,
+      "service": 24
+    },
+    "owned_children_after_read": 0,
+    "resident_service_installed": false,
+    "credential_received_or_stored_by_app": false,
+    "real_startup_settings_changed": false,
+    "cancel_error_classification_unit_tested": true,
+    "system_dialog_cancel_not_directly_operated_by_agent": true
+  },
+  "trend_continuity": {
+    "regression_tests": 8,
+    "controlled_preview": {
+      "observations": 7,
+      "unrecorded_gap_seconds": 414,
+      "separate_curves_visually_verified": true,
+      "no_readings_label_verified": true,
+      "metric_legend_preserved": true
+    },
+    "real_pause_resume": {
+      "paused": true,
+      "resumed": true,
+      "fresh_readings_resumed": true,
+      "cpu_memory_disk_and_network_gaps_verified": true,
+      "en0_network_rates_returned": true
+    }
+  },
+  "archive_sha256": "402832574aac2ff1add4c38467b6b7750eaffa85dfcb7f2c6b10846c020d48d2",
+  "limits": "Manual checks are bounded observations; no real cleanup/uninstall or privileged startup mutation. Not long-term stability acceptance.",
+  "minimized_menu_off_observation": {
+    "duration_seconds": 35.08039491670206,
+    "sample_count": 17,
+    "cpu_mean_percent": 0.007493477049441484,
+    "cpu_peak_percent": 0.05177599611108949,
+    "physical_footprint_first_bytes": 99746968,
+    "physical_footprint_last_bytes": 99746968,
+    "owned_children": 0,
+    "limitations": "35-second observation of a minimized dashboard without menu monitoring; not Energy Impact or a leak proof."
+  },
+  "qa_processes_remaining": 0,
+  "installed_application_unchanged": true
+}

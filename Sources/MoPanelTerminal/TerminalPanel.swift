@@ -11,8 +11,13 @@ public struct TerminalPanel: View {
     @ObservedObject private var session: ManagedProcess
     private let english: Bool
     private let engineName: String
-    public init(session: ManagedProcess, english: Bool = false, engineName: String = "Mole") {
+    private let isVisible: Bool
+    private let minimumTerminalHeight: CGFloat
+    private let onScreen: (([String]) -> Void)?
+    public init(session: ManagedProcess, english: Bool = false, engineName: String = "Mole",
+                isVisible: Bool = true, minimumTerminalHeight: CGFloat = 340, onScreen: (([String]) -> Void)? = nil) {
         self.session = session; self.english = english; self.engineName = engineName
+        self.isVisible = isVisible; self.minimumTerminalHeight = minimumTerminalHeight; self.onScreen = onScreen
     }
     public var body: some View {
         VStack(spacing: 0) {
@@ -30,8 +35,8 @@ public struct TerminalPanel: View {
                 }
             }.padding(12)
             Divider()
-            NativeTerminal(session: session, engineName: engineName)
-                .frame(minWidth: 600, minHeight: 340)
+            NativeTerminal(session: session, engineName: engineName, isVisible: isVisible, onScreen: onScreen)
+                .frame(minWidth: 600, minHeight: minimumTerminalHeight)
                 .accessibilityLabel(english ? "\(engineName) terminal. Use arrow keys, Space, and Return." : "\(engineName) 終端。使用方向鍵、空白鍵及 Return 操作。")
             Divider()
             HStack(spacing: 8) {
@@ -54,6 +59,8 @@ public struct TerminalPanel: View {
 private struct NativeTerminal: NSViewRepresentable {
     @ObservedObject var session: ManagedProcess
     let engineName: String
+    let isVisible: Bool
+    let onScreen: (([String]) -> Void)?
     func makeCoordinator() -> Coordinator { Coordinator(session: session) }
     func makeNSView(context: Context) -> TerminalView {
         let options = TerminalOptions(cols: 110, rows: 32, cursorStyle: .steadyBlock, scrollback: 500,
@@ -63,20 +70,41 @@ private struct NativeTerminal: NSViewRepresentable {
         view.configureNativeColors()
         view.optionAsMetaKey = false
         view.allowMouseReporting = false
+        view.isHidden = !isVisible
         view.setAccessibilityLabel("\(engineName) interactive terminal")
+        view.identifier = NSUserInterfaceItemIdentifier("mopanel.terminal.viewport")
         context.coordinator.view = view
-        session.onOutput = { [weak view] data in view?.feed(byteArray: Array(data)[...]) }
+        context.coordinator.onScreen = onScreen
+        let coordinator = context.coordinator
+        session.onOutput = { [weak view, weak coordinator] data in
+            view?.feed(byteArray: Array(data)[...]); coordinator?.screenChanged()
+        }
         DispatchQueue.main.async { [weak view] in
-            guard let view else { return }; view.window?.makeFirstResponder(view)
+            guard let view, !view.isHidden else { return }; view.window?.makeFirstResponder(view)
         }
         return view
     }
     func updateNSView(_ nsView: TerminalView, context: Context) {
-        // Drawing is output-driven; no monitor timer is attached to this view.
+        context.coordinator.onScreen = onScreen
+        let visibilityChanged = nsView.isHidden == isVisible
+        let becameVisible = nsView.isHidden && isVisible
+        nsView.isHidden = !isVisible
+        if visibilityChanged { context.coordinator.screenChanged() }
+        if becameVisible {
+            session.resize(columns: context.coordinator.columns, rows: context.coordinator.rows)
+            DispatchQueue.main.async { [weak nsView] in
+                guard let nsView, !nsView.isHidden else { return }
+                nsView.window?.makeFirstResponder(nsView)
+            }
+        }
+        // Folded terminals keep their bounded screen and consume PTY output,
+        // but are hidden at the AppKit level so output does not draw the view.
     }
     static func dismantleNSView(_ nsView: TerminalView, coordinator: Coordinator) {
+        coordinator.screenTask?.cancel()
         coordinator.session.onOutput = nil
-        // Closing the operation sheet stops its child instead of leaving a cleaner running.
+        // Removing the whole operation panel stops its child. Folding details
+        // keeps this representable mounted and never reaches dismantleNSView.
         coordinator.session.cancel()
         nsView.terminalDelegate = nil
     }
@@ -84,9 +112,23 @@ private struct NativeTerminal: NSViewRepresentable {
     @MainActor final class Coordinator: NSObject, @preconcurrency TerminalViewDelegate {
         let session: ManagedProcess
         weak var view: TerminalView?
+        var columns = 110
+        var rows = 32
+        var onScreen: (([String]) -> Void)?
+        var screenTask: Task<Void, Never>?
+        func screenChanged() {
+            guard onScreen != nil else { return }
+            screenTask?.cancel()
+            screenTask = Task { @MainActor [weak self] in
+                do { try await Task.sleep(for: .milliseconds(40)) } catch { return }
+                guard let self, let terminal = self.view?.getTerminal() else { return }
+                self.onScreen?((0..<min(terminal.rows, 80)).map { terminal.getLine(row: $0)?.translateToString(trimRight: true, skipNullCellsFollowingWide: true) ?? "" })
+            }
+        }
         init(session: ManagedProcess) { self.session = session }
         func sizeChanged(source: TerminalView, newCols: Int, newRows: Int) {
-            session.resize(columns: newCols, rows: newRows)
+            columns = newCols; rows = newRows
+            if !source.isHidden { session.resize(columns: newCols, rows: newRows) }
         }
         func send(source: TerminalView, data: ArraySlice<UInt8>) {
             // Large pastes and multi-line paste automation are unnecessary for Mole.

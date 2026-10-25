@@ -1,0 +1,2205 @@
+{
+  "base_commit": "9eb131721293cdf621161ef2052c3f8ca0c1e5cb",
+  "scope": "first-party source, tests, build scripts and workflow; excludes downloaded dependencies and generated binaries",
+  "files": [
+    {
+      "path": ".github/workflows/build.yml",
+      "sha256": "a6302fe36d08c0eba5d39a56906100186469bb2babd72c7fa8fc4d359373d850",
+      "lines": 78,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Package.swift",
+      "sha256": "fd37eebcae69a465ca434c3e12f4390b7552bbc80ed148385e0989d83d9fd85e",
+      "lines": 29,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "sha256": "158d209018af8e9ddb1df8c032a957189c750382816edf4721a592c312aa092e",
+      "lines": 181,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppModel.swift",
+      "sha256": "5dc8af48c7d47f9f831fa4cd27145edfa2270f91f1958f3c5422b7d2c14c8cf4",
+      "lines": 633,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppResources.swift",
+      "sha256": "0ec3bb3a3f53d22a8dafccba541fb2afda13857916e2f9de9819bb3f1761744c",
+      "lines": 13,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppTypes.swift",
+      "sha256": "d8160467db1941ad081ddfb7ea9737ff4d65cf38e3677e80b900048a765e10ae",
+      "lines": 216,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesController.swift",
+      "sha256": "03b7c1e666017daa382c62e3b089752265c91dfd4d0b31f44f97ad2b1c7856b5",
+      "lines": 486,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "sha256": "83d1dfc83275b8de88401fe7e17cb2086023918291bfb43d7fc8bd169a1745b0",
+      "lines": 289,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/CLIProbe.swift",
+      "sha256": "110f2cdffd941aece0fa953b8460e02c2d0c9df62c6d144bedd4ad16898d1ea3",
+      "lines": 195,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "sha256": "966e1347c3ca29e3e5cff191ddf50069995c2f7b2c6e831f95016557ec4701f2",
+      "lines": 407,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/DashboardView.swift",
+      "sha256": "7be3c2fe770316136ea99864ee0204c218d70e10527c5ed7e827a9f86afdb686",
+      "lines": 358,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/Fixtures/mock-mo.sh",
+      "sha256": "d28a18959612a176072b21b3be3863a99e494e3053f4a249a50a8e8ca9af0934",
+      "lines": 64,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeController.swift",
+      "sha256": "f1f8d6196c5e4282da03363e43b1c1a0a4e71a1126223a1abda8535b002ea314",
+      "lines": 313,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "sha256": "f2ec89eff141d9fc0d0ebc46a3165249bc60ec9b3450bdafa7ee5968240d982f",
+      "lines": 227,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "sha256": "6e626d6b2a8e341b557810f6cbe999150e712b6965febc0c3afb4eef0e5e5704",
+      "lines": 92,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "sha256": "804189c34da7f56332c7ae8c5bc4d57450a7a2572364895d6be4057210438639",
+      "lines": 122,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/MenuBarPanel.swift",
+      "sha256": "1d8f34d06b4d2051d8721d1c524dff3e0a3781bf53457201bc7c6d265e05675f",
+      "lines": 43,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "sha256": "6681b69f8f5d2299ef953d9725646224a490c2ad30ed8bdc6055cee761734005",
+      "lines": 144,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/NativeControls.swift",
+      "sha256": "46ec17974e48219810f592598c4570d21107e703f8eb79c331f04d035990eeb4",
+      "lines": 164,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/NativeUITestHarness.swift",
+      "sha256": "5fc3e16b73c08c51b6f87142ba4d53378262d29365ce5f9510032a50af7833a0",
+      "lines": 818,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/OperationExport.swift",
+      "sha256": "857b4e4aeff07866b73f5bf6a522197e9f612545b8468ce1ef47ecaedac10d99",
+      "lines": 32,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "sha256": "d60ecd7a196b0ba4ab82d1598cfc5e0caae31b6ab62957bd0b9acef0cbe453f7",
+      "lines": 217,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "sha256": "830ed39275918103cc944df12bd788a75cbce342e9bf50eb1fc16a903658ba96",
+      "lines": 218,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/SmokeHarness.swift",
+      "sha256": "998b4f4c96af28d4d9cff3f73c8d3282cac22b48a5e62e2a7568392a45e45bdc",
+      "lines": 267,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupController.swift",
+      "sha256": "9035450bd6d6dda5a67b8501a91ef063bed610b3c49a9c024bc604903b98d33a",
+      "lines": 392,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "sha256": "2468e3ab51705c2b1c70e27e9dd632c918d26740ead59d084cdac25aa1895cbb",
+      "lines": 180,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsController.swift",
+      "sha256": "071621eb22454f1cd2ae44854e702aeffff996fe70c342fd58bdb442fea5f456",
+      "lines": 585,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "sha256": "a018d950fd9992064aba48ad736f784aacdccf0c5c77b10655b3678263763309",
+      "lines": 162,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "sha256": "0b0bfdf51cd32684c7979d3b5e310563a94e985206781301b330277b3c246ed7",
+      "lines": 119,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/AppUpdateModels.swift",
+      "sha256": "ba8ba46a83ab61b996f4e22f2fda710e2f2703f9d89da6947bea0a10151d5668",
+      "lines": 331,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/BrewInstalledReceipt.swift",
+      "sha256": "e297267a8aff85575278205e54bdfdfb1a572aeb7e488809ff1cef95af1afa1c",
+      "lines": 243,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/Compatibility.swift",
+      "sha256": "6ea177cf5335c3c6f01cabde2c78cab5875ab2dc483cb6a95c544da037632225",
+      "lines": 206,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/GitWorktreeModels.swift",
+      "sha256": "322c5123d046370b39ecf477c7264ae991ee99fbfad4c5066afbee30f8ba4abc",
+      "lines": 263,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/GitWorktreeService.swift",
+      "sha256": "093f019025be11aa9f806cb29d3e1f4686186514d46f37eff9c5b003049a0b0c",
+      "lines": 529,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/MoleCommand.swift",
+      "sha256": "1e67862d7c9339aac609676c642bde99520b310036b032884525167bfba3c749",
+      "lines": 238,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/MoleDiscovery.swift",
+      "sha256": "30ac9f2f916c2f0524a6745243f6f827218011d2813041208aad61b05d543c3c",
+      "lines": 139,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/MoleModels.swift",
+      "sha256": "4943a36ad700bc1d3e3fbac8c9e9c0521d718250e8bc4bdb5d0f91c005415cf5",
+      "lines": 419,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/MonitoringPreferences.swift",
+      "sha256": "be06a6ada89bc0b1076f08cc89df5426fa27e2ca6f3f3457a5c530f88d7d681d",
+      "lines": 53,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/NativeControlPolicy.swift",
+      "sha256": "df9721979b4559f7ca8fffae0048617d6879fdba9e85ca24615fdd2deddfed08",
+      "lines": 56,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/ReadOnlyBenchmark.swift",
+      "sha256": "7e239c4f142422daf974e4902e9037c5f2a1ffa94dfa6a31cbf777ab055f0bda",
+      "lines": 179,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/StartupModels.swift",
+      "sha256": "ed8a923368b6488e35d5c6574963b88c80b298bf292010cc2a4680b373db013b",
+      "lines": 418,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/StatusTimestampDisplay.swift",
+      "sha256": "333c5dfd4d3271c48f7aa530bda8147965a0154eee54a9af6429c640fde618bf",
+      "lines": 42,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelCore/SystemToolsPolicy.swift",
+      "sha256": "a87e846d18d0c499e12bf137687ddc6e528496184c211debf31a0bc21b9c31b0",
+      "lines": 76,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelEditor/main.swift",
+      "sha256": "94508246b206d0029d042bc0de9cefbac3865e5d0c2a263e8522e7ca9dce7745",
+      "lines": 144,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelGuardian/main.c",
+      "sha256": "1a2f5425e3d42c2da132c875a98295e4bb1877e9a347fc79cc095c174a256f81",
+      "lines": 297,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelProcess/ManagedProcess.swift",
+      "sha256": "7a5b88bac551b12469a9256584069d9f05805112404195909645c1b740c98c77",
+      "lines": 458,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelProcess/PurgePathsDocument.swift",
+      "sha256": "8dbedfa9c1e1412c20c28d94341542e92b67ea363aba58db63ae736983cba457",
+      "lines": 157,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Sources/MoPanelTerminal/TerminalPanel.swift",
+      "sha256": "69d60c153837d8f9fb70a72a03edb0ff670b71e60d5acfec7b5446c72b95e962",
+      "lines": 132,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/AppUpdateTests.swift",
+      "sha256": "95484ac7db97ecb731201228c4c975840098bddebd15f839ccf78d093d1c97c6",
+      "lines": 224,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/BrewInstalledReceiptTests.swift",
+      "sha256": "7cbe4ef064ae9d870cdb623df70322e0b3798696bccc10879756d727283bb6da",
+      "lines": 177,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/DiscoveryTests.swift",
+      "sha256": "ac13a06eca654b037c8d9721135662789a0c2180e4ce9318ee553b60f421d310",
+      "lines": 114,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/GitWorktreeIntegrationTests.swift",
+      "sha256": "fd97d7049d3d795edb74d659be6b30dd81ec4d7d297b09ecd0403a3b47158833",
+      "lines": 455,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/GitWorktreeParserTests.swift",
+      "sha256": "7dd6ecaa7fd113121bec9b4645b93105b90f90c282277a2c0165dc717af49700",
+      "lines": 65,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/MoleCoreTests.swift",
+      "sha256": "8a47ed86d559c3a56c5ae767d6ff0b6f56ef8ba70fb2accc6d8b9038ff4ed6b3",
+      "lines": 324,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/MonitoringPreferencesTests.swift",
+      "sha256": "e537a7af887c00784d9d3b3193763efd97025099f7c89f66230c461ea131b826",
+      "lines": 62,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/NativeControlPolicyTests.swift",
+      "sha256": "80354ae119cc2882bb719ee7e29029b1c7c17fe63b3bf574cf46998f2caa5d89",
+      "lines": 56,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/ReadOnlyBenchmarkTests.swift",
+      "sha256": "114709c451186091803a8fe22e0f205249829c9ff957e5f7704e61cfe0f77d05",
+      "lines": 192,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/StartupModelsTests.swift",
+      "sha256": "ecc0331142297f4ccbce42babd4939de077e4d44ebd648dd8afbd9d1364f0e05",
+      "lines": 252,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelCoreTests/SystemToolsPolicyTests.swift",
+      "sha256": "64f034bc2205316ad9cf5bedb5bcfefb3368c15061b818982e8ba1594203a68d",
+      "lines": 77,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelProcessTests/ControlPipeTests.swift",
+      "sha256": "db8083c1f1f5ba56151256801706a7c7752f5260a5bb7678ffb0163c305ef0d3",
+      "lines": 94,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelProcessTests/GitEnvironmentTests.swift",
+      "sha256": "6955b340d40409ab35371a159fc73ce853207b8d80df1ee003a2490d810b19ec",
+      "lines": 52,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelProcessTests/ManagedProcessTests.swift",
+      "sha256": "f4f4aa66f5890b07f259179e3ff603e4d81e0b0c24f22d4270648f69235b336a",
+      "lines": 188,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelProcessTests/PurgePathsDocumentTests.swift",
+      "sha256": "86b1bdaffd9d3c35c9f8303ab622259f8c7f2b391fc08fc9375539d18b0485ae",
+      "lines": 62,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "Tests/MoPanelProcessTests/StreamingTests.swift",
+      "sha256": "660bd596e7a87c0e6a0c5af71c9aff2614acccf3b72a11cb9d4cb15d73a83ee9",
+      "lines": 48,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/audit_cli.py",
+      "sha256": "f5b1f3517d8b0540e8deef55ddd14507083f0adb132393da7cf910854767e966",
+      "lines": 161,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/audit_homebrew.py",
+      "sha256": "65e3120f541891b8a44b7b4dda3d25be6570714c0866f89259e329b763a78a57",
+      "lines": 345,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/audit_platform.py",
+      "sha256": "122e578c5418bd979475f68282f2838b9c4813d74d1dacaf13cd310c9fef634f",
+      "lines": 52,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/build.sh",
+      "sha256": "7228d7a4d8731bb1ac3269dc62d632b62a733c9a5e26a22176b65bf7e0a40e3a",
+      "lines": 141,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/crash_evidence.py",
+      "sha256": "11d2b39b6ad4730a10cb6947fd7c1c5824df0b1b3ec8db540030527b6415fef7",
+      "lines": 120,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/create_icon.swift",
+      "sha256": "82f34880a269474fed8cb5c413a1984b2391e4622c782108ac1ad98e4757157b",
+      "lines": 46,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/debug_smoke_failure.py",
+      "sha256": "ad0338787fec628bcac791f9b22f9c2bcb9d75b0b2cc8570b423b0938008149f",
+      "lines": 132,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/fixtures/ControlPipeSIGPIPEProbe.swift",
+      "sha256": "f6a84c2c3464181c2526e679bb89bf598d84bf074ad260e4bddc9150bff5eb3d",
+      "lines": 73,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/inventory-product.py",
+      "sha256": "f84739b15c0bb31ed764208a4db3e6e0706c8878217eea1e49d0484afec3b6c6",
+      "lines": 43,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/package_source.py",
+      "sha256": "1f63a79500b824b3754175c4d56e14b7e7a104afaa990214a6d3a804ea7a9ee2",
+      "lines": 38,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/prepare_mole_fixture.py",
+      "sha256": "f6bd170fdc2a61f2b9a10abb861ff6a874d1aae7506b4c03da686ec8aea08b5b",
+      "lines": 88,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/probe-monitoring.sh",
+      "sha256": "453347559390f9a972ec8e3556d2b9fea44a9bcbb789f0e8b97dfe41bc0adc6d",
+      "lines": 31,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/probe_monitoring.swift",
+      "sha256": "5a5eb1aec7e3759585ede7fc36b9d61013a97d4c37ea126ea56106ca63fc6cfc",
+      "lines": 95,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/profile.py",
+      "sha256": "36b8f43baba7ae7045886f16a1e1b6e1883abf1a1ec44f78691583e3e9b2f1f8",
+      "lines": 310,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/signature_policy.py",
+      "sha256": "d5d5b3223ce4529fc04a34ea1634a10602c196cc857ff8f82893f9e164697c21",
+      "lines": 22,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/smoke_test.py",
+      "sha256": "a6ddd6ec163fff4ec0942073e2feadd7be9a6d4bd8d75eea256120d8f0e220c8",
+      "lines": 188,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test-core.sh",
+      "sha256": "157222cad6b152b842ed48a8c9be83a33b4a58a7d62d3642da2f9cc80ebc1d7f",
+      "lines": 32,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_audit_homebrew.py",
+      "sha256": "213526bd82466a427aacf0b7c0bcdba9d61c41eb3e29a42b9616a46355df91e7",
+      "lines": 144,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_control_pipe_sigpipe.py",
+      "sha256": "69eaac0a7c94d888f8bb937f13b915f7aa2e457ac7a79b42f616f86372a291c9",
+      "lines": 69,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_crash_evidence.py",
+      "sha256": "153792cd4ef6b9603920ea01ec176fe02887601ba8d9b41428a12abe2dccb270",
+      "lines": 75,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_debug_smoke_failure.py",
+      "sha256": "803642fe371aac053c45999b98cb9572f07b2a5ce9dbb9a256ba7855b94c9d87",
+      "lines": 163,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_guardian.py",
+      "sha256": "3768b6d108ab8acc5c823ab6216a380010f864187d5f40a9d8b682ea4de1cd03",
+      "lines": 268,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_profile.py",
+      "sha256": "730e9a5de5bd4cf3d22e0d532a9164ddb1b65816d880701f4846ed713eea34c1",
+      "lines": 128,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_release_report.py",
+      "sha256": "405d69985dace311384cdf1172828c14004ed3fd612af4c5e6dce03176884d29",
+      "lines": 115,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_smoke_driver.py",
+      "sha256": "832b265e6324d518aef107e5b8efe21a027e7eec75d93247ef3fb693205fa179",
+      "lines": 118,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/test_validation_gates.py",
+      "sha256": "dc3f6c08a770657821e7d293195f9787034dc94c5ed96dfe9cd1afa32bb2b2fc",
+      "lines": 90,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/validation-gates.sh",
+      "sha256": "facc4242a530a47796b0e4f64dfa1e0ea2ff2f1f8fc3080ef903243d75c65d99",
+      "lines": 29,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/validation_gate.py",
+      "sha256": "9282e566b915e8bbd86ac145a6533fae86f9a825624729272677d76f78e22290",
+      "lines": 109,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/verify-package.sh",
+      "sha256": "1c9fbb89b3a2929c4c25dfdb95c39ed036e5147385ad410b70d7bd3262ebef6e",
+      "lines": 53,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/write_build_manifest.py",
+      "sha256": "4e0084857acf92ac7f3f962b24f290760f4e0cadb22d7eea89191913f3ce398e",
+      "lines": 41,
+      "review_status": "inventory_only; full line-by-line review pending"
+    },
+    {
+      "path": "scripts/write_release_report.py",
+      "sha256": "4150462ab61d095996a1f88e35f9a1270152974363f4cf5ad601a6d9e1f91b61",
+      "lines": 238,
+      "review_status": "inventory_only; full line-by-line review pending"
+    }
+  ],
+  "ui_controls": [
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 22,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"掃描總覽\", \"Scan Overview\"), identifier: \"mopanel.analyze.overview\") {                         Task { await model.analyze(path: nil) }                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 25,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"選擇資料夾／外接磁碟…\", \"Choose Folder / External Drive…\")) { model.chooseFolder { url in Task { await model.analyze(path: url.path) } } }.buttonStyle(.borderedProminent)                     if let scan = model.analysis {                         NativeAc",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 27,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"重新掃描\", \"Rescan\"), identifier: \"mopanel.analyze.rescan\") {                             Task { await model.analyze(path: scan.overview ? nil : scan.path) }                         }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 31,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"上一層\", \"Parent\"), identifier: \"mopanel.analyze.parent\", systemImage: \"arrow.up\") {                                 Task { await model.analyze(path: URL(fileURLWithPath: scan.path).deletingLastPathComponent().path) }                  ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 67,
+      "control": "TextField",
+      "excerpt": "TextField(model.t(\"搜尋名稱或路徑\", \"Search name or path\"), text: $search).textFieldStyle(.roundedBorder)                         Toggle(model.t(\"僅資料夾\", \"Folders only\"), isOn: $showOnlyFolders).toggleStyle(.checkbox)                         Toggle(model.t(\"容量排序\", \"So",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 68,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"僅資料夾\", \"Folders only\"), isOn: $showOnlyFolders).toggleStyle(.checkbox)                         Toggle(model.t(\"容量排序\", \"Sort by size\"), isOn: $sortBySize).toggleStyle(.checkbox)                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 69,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"容量排序\", \"Sort by size\"), isOn: $sortBySize).toggleStyle(.checkbox)                     }                     LazyVStack(spacing: 0) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 75,
+      "control": "Button",
+      "excerpt": "Button {                                     if entry.isDir { Task { await model.analyze(path: entry.path) } } else { model.reveal(entry.path) }                                 } label: {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 85,
+      "control": "Button",
+      "excerpt": "Button { model.reveal(entry.path) } label: { Image(systemName: \"folder.badge.questionmark\") }.help(model.t(\"在 Finder 顯示\", \"Show in Finder\"))                             }.padding(.vertical, 11).padding(.horizontal, 8)                                 .contextMe",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 88,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"在 Finder 顯示\", \"Show in Finder\")) { model.reveal(entry.path) }                                     Button(model.t(\"開啟官方介面以移至垃圾桶…\", \"Open Official Interface to Move to Trash…\")) {                                         let path = URL(fileURLWith",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 89,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟官方介面以移至垃圾桶…\", \"Open Official Interface to Move to Trash…\")) {                                         let path = URL(fileURLWithPath: entry.path).deletingLastPathComponent().path                                         model.request(.analyze,",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 102,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"Finder\", \"Finder\")) { model.reveal(file.path) } }                                 }                             }.padding(10)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 108,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"以官方互動介面瀏覽／移至垃圾桶\", \"Browse / Move to Trash in Mole\")) {                             model.request(.analyze, options: scan.overview ? [] : [.analyzePath(scan.path)])                         }.disabled(!model.canStart)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AnalyzeView.swift",
+      "line": 145,
+      "control": "Button",
+      "excerpt": "Button { select(tile.entry) } label: {                         VStack(alignment: .leading, spacing: 4) {                             if tile.rect.width > 70 && tile.rect.height > 38 {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 45,
+      "control": "Button",
+      "excerpt": "Button(t(\"查看更新作業\", \"Show Update Operation\")) { controller.showOperation = true }                             } else { Button(t(\"取消\", \"Cancel\")) { controller.cancelReadOnly() } }                         }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 46,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\")) { controller.cancelReadOnly() } }                         }                         ProgressView().progressViewStyle(.linear)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 55,
+      "control": "TextField",
+      "excerpt": "TextField(t(\"搜尋 App、cask 或路徑\", \"Search apps, casks or paths\"), text: $search)                         .textFieldStyle(.roundedBorder)                     Toggle(t(\"只顯示 Homebrew 可用版本\", \"Only Homebrew version differences\"), isOn: $onlyAvailable)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 57,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"只顯示 Homebrew 可用版本\", \"Only Homebrew version differences\"), isOn: $onlyAvailable)                 }                 homebrewSection",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 74,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\"), role: .cancel) {}             Button(t(\"確認更新 Homebrew\", \"Update Homebrew\")) { Task { await controller.refreshMetadataAfterConfirmation() } }         } message: {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 75,
+      "control": "Button",
+      "excerpt": "Button(t(\"確認更新 Homebrew\", \"Update Homebrew\")) { Task { await controller.refreshMetadataAfterConfirmation() } }         } message: {             Text(t(\"將執行 brew update，透過目前安裝的 Homebrew 更新 Homebrew 本身、已加入的 tap 與套件索引，可能進行 Homebrew 資料遷移。這一步不會由 MoPanel 呼叫 App 升級；完",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 80,
+      "control": "Button",
+      "excerpt": "Button(t(\"關閉\", \"Close\")) { controller.errorMessage = nil }         } message: { Text(controller.errorMessage ?? \"\") }     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 100,
+      "control": "Button",
+      "excerpt": "Button(t(\"選擇 Homebrew…\", \"Choose Homebrew…\")) { controller.chooseHomebrew() }.disabled(locked)                     Button(t(\"檢查更新\", \"Check Updates\")) { Task { await controller.checkHomebrew() } }                         .buttonStyle(.borderedProminent).disable",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 101,
+      "control": "Button",
+      "excerpt": "Button(t(\"檢查更新\", \"Check Updates\")) { Task { await controller.checkHomebrew() } }                         .buttonStyle(.borderedProminent).disabled(locked)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 112,
+      "control": "Button",
+      "excerpt": "Button(t(\"更新 Homebrew 與索引…\", \"Update Homebrew and Metadata…\")) { refreshConfirmation = true }                         .disabled(locked || !controller.canRefreshMetadata)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 150,
+      "control": "Button",
+      "excerpt": "Button(t(\"Finder 顯示\", \"Show in Finder\")) { controller.reveal(path) }.buttonStyle(.link).disabled(!controller.actionsAllowed)                     }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 158,
+      "control": "Button",
+      "excerpt": "Button(t(\"預覽更新…\", \"Preview Update…\")) { Task { await controller.prepareUpdate(item) } }                     .disabled(locked || !controller.canUpgrade)             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 170,
+      "control": "Button",
+      "excerpt": "Button(t(\"開啟 App Store\", \"Open App Store\")) { controller.openAppStore() }.disabled(locked)                     Button(t(\"讀取本機 App\", \"Read Local Apps\")) { Task { await controller.scanLocalApplications() } }.disabled(locked)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 171,
+      "control": "Button",
+      "excerpt": "Button(t(\"讀取本機 App\", \"Read Local Apps\")) { Task { await controller.scanLocalApplications() } }.disabled(locked)                 }                 Text(t(\"App Store：開啟後選擇側邊欄「更新」，由 Apple 顯示及確認可用版本。這裡不讀取 Apple 帳號或偽造 App Store 更新數量。\", \"App Store: choose Updates in",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 192,
+      "control": "Button",
+      "excerpt": "Button(t(\"Finder\", \"Finder\")) { controller.reveal(app.url.path) }.disabled(!controller.actionsAllowed)                             if app.source == .appStoreReceipt {                                 Button(t(\"前往 App Store\", \"Go to App Store\")) { controller.ope",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 194,
+      "control": "Button",
+      "excerpt": "Button(t(\"前往 App Store\", \"Go to App Store\")) { controller.openAppStore() }.disabled(locked)                             } else {                                 Button(t(\"開啟 App\", \"Open App\")) { controller.openApp(app) }.disabled(locked)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 196,
+      "control": "Button",
+      "excerpt": "Button(t(\"開啟 App\", \"Open App\")) { controller.openApp(app) }.disabled(locked)                             }                         }.padding(.vertical, 11)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 247,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"我已閱讀官方預覽並確認更新這個 App。\", \"I reviewed the official preview and confirm this app update.\"), isOn: $acknowledged)             HStack {                 Button(t(\"取消\", \"Cancel\"), role: .cancel) { controller.pendingPreview = nil }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 249,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\"), role: .cancel) { controller.pendingPreview = nil }                 Spacer()                 Button(t(\"確認更新\", \"Confirm Update\")) { Task { await controller.confirmUpdate(preview) } }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 251,
+      "control": "Button",
+      "excerpt": "Button(t(\"確認更新\", \"Confirm Update\")) { Task { await controller.confirmUpdate(preview) } }                     .buttonStyle(.borderedProminent).disabled(!acknowledged || controller.isBusy)             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 268,
+      "control": "Button",
+      "excerpt": "Button(t(controller.operationDetailsExpanded ? \"收合詳細資訊\" : \"詳細資訊\", controller.operationDetailsExpanded ? \"Hide Details\" : \"Details\")) {                     controller.operationDetailsExpanded.toggle()                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 271,
+      "control": "Button",
+      "excerpt": "Button(t(\"要求取消\", \"Request Cancellation\"), role: .destructive) { controller.requestCancellation() } }                 Button(t(\"關閉\", \"Close\")) { controller.showOperation = false }.disabled(session.running || controller.isBusy)             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/AppUpdatesView.swift",
+      "line": 272,
+      "control": "Button",
+      "excerpt": "Button(t(\"關閉\", \"Close\")) { controller.showOperation = false }.disabled(session.running || controller.isBusy)             }             if session.running || controller.isBusy { ProgressView().progressViewStyle(.linear) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 82,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"關閉錯誤訊息\", \"Dismiss error\"), identifier: \"mopanel.error.dismiss\",                                            systemImage: \"xmark\", appearance: .icon) { model.error = nil }                     }.padding(14).background(Color.orange.opac",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 91,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"停止掃描\", \"Stop Scan\"), identifier: \"mopanel.scan.stop\") {                                 model.cancelScan()                             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 150,
+      "control": "Button",
+      "excerpt": "Button {                         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {                             isSidebarCollapsed.toggle()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 166,
+      "control": "Button",
+      "excerpt": "Button { Task { await model.detect() } } label: { Label(model.t(\"重新偵測\", \"Re-detect\"), systemImage: \"arrow.clockwise\") }.disabled(model.hasRunningOperation) }                 }             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 211,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"選擇已安裝的 CLI\", \"Choose Installed CLI\")) { model.chooseCLI() }                     if model.brewURL != nil {                         Button(model.t(\"以 Homebrew 安裝\", \"Install with Homebrew\")) { model.homebrewConfirmation = true }.buttonStyle(.borde",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 213,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"以 Homebrew 安裝\", \"Install with Homebrew\")) { model.homebrewConfirmation = true }.buttonStyle(.borderedProminent)                     } else {                         Link(model.t(\"Homebrew 安裝說明\", \"Homebrew Installation\"), destination: URL(string",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 215,
+      "control": "Link",
+      "excerpt": "Link(model.t(\"Homebrew 安裝說明\", \"Homebrew Installation\"), destination: URL(string: \"https://brew.sh/\")!)                     }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 218,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"重新偵測常見安裝位置\", \"Search Standard Install Locations\")) { Task { await model.detect() } }             }             Link(model.t(\"官方 Mole 安裝文件\", \"Official Mole Installation Guide\"), destination: URL(string: \"https://github.com/tw93/Mole/blob/main/RE",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 220,
+      "control": "Link",
+      "excerpt": "Link(model.t(\"官方 Mole 安裝文件\", \"Official Mole Installation Guide\"), destination: URL(string: \"https://github.com/tw93/Mole/blob/main/README_TW.md\")!)             Text(model.t(\"不會自動下載或執行安裝腳本。\", \"Installation requires your explicit confirmation.\")).font(.caption).",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 239,
+      "control": "NativeAcknowledgementToggle",
+      "excerpt": "NativeAcknowledgementToggle(model.t(\"我已檢查預覽，了解操作影響並要繼續。\", \"I reviewed the preview and understand the effect of this operation.\"),                                         identifier: \"mopanel.confirmation.acknowledge\", isOn: $acknowledged)             if pendin",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 241,
+      "control": "TextField",
+      "excerpt": "TextField(\"REMOVE\", text: $removalText).textFieldStyle(.roundedBorder) }             HStack {                 NativeActionButton(model.t(\"取消\", \"Cancel\"), identifier: \"mopanel.confirmation.cancel\", shortcut: .cancel) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 243,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"取消\", \"Cancel\"), identifier: \"mopanel.confirmation.cancel\", shortcut: .cancel) {                     model.pending = nil                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 247,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"繼續至官方操作\", \"Continue to Mole\"), identifier: \"mopanel.confirmation.continue\", appearance: .warning) {                     model.confirmPending()                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 264,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"取消\", \"Cancel\")) { model.homebrewConfirmation = false }                 Spacer()                 Button(model.t(\"確認安裝\", \"Install\")) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 266,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"確認安裝\", \"Install\")) {                     model.homebrewConfirmation = false                     model.installWithHomebrew()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 303,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(detailsExpanded ? \"收合詳細資訊\" : \"詳細資訊\", detailsExpanded ? \"Hide Details\" : \"Details\"), identifier: \"mopanel.operation.details.toggle\",                                    systemImage: detailsExpanded ? \"chevron.down\" : \"chevron.right\") {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 307,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"儲存結果…\", \"Save Result…\")) { model.exportOperationOutput() }.disabled(model.operationResult == nil)                 NativeActionButton(model.t(\"停止\", \"Stop\"), identifier: \"mopanel.operation.stop\", destructive: true) {                     stopping ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 308,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"停止\", \"Stop\"), identifier: \"mopanel.operation.stop\", destructive: true) {                     stopping = true; session.cancel()                 }.disabled(!session.running || stopping)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 311,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"關閉\", \"Close\"), identifier: \"mopanel.operation.close\", shortcut: .cancel) {                     model.showOperation = false                     model.updateMonitoringDemand()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ContentView.swift",
+      "line": 405,
+      "control": "Button",
+      "excerpt": "Button(title) { session.send(Data(key.utf8)) }.disabled(!session.running)     } }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/DashboardView.swift",
+      "line": 19,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"單次快照\", \"Snapshot\"), identifier: \"mopanel.dashboard.snapshot\") {                         Task { await model.takeSnapshot() }                     }.disabled(!model.canStart)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/DashboardView.swift",
+      "line": 22,
+      "control": "Button",
+      "excerpt": "Button(model.monitoring ? model.t(\"暫停\", \"Pause\") : model.t(\"開始監控\", \"Start Monitoring\")) {                         if model.monitoring { model.pauseMonitoring() } else { model.resumeMonitoring() }                     }.buttonStyle(.borderedProminent).disabled(m",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/DashboardView.swift",
+      "line": 110,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"圖表介面\", \"Chart Interface\"), selection: $model.selectedNetwork) {                         ForEach(s.network) { network in Text(network.name).tag(network.name) }                     }.pickerStyle(.segmented)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/DashboardView.swift",
+      "line": 169,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"查看官方 JSON 快照\", \"View Official JSON Snapshot\")) {                         model.request(.status, options: [.json])                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 36,
+      "control": "Button",
+      "excerpt": "Button(t(\"要求停止\", \"Request Stop\")) { controller.requestCancellation() }                             .disabled(controller.cancellationRequested)                     }.padding(14).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 45,
+      "control": "Button",
+      "excerpt": "Button(t(\"複製復原 ref\", \"Copy Recovery Ref\")) { controller.copyReference(reference) }                                     .disabled(!controller.actionsAllowed)                             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 52,
+      "control": "TextField",
+      "excerpt": "TextField(t(\"搜尋路徑、分支或 HEAD\", \"Search paths, branches or HEAD\"), text: $search).textFieldStyle(.roundedBorder)                     Toggle(t(\"只顯示可預覽移除\", \"Only removable candidates\"), isOn: $onlyRemovable)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 53,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"只顯示可預覽移除\", \"Only removable candidates\"), isOn: $onlyRemovable)                 }                 worktrees",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 70,
+      "control": "Button",
+      "excerpt": "Button(t(\"關閉\", \"Close\")) { controller.errorMessage = nil }         } message: { Text(controller.errorMessage ?? \"\") }     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 81,
+      "control": "Button",
+      "excerpt": "Button(t(\"選擇倉庫…\", \"Choose Repository…\")) { controller.chooseRepository() }.disabled(disabled)                     .accessibilityIdentifier(\"mopanel.worktrees.choose\")                 Button(t(\"重新掃描\", \"Scan Again\")) { Task { await controller.refresh() } }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 83,
+      "control": "Button",
+      "excerpt": "Button(t(\"重新掃描\", \"Scan Again\")) { Task { await controller.refresh() } }                     .buttonStyle(.borderedProminent).disabled(disabled || controller.selectedRepository == nil)                     .accessibilityIdentifier(\"mopanel.worktrees.scan\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 114,
+      "control": "Button",
+      "excerpt": "Button(\"Finder\") { controller.reveal(row.entry.path) }.disabled(!controller.actionsAllowed)                                 Button(t(\"移除預覽…\", \"Preview Removal…\")) { Task { await controller.prepareRemoval(row) } }                                     .disabled(d",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 115,
+      "control": "Button",
+      "excerpt": "Button(t(\"移除預覽…\", \"Preview Removal…\")) { Task { await controller.prepareRemoval(row) } }                                     .disabled(disabled || !row.canRemove)                             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 154,
+      "control": "Button",
+      "excerpt": "Button(t(\"複製 ref\", \"Copy Ref\")) { controller.copyReference(point.reference) }.disabled(!controller.actionsAllowed)                             Button(t(\"重建工作目錄…\", \"Rebuild Worktree…\")) { controller.chooseRestoreDestination(point) }                             ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 155,
+      "control": "Button",
+      "excerpt": "Button(t(\"重建工作目錄…\", \"Rebuild Worktree…\")) { controller.chooseRestoreDestination(point) }                                 .disabled(disabled || point.checkedOutPath != nil)                         }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 189,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"我已停止此目錄的工作，並理解永久移除與復原點的限制。\", \"I stopped work in this directory and understand permanent removal and the recovery point's limits.\"), isOn: $acknowledged)             HStack {                 Button(t(\"取消\", \"Cancel\"), role: .cancel) { controller.cancel",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 191,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\"), role: .cancel) { controller.cancelReview() }                 Spacer()                 Button(t(\"保留分支並移除\", \"Retain Branch and Remove\"), role: .destructive) { Task { await controller.confirmRemoval(plan) } }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 193,
+      "control": "Button",
+      "excerpt": "Button(t(\"保留分支並移除\", \"Retain Branch and Remove\"), role: .destructive) { Task { await controller.confirmRemoval(plan) } }                     .buttonStyle(.borderedProminent).disabled(!acknowledged || controller.isBusy || operationInProgress)             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 218,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"確認在這個新位置重建已提交內容。\", \"Reconstruct committed contents at this new location.\"), isOn: $acknowledged)             HStack {                 Button(t(\"取消\", \"Cancel\"), role: .cancel) { controller.cancelReview() }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 220,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\"), role: .cancel) { controller.cancelReview() }                 Spacer()                 Button(t(\"確認重建\", \"Rebuild Worktree\")) { Task { await controller.confirmRestore(plan) } }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/GitWorktreeView.swift",
+      "line": 222,
+      "control": "Button",
+      "excerpt": "Button(t(\"確認重建\", \"Rebuild Worktree\")) { Task { await controller.confirmRestore(plan) } }                     .buttonStyle(.borderedProminent).disabled(!acknowledged || controller.isBusy || operationInProgress)             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 20,
+      "control": "TextField",
+      "excerpt": "TextField(model.t(\"搜尋指令、日期或 Run ID\", \"Search command, date or run ID\"), text: $search).textFieldStyle(.roundedBorder)                     Picker(model.t(\"篩選\", \"Filter\"), selection: $filter) {                         Text(model.t(\"全部\", \"All\")).tag(\"all\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 21,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"篩選\", \"Filter\"), selection: $filter) {                         Text(model.t(\"全部\", \"All\")).tag(\"all\")                         Text(model.t(\"失敗\", \"Failures\")).tag(\"failed\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 26,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"筆數\", \"Limit\"), selection: $limit) { ForEach([20, 50, 100, 200], id: \\.self) { Text(String($0)).tag($0) } }.frame(width: 105)                     Button(model.t(\"讀取歷史\", \"Load History\")) { Task { await model.loadHistory(limit: limit) } }.buttonSt",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 27,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"讀取歷史\", \"Load History\")) { Task { await model.loadHistory(limit: limit) } }.buttonStyle(.borderedProminent).disabled(!model.canStart)                 }                 if let history = model.history {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 31,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"原始操作日誌\", \"Operation Log\")) { model.reveal(history.logs.operations) }                         Button(model.t(\"原始刪除日誌\", \"Deletion Log\")) { model.reveal(history.logs.deletions) }                         Button(model.t(\"官方文字報表\", \"Official Text Repo",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 32,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"原始刪除日誌\", \"Deletion Log\")) { model.reveal(history.logs.deletions) }                         Button(model.t(\"官方文字報表\", \"Official Text Report\")) { model.request(.history, options: [.historyLimit(limit)]) }.disabled(!model.canStart)                 ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 33,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方文字報表\", \"Official Text Report\")) { model.request(.history, options: [.historyLimit(limit)]) }.disabled(!model.canStart)                         Button(model.t(\"官方 JSON\", \"Official JSON\")) { model.request(.history, options: [.json, .historyLimi",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/HistoryView.swift",
+      "line": 34,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方 JSON\", \"Official JSON\")) { model.request(.history, options: [.json, .historyLimit(limit)]) }.disabled(!model.canStart)                     }                     LazyVStack(spacing: 12) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 29,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"掃描並預覽\", \"Scan and Preview\"),                                                identifier: \"mopanel.maintenance.\\(command.rawValue).preview\",                                                systemImage: \"magnifyingglass\", appearance: .p",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 34,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"檢查並開始操作\", \"Review and Start\"),                                                identifier: \"mopanel.maintenance.\\(command.rawValue).review\",                                                systemImage: \"play.fill\") {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 40,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方說明\", \"CLI Help\")) { model.request(command, options: [.help]) }                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 48,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"清理指定外接磁碟的系統中繼資料\", \"Clean OS metadata on an external volume\"), isOn: $external)                             if external {                                 HStack {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 53,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"選擇磁碟…\", \"Choose Volume…\")) { model.chooseFolder { volume = $0.path } }                                 }                                 Text(model.t(\"只接受 /Volumes 下的掛載位置；是否為外接磁碟及可清理項目仍由官方 CLI 驗證。\", \"Choose a mount beneath /Volumes. Mole still ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 58,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"管理清理白名單／保護垃圾桶\", \"Manage Clean Whitelist / Protect Trash\")) { model.request(.clean, options: [.whitelist]) }.disabled(!model.canStart)                         }                         if section == .optimize {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 61,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"管理最佳化白名單\", \"Manage Optimization Whitelist\")) { model.request(.optimize, options: [.whitelist]) }.disabled(!model.canStart)                         }                         if section == .purge {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 64,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"顯示零容量的專案產物目錄（--include-empty）\", \"Show zero-size artifact directories (--include-empty)\"), isOn: $includeEmpty)                             Button(model.t(\"選擇與編輯專案掃描路徑…\", \"Choose and Edit Project Search Paths…\")) { model.request(.purge, options:",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 65,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"選擇與編輯專案掃描路徑…\", \"Choose and Edit Project Search Paths…\")) { model.request(.purge, options: [.purgePaths], title: model.t(\"專案掃描路徑\", \"Project Search Paths\")) }.disabled(!model.canStart)                             Text(model.t(\"官方 --paths 會啟動 MoPa",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 69,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"執行時傳入 --yes，省略部分 CLI 確認\", \"Pass --yes to skip some CLI confirmations\"), isOn: $unattended)                                 Notice(text: model.t(\"此選項會套用 Mole 的預設合格項目，不代表 GUI 有逐項選取。預設關閉；執行前仍有 MoPanel 的明確確認。\", \"This applies Mole's default eligible",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 73,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"顯示詳細診斷（--debug）\", \"Show detailed diagnostics (--debug)\"), isOn: $debug)                     }.padding(12)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MaintenanceView.swift",
+      "line": 85,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"查看操作歷史與實際結果\", \"View History and Actual Results\")) { model.section = .history; Task { await model.loadHistory() } }                         .disabled(!model.canStart)                     Spacer()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MenuBarPanel.swift",
+      "line": 23,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟總覽\", \"Dashboard\")) { show(.dashboard) }                 Spacer()                 Button(model.monitoringPaused ? model.t(\"繼續監控\", \"Resume\") : model.t(\"暫停監控\", \"Pause\")) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MenuBarPanel.swift",
+      "line": 25,
+      "control": "Button",
+      "excerpt": "Button(model.monitoringPaused ? model.t(\"繼續監控\", \"Resume\") : model.t(\"暫停監控\", \"Pause\")) {                     if model.monitoringPaused { model.resumeMonitoring() } else { model.pauseMonitoring() }                 }.disabled(model.installation == nil || model.ha",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MenuBarPanel.swift",
+      "line": 30,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"系統工具\", \"System Tools\")) { show(.tools) }                 Spacer()                 Button(model.t(\"結束 MoPanel\", \"Quit MoPanel\")) { NSApp.terminate(nil) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MenuBarPanel.swift",
+      "line": 32,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"結束 MoPanel\", \"Quit MoPanel\")) { NSApp.terminate(nil) }             }             Text(model.t(\"MoPanel 新實作。與總覽共用同一個 Mole 串流；關閉最後視窗或結束 App 就會停止。\", \"Added by MoPanel. Shares one Mole stream with Dashboard and stops when the last window or the app",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "line": 70,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟設定\", \"Settings\")) { model.section = .settings }.keyboardShortcut(\",\")                 Button(model.t(\"重新偵測 Mole\", \"Re-detect Mole\")) { Task { await model.detect() } }.keyboardShortcut(\"r\", modifiers: [.command, .shift])             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "line": 71,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"重新偵測 Mole\", \"Re-detect Mole\")) { Task { await model.detect() } }.keyboardShortcut(\"r\", modifiers: [.command, .shift])             }             CommandMenu(model.t(\"作業\", \"Operation\")) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "line": 73,
+      "control": "CommandMenu",
+      "excerpt": "CommandMenu(model.t(\"作業\", \"Operation\")) {                 Button(model.t(\"停止目前作業\", \"Stop Current Operation\")) {                     model.cancelScan(); model.operationSession.cancel(); startup.cancel(); appUpdates.requestCancellation(); worktrees.requestCancel",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "line": 74,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"停止目前作業\", \"Stop Current Operation\")) {                     model.cancelScan(); model.operationSession.cancel(); startup.cancel(); appUpdates.requestCancellation(); worktrees.requestCancellation()                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "line": 78,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"暫停監控\", \"Pause Monitoring\")) { model.pauseMonitoring() }                     .keyboardShortcut(\"p\", modifiers: [.command, .shift])             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/MoPanelApp.swift",
+      "line": 82,
+      "control": "MenuBarExtra",
+      "excerpt": "MenuBarExtra(isInserted: menuBarInsertion) {             MenuBarPanel().environmentObject(model).preferredColorScheme(model.colorScheme)         } label: {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 40,
+      "control": "TextField",
+      "excerpt": "TextField(model.t(\"搜尋行程名稱或 PID\", \"Search process name or PID\"), text: $search)                     .textFieldStyle(.roundedBorder)                 Picker(model.t(\"排序\", \"Sort\"), selection: $sort) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 42,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"排序\", \"Sort\"), selection: $sort) {                     Text(\"CPU\").tag(\"cpu\"); Text(model.t(\"記憶體\", \"Memory\")).tag(\"memory\"); Text(model.t(\"名稱\", \"Name\")).tag(\"name\")                 }.frame(width: 175)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 85,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟系統活動監視器\", \"Open Activity Monitor\")) {                     guard !model.isTestLaunch else {                         outcome = model.t(\"測試模式不會開啟真實活動監視器。\", \"Test mode does not open the real Activity Monitor.\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 103,
+      "control": "Button",
+      "excerpt": "Button {                 if pinnedNames.contains(process.name) { pinnedNames.remove(process.name) }                 else { pinnedNames.insert(process.name) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 128,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"檢視\", \"Inspect\")) { inspect(process) }                 .controlSize(.small).frame(width: 70, alignment: .trailing)                 .disabled(model.hasRunningOperation)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 173,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"在 Finder 顯示\", \"Show in Finder\")) { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: item.identity.appPath)]) }             Toggle(model.t(\"強制結束\", \"Force Quit\"), isOn: $forceQuit)             Toggle(model.t(\"我已確認 App 與未儲存資料的影",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 174,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"強制結束\", \"Force Quit\"), isOn: $forceQuit)             Toggle(model.t(\"我已確認 App 與未儲存資料的影響\", \"I checked the app and the impact on unsaved data\"), isOn: $acknowledged)             HStack {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 175,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"我已確認 App 與未儲存資料的影響\", \"I checked the app and the impact on unsaved data\"), isOn: $acknowledged)             HStack {                 Button(model.t(\"返回\", \"Back\"), role: .cancel) { pending = nil }.keyboardShortcut(.cancelAction)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 177,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"返回\", \"Back\"), role: .cancel) { pending = nil }.keyboardShortcut(.cancelAction)                 Spacer()                 Button(forceQuit ? model.t(\"強制結束 App\", \"Force Quit App\") : model.t(\"要求 App 結束\", \"Request App Quit\"), role: .destructive) { p",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/ProcessInspectorView.swift",
+      "line": 179,
+      "control": "Button",
+      "excerpt": "Button(forceQuit ? model.t(\"強制結束 App\", \"Force Quit App\") : model.t(\"要求 App 結束\", \"Request App Quit\"), role: .destructive) { performQuit(item) }                     .disabled(!acknowledged).buttonStyle(.borderedProminent)             }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 30,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"介面語言\", \"Interface Language\"), selection: $model.language) { Text(\"繁體中文\").tag(\"zh-Hant\"); Text(\"English\").tag(\"en\") }.pickerStyle(.segmented)                 Picker(model.t(\"外觀\", \"Appearance\"), selection: $model.appearance) { Text(model.t(\"跟隨系統\"",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 31,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"外觀\", \"Appearance\"), selection: $model.appearance) { Text(model.t(\"跟隨系統\", \"System\")).tag(\"system\"); Text(model.t(\"淺色\", \"Light\")).tag(\"light\"); Text(model.t(\"深色\", \"Dark\")).tag(\"dark\") }.pickerStyle(.segmented)                 Text(model.t(\"官方 CLI",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 41,
+      "control": "TextField",
+      "excerpt": "TextField(model.t(\"自訂執行檔路徑；留空自動偵測\", \"Custom executable path; blank for automatic detection\"), text: $model.customPath).textFieldStyle(.roundedBorder)                     Button(model.t(\"選擇…\", \"Choose…\")) { model.chooseCLI() }                     Button(model.t",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 42,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"選擇…\", \"Choose…\")) { model.chooseCLI() }                     Button(model.t(\"套用並偵測\", \"Apply and Detect\")) { Task { await model.detect() } }                 }.disabled(model.hasRunningOperation || model.isDetecting)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 43,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"套用並偵測\", \"Apply and Detect\")) { Task { await model.detect() } }                 }.disabled(model.hasRunningOperation || model.isDetecting)                 Text(model.t(\"自訂路徑必須是可信任的官方執行檔；偵測時會執行 --version 與 --help。\", \"A custom path must identify a",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 61,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"查看說明\", \"Help\")) { model.request(command == .menu || command == .version ? .help : command, options: command == .menu || command == .version || command == .help ? [] : [.help]) }                                 }                                 ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 70,
+      "control": "Button",
+      "excerpt": "Button(\"mo --version\") { model.request(.version) }                         Button(\"mo --help\") { model.request(.help) }                         Button(model.t(\"官方互動主選單\", \"Official Main Menu\")) { model.request(.menu) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 71,
+      "control": "Button",
+      "excerpt": "Button(\"mo --help\") { model.request(.help) }                         Button(model.t(\"官方互動主選單\", \"Official Main Menu\")) { model.request(.menu) }                     }.disabled(!model.canStart)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 72,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方互動主選單\", \"Official Main Menu\")) { model.request(.menu) }                     }.disabled(!model.canStart)                 } else { Text(model.t(\"尚未找到可用的 Mole。\", \"No usable Mole installation found.\")).foregroundStyle(.secondary) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 78,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"檢查更新\", \"Check for Updates\")) { Task { await model.checkRelease() } }                 }                 if let error = model.releaseError { Text(error).font(.caption).foregroundStyle(.orange) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 82,
+      "control": "Button",
+      "excerpt": "Button(model.canRecoverStable ? model.t(\"返回官方穩定版…\", \"Return to Official Stable…\") : model.t(\"更新官方 CLI…\", \"Update Official CLI…\")) { model.request(.update, options: forceUpdate ? [.force] : []) }.disabled(!model.canStart || model.installation?.source == .nix)  ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 83,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"安裝 Mole…\", \"Install Mole…\")) { model.homebrewConfirmation = true }.disabled(model.brewURL == nil || model.hasRunningOperation)                     Link(model.t(\"官方 Releases\", \"Official Releases\"), destination: URL(string: \"https://github.com/tw",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 84,
+      "control": "Link",
+      "excerpt": "Link(model.t(\"官方 Releases\", \"Official Releases\"), destination: URL(string: \"https://github.com/tw93/Mole/releases\")!)                 }                 if model.canRecoverStable {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 94,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"強制重新安裝穩定版（--force）\", \"Force reinstall the stable version (--force)\"), isOn: $forceUpdate)                         Button(model.t(\"更新至 Nightly…\", \"Update to Nightly…\")) { model.request(.update, options: [.nightly]) }.disabled(!model.canStart || ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 95,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"更新至 Nightly…\", \"Update to Nightly…\")) { model.request(.update, options: [.nightly]) }.disabled(!model.canStart || model.installation?.source != .script)                         Text(model.t(\"Nightly 僅限官方指令碼安裝，更新後未驗證的破壞性功能會停用。Homebrew 使用官方更新流程；N",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 106,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"在選單列顯示即時監控（MoPanel 新實作）\", \"Show live monitoring in menu bar (MoPanel addition)\"), isOn: $model.menuBarEnabled)                 Text(model.t(\"預設關閉。開啟後，即使切換頁面或使用其他 App，也會共用現有的單一監控串流。關閉最後一個 MoPanel 視窗或結束 App 時全部停止。\", \"Off by default. When enabled,",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 109,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"總覽更新間隔\", \"Dashboard Interval\"), selection: $model.monitoringInterval) { ForEach(MonitoringPreferences.foregroundIntervals, id: \\.self) { Text(\"\\($0) s\").tag($0) } }.pickerStyle(.segmented)                 Picker(model.t(\"只有選單列時\", \"Menu Bar Only",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 110,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"只有選單列時\", \"Menu Bar Only Interval\"), selection: $model.menuBarMonitoringInterval) { ForEach(MonitoringPreferences.menuBarIntervals, id: \\.self) { Text(\"\\($0) s\").tag($0) } }.pickerStyle(.segmented)                 Toggle(model.t(\"官方高 CPU 行程警示\", ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 111,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"官方高 CPU 行程警示\", \"Mole high-CPU process alerts\"), isOn: $model.processAlertsEnabled)                 Stepper(value: $model.processCPUThreshold, in: 0...3200, step: 25) { Text(model.t(\"CPU 門檻：\", \"CPU Threshold: \") + DisplayFormat.percent(model.pro",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 112,
+      "control": "Stepper",
+      "excerpt": "Stepper(value: $model.processCPUThreshold, in: 0...3200, step: 25) { Text(model.t(\"CPU 門檻：\", \"CPU Threshold: \") + DisplayFormat.percent(model.processCPUThreshold)) }                 Picker(model.t(\"持續時間視窗\", \"Sustained Window\"), selection: $model.processCPUWind",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 113,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"持續時間視窗\", \"Sustained Window\"), selection: $model.processCPUWindow) { ForEach([60, 120, 300, 600], id: \\.self) { Text(\"\\($0) s\").tag($0) } }.pickerStyle(.segmented)                 Text(model.t(\"設定會自動儲存並套用。最多保留 120 筆樣本；睡眠時停止採樣，喚醒後依原本需求恢復。低耗電模式至少間",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 116,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟官方 TUI 儀表板\", \"Open Official TUI Dashboard\")) { model.request(.status) }.disabled(!model.canStart)             }.padding(12)         }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 127,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟完整磁碟存取權設定\", \"Open Full Disk Access Settings\")) { NSWorkspace.shared.open(URL(string: \"x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles\")!) }                     Button(model.t(\"選擇資料夾測試讀取\", \"Test a Folder's Read Access\"",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 128,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"選擇資料夾測試讀取\", \"Test a Folder's Read Access\")) { model.chooseFolder { url in model.section = .analyze; Task { await model.analyze(path: url.path) } } }.disabled(!model.canStart)                 }                 Notice(text: model.t(\"請在系統設定自行加入並授權",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 139,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"狀態\", \"Status\")) { model.request(.touchid, options: [.touchID(.status)]) }                     Button(model.t(\"預覽啟用\", \"Preview Enable\")) { model.request(.touchid, options: [.touchID(.enable), .dryRun]) }                     Button(model.t(\"啟用…\",",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 140,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"預覽啟用\", \"Preview Enable\")) { model.request(.touchid, options: [.touchID(.enable), .dryRun]) }                     Button(model.t(\"啟用…\", \"Enable…\")) { model.request(.touchid, options: [.touchID(.enable)]) }                     Button(model.t(\"預覽停",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 141,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"啟用…\", \"Enable…\")) { model.request(.touchid, options: [.touchID(.enable)]) }                     Button(model.t(\"預覽停用\", \"Preview Disable\")) { model.request(.touchid, options: [.touchID(.disable), .dryRun]) }                     Button(model.t(\"停",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 142,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"預覽停用\", \"Preview Disable\")) { model.request(.touchid, options: [.touchID(.disable), .dryRun]) }                     Button(model.t(\"停用…\", \"Disable…\")) { model.request(.touchid, options: [.touchID(.disable)]) }                     Button(model.t(",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 143,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"停用…\", \"Disable…\")) { model.request(.touchid, options: [.touchID(.disable)]) }                     Button(model.t(\"官方選單\", \"Official Menu\")) { model.request(.touchid) }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 144,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方選單\", \"Official Menu\")) { model.request(.touchid) }                 }                 Divider()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 149,
+      "control": "Picker",
+      "excerpt": "Picker(\"Shell\", selection: $completionShell) { ForEach(CompletionShell.allCases, id: \\.self) { Text($0.rawValue).tag($0) } }.frame(width: 180)                     Button(model.t(\"顯示補全腳本\", \"Show Completion Script\")) { model.request(.completion, options: [.compl",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 150,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"顯示補全腳本\", \"Show Completion Script\")) { model.request(.completion, options: [.completionShell(completionShell)]) }                     Button(model.t(\"預覽安裝\", \"Preview Installation\")) { model.request(.completion, options: [.dryRun]) }             ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 151,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"預覽安裝\", \"Preview Installation\")) { model.request(.completion, options: [.dryRun]) }                     Button(model.t(\"安裝至預設 Shell…\", \"Install to Default Shell…\")) { model.request(.completion) }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 152,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"安裝至預設 Shell…\", \"Install to Default Shell…\")) { model.request(.completion) }                 }                 Divider()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 156,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"清理白名單\", \"Clean Whitelist\")) { model.request(.clean, options: [.whitelist]) }                     Button(model.t(\"最佳化白名單\", \"Optimize Whitelist\")) { model.request(.optimize, options: [.whitelist]) }                     Button(model.t(\"專案掃描路徑\", \"P",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 157,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"最佳化白名單\", \"Optimize Whitelist\")) { model.request(.optimize, options: [.whitelist]) }                     Button(model.t(\"專案掃描路徑\", \"Project Search Paths\")) { model.request(.purge, options: [.purgePaths]) }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 158,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"專案掃描路徑\", \"Project Search Paths\")) { model.request(.purge, options: [.purgePaths]) }                 }             }.disabled(!model.canStart).padding(12)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 169,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"預覽移除範圍\", \"Preview Removal\")) { model.request(.remove, options: [.dryRun]) }                         Button(model.t(\"移除官方 CLI…\", \"Remove Official CLI…\"), role: .destructive) { model.request(.remove) }                     }.disabled(!model.canSta",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 170,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"移除官方 CLI…\", \"Remove Official CLI…\"), role: .destructive) { model.request(.remove) }                     }.disabled(!model.canStart || model.installation?.source == .nix)                 }.padding(.top, 12)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 182,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"指令\", \"Command\"), selection: $diagnosticCommand) {                         ForEach(MoleCommand.allCases.filter { ![.menu, .help, .version].contains($0) }) { command in Text(command.rawValue).tag(command) }                     }.frame(width: 230)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 185,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"先預覽\", \"Dry Run\"), isOn: $diagnosticPreview) }                     Spacer()                     Button(model.t(\"官方說明\", \"Help\")) { model.request(diagnosticCommand, options: [.help]) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 187,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方說明\", \"Help\")) { model.request(diagnosticCommand, options: [.help]) }                     Button(model.t(\"開啟診斷\", \"Open Diagnostics\")) {                         model.request(diagnosticCommand, options: [.debug] + (diagnosticCommand.hasDryRun &",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 188,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"開啟診斷\", \"Open Diagnostics\")) {                         model.request(diagnosticCommand, options: [.debug] + (diagnosticCommand.hasDryRun && diagnosticPreview ? [.dryRun] : []))                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SettingsView.swift",
+      "line": 198,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"匯出\", \"Export\")) { model.exportActivity() } }                 if model.activities.isEmpty { Text(model.t(\"目前沒有作業紀錄。\", \"No operations recorded yet.\")).foregroundStyle(.secondary) }                 ForEach(model.activities.prefix(20)) { item in",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 28,
+      "control": "Button",
+      "excerpt": "Button(t(\"讀取／重新整理\", \"Read / Refresh\")) { Task { await controller.refresh() } }.buttonStyle(.borderedProminent)                         .disabled(controller.isBusy || operationInProgress)                     Button(t(\"開啟登入項目系統設定\", \"Open Login Items Settings\")) ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 30,
+      "control": "Button",
+      "excerpt": "Button(t(\"開啟登入項目系統設定\", \"Open Login Items Settings\")) { controller.openLoginItemsSettings() }                     Spacer()                     if controller.isBusy {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 34,
+      "control": "Button",
+      "excerpt": "Button(t(\"停止\", \"Stop\")) { controller.cancel() }                     }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 39,
+      "control": "TextField",
+      "excerpt": "TextField(t(\"搜尋標籤、執行檔或路徑\", \"Search label, executable or path\"), text: $search).textFieldStyle(.roundedBorder)                     Picker(t(\"來源\", \"Source\"), selection: $scope) {                         Text(t(\"全部\", \"All\")).tag(\"all\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 40,
+      "control": "Picker",
+      "excerpt": "Picker(t(\"來源\", \"Source\"), selection: $scope) {                         Text(t(\"全部\", \"All\")).tag(\"all\")                         ForEach(StartupScope.allCases, id: \\.rawValue) { value in Text(scopeTitle(value)).tag(value.rawValue) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 44,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"僅可管理\", \"Manageable only\"), isOn: $onlyManageable).toggleStyle(.checkbox)                 }                 if !controller.statusMessage.isEmpty { Text(controller.statusMessage).font(.callout) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 61,
+      "control": "Button",
+      "excerpt": "Button(t(\"關閉\", \"Close\")) { controller.errorMessage = nil }         } message: { Text(controller.errorMessage ?? \"\") }     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 76,
+      "control": "Button",
+      "excerpt": "Button(t(\"Finder\", \"Finder\")) { controller.reveal(row) }                 }                 if let snapshot = row.item.snapshot {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 99,
+      "control": "Button",
+      "excerpt": "Button(t(\"重新檢查狀態\", \"Recheck State\")) { Task { await controller.inspectState(id: row.id) } }                             .disabled(controller.isBusy || operationInProgress)                         Spacer()",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 103,
+      "control": "Button",
+      "excerpt": "Button(t(\"預覽停用…\", \"Review Disable…\")) { Task { await controller.prepareChange(id: row.id, enable: false) } }                                 .disabled(!controller.canReview(row) || controller.isBusy || operationInProgress)                             Button(t(",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 105,
+      "control": "Button",
+      "excerpt": "Button(t(\"預覽啟用…\", \"Review Enable…\")) { Task { await controller.prepareChange(id: row.id, enable: true) } }                                 .disabled(!controller.canReview(row) || controller.isBusy || operationInProgress)                         } else {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 108,
+      "control": "Button",
+      "excerpt": "Button(t(\"系統設定中管理\", \"Manage in System Settings\")) { controller.openLoginItemsSettings() }                         }                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 132,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\")) { controller.pendingPlan = nil }.keyboardShortcut(.cancelAction)                 Spacer()                 Button(plan.enable ? t(\"確認啟用\", \"Confirm Enable\") : t(\"確認停用\", \"Confirm Disable\")) {",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/StartupView.swift",
+      "line": 134,
+      "control": "Button",
+      "excerpt": "Button(plan.enable ? t(\"確認啟用\", \"Confirm Enable\") : t(\"確認停用\", \"Confirm Disable\")) {                     Task { await controller.applyPendingChange() }                 }.buttonStyle(.borderedProminent).disabled(controller.isBusy || operationInProgress)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsController.swift",
+      "line": 581,
+      "control": "Button",
+      "excerpt": "Button(language == \"en\" ? \"Finish\" : \"結束\", action: exit).buttonStyle(.bordered).keyboardShortcut(.cancelAction)             }.foregroundStyle(light ? Color.black.opacity(0.6) : Color.white.opacity(0.6))         }.accessibilityElement(children: .contain)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 34,
+      "control": "Button",
+      "excerpt": "Button(t(\"退出 \", \"Eject \") + volume.name) {                     guard !operationInProgress else { return }                     Task { await controller.ejectVolume(volume); pendingEject = nil }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 39,
+      "control": "Button",
+      "excerpt": "Button(t(\"取消\", \"Cancel\"), role: .cancel) { pendingEject = nil }         } message: {             Text((pendingEject?.url.path ?? \"\") + \"\\n\" + t(\"請先儲存並關閉磁碟上的檔案。退出可能同時卸載同一裝置的其他分割區；使用中的磁碟會由 macOS 拒絕，不會強制退出。\", \"Save and close files first. Ejection can unmount othe",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 44,
+      "control": "Button",
+      "excerpt": "Button(t(\"關閉\", \"Close\")) { controller.errorMessage = nil }         } message: { Text(controller.errorMessage ?? \"\") }     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 52,
+      "control": "Picker",
+      "excerpt": "Picker(t(\"模式\", \"Mode\"), selection: $mode) {                     Text(t(\"螢幕與系統\", \"Display and system\")).tag(KeepAwakeMode.displayAndSystem)                     Text(t(\"僅系統（螢幕可關閉）\", \"System only (display may sleep)\")).tag(KeepAwakeMode.system)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 57,
+      "control": "Picker",
+      "excerpt": "Picker(t(\"時間\", \"Duration\"), selection: $duration) {                         ForEach(KeepAwakeDuration.allCases, id: \\.rawValue) { value in                             Text(value == .untilStopped ? t(\"直到手動停止\", \"Until stopped\") : \"\\(value.rawValue) \" + t(\"小時\", \"",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 64,
+      "control": "Button",
+      "excerpt": "Button(t(\"停止\", \"Stop\")) { controller.stopKeepAwake() }.buttonStyle(.borderedProminent)                     } else {                         Button(t(\"開始\", \"Start\")) { controller.startKeepAwake(mode: mode, duration: duration) }.buttonStyle(.borderedProminent)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 66,
+      "control": "Button",
+      "excerpt": "Button(t(\"開始\", \"Start\")) { controller.startKeepAwake(mode: mode, duration: duration) }.buttonStyle(.borderedProminent)                             .disabled(!controller.userToolActionsAllowed)                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 87,
+      "control": "Toggle",
+      "excerpt": "Toggle(t(\"白色背景\", \"White background\"), isOn: $lightScreen)                     Spacer()                     Button(t(\"開始清潔螢幕\", \"Start Clean Screen\")) { controller.startCleanScreen(light: lightScreen) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 89,
+      "control": "Button",
+      "excerpt": "Button(t(\"開始清潔螢幕\", \"Start Clean Screen\")) { controller.startCleanScreen(light: lightScreen) }                         .buttonStyle(.bordered).disabled(controller.isCleaningScreen || !controller.userToolActionsAllowed)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 104,
+      "control": "Button",
+      "excerpt": "Button(t(\"重新整理\", \"Refresh\")) { Task { await controller.refreshVolumes() } }                         .disabled(controller.isRefreshingVolumes || controller.ejectingVolumeID != nil)                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 122,
+      "control": "Button",
+      "excerpt": "Button(t(\"退出…\", \"Eject…\")) { pendingEject = volume; showEjectConfirmation = true }                             .disabled(operationInProgress || controller.ejectingVolumeID != nil || controller.isRefreshingVolumes)                     }.padding(.vertical, 5)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 140,
+      "control": "Button",
+      "excerpt": "Button(t(\"產生報告\", \"Generate Report\")) { Task { await controller.generateDoctorReport(cliSummary: cliSummary) } }.disabled(controller.isGeneratingDoctor)                 }                 Text(t(\"讀取版本、系統硬體、電源、顯示器及磁碟中繼資料。沒有目錄內容掃描、不讀私人檔案、不執行修復，也不上傳報告。\", \"Reads ver",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 155,
+      "control": "Button",
+      "excerpt": "Button(t(\"複製報告\", \"Copy Report\")) { controller.copyDoctorReport() }                         Button(t(\"儲存報告…\", \"Save Report…\")) { controller.exportDoctorReport() }                     }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/SystemToolsView.swift",
+      "line": 156,
+      "control": "Button",
+      "excerpt": "Button(t(\"儲存報告…\", \"Save Report…\")) { controller.exportDoctorReport() }                     }                 } else { Text(t(\"尚未產生報告。\", \"No report generated yet.\")).foregroundStyle(.secondary) }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 25,
+      "control": "TextField",
+      "excerpt": "TextField(model.t(\"搜尋 App、Bundle ID 或路徑\", \"Search app, bundle ID or path\"), text: $search).textFieldStyle(.roundedBorder)                 Picker(model.t(\"排序\", \"Sort\"), selection: $sort) {                     Text(model.t(\"名稱\", \"Name\")).tag(\"name\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 26,
+      "control": "Picker",
+      "excerpt": "Picker(model.t(\"排序\", \"Sort\"), selection: $sort) {                     Text(model.t(\"名稱\", \"Name\")).tag(\"name\")                     Text(model.t(\"容量（官方顯示值）\", \"Size (display estimate)\")).tag(\"size\")",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 31,
+      "control": "NativeActionButton",
+      "excerpt": "NativeActionButton(model.t(\"掃描／重新整理\", \"Scan / Refresh\"), identifier: \"mopanel.uninstall.scan\") {                     Task { await model.loadApps() }                 }.disabled(!model.canStart)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 53,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"在 Finder 顯示\", \"Show in Finder\")) { model.reveal(app.path) } }                     }                 }",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 71,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"預選個人資料（--with-data；預設關閉）\", \"Preselect personal data (--with-data; off by default)\"), isOn: $withData)                     Toggle(model.t(\"詳細診斷（--debug）\", \"Detailed diagnostics (--debug)\"), isOn: $debug)                     DisclosureGroup(model",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 72,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"詳細診斷（--debug）\", \"Detailed diagnostics (--debug)\"), isOn: $debug)                     DisclosureGroup(model.t(\"進階刪除方式\", \"Advanced Removal Mode\")) {                         Toggle(model.t(\"永久刪除，不放入垃圾桶（--permanent）\", \"Delete permanently, bypassing",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 74,
+      "control": "Toggle",
+      "excerpt": "Toggle(model.t(\"永久刪除，不放入垃圾桶（--permanent）\", \"Delete permanently, bypassing Trash (--permanent)\"), isOn: $permanent)                     }                     Text(model.t(\"同名 App、無法唯一對應的 Homebrew 名稱或特殊檔名，請使用「官方選取器」。確認畫面的實際路徑才是最終移除範圍。\", \"For duplicate app names,",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 81,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"預覽選取項目\", \"Preview Selected\")) { Task { await model.uninstall(selected: selected, preview: true, withData: withData, permanent: permanent, debug: debug) } }                     .buttonStyle(.borderedProminent).disabled(selected.isEmpty || !model",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 83,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"確認卸載…\", \"Review Uninstall…\")) { Task { await model.uninstall(selected: selected, preview: false, withData: withData, permanent: permanent, debug: debug) } }.disabled(selected.isEmpty || !model.canStart)                 Spacer()                 ",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 85,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方選取器／預覽\", \"Official Selector / Preview\")) { model.request(.uninstall, options: [.dryRun] + (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)                 Button(model.t(\"官",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 86,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"官方選取器／卸載\", \"Official Selector / Uninstall\")) { model.request(.uninstall, options: (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)                 Button(model.t(\"說明\", \"Help\"",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    },
+    {
+      "path": "Sources/MoPanelApp/UninstallView.swift",
+      "line": 87,
+      "control": "Button",
+      "excerpt": "Button(model.t(\"說明\", \"Help\")) { model.request(.uninstall, options: [.help]) }.disabled(!model.canStart)             }         }.padding(26)",
+      "source_trace": "pending per-control verification; see PRODUCT_READINESS_AUDIT.md for verified feature groups",
+      "test_status": "not individually verified in this audit"
+    }
+  ],
+  "file_count": 95,
+  "ui_control_count": 203,
+  "limitation": "Syntax inventory is not proof of feature behavior, source attribution, coverage or a completed manual code audit."
+}

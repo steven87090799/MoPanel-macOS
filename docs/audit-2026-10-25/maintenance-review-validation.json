@@ -1,0 +1,35 @@
+{
+  "source_revision": "6970c52389e8d611e0cbfddc43d4afacbcf42cbc",
+  "date_taipei": "2026-10-25",
+  "xctest_passed": 254,
+  "skipped": 0,
+  "fixture_checks": 20,
+  "native_ui_assertions": 46,
+  "verified_native_actions": 29,
+  "guardian_tests": 17,
+  "native_review_integration_checks": 24,
+  "synthetic_trash_moves": 3,
+  "mole_selector_integration_checks": 11,
+  "manual_fixture_checks": [
+    "category expands",
+    "mixed checkbox and capacity update",
+    "group restores selection",
+    "protected row disabled and unknown size",
+    "protected reason expandable",
+    "installer selection on main page",
+    "Mole selection acknowledgment 1/2 to 2/2",
+    "final confirmation on main page",
+    "fixture completion summary",
+    "uninstall selection expands related files"
+  ],
+  "user_files_changed_during_tests": false,
+  "no_permission_changes": true,
+  "strict_bundle_zip_verified": true,
+  "zip_sha256": "a7bc6053d223fefa87f6b07be8e5170baee5a825059dc5755df56b4179da2d97",
+  "limitations": [
+    "Synthetic cleanup and uninstall only; macOS can still reject a descendant not covered by the cheap top-level preflight. Such failures are retained and unselected.",
+    "The native standard action uses recoverable macOS Trash; advanced Mole deletion and its final confirmation remain separate.",
+    "No new long-running resource observation was run for these UI changes.",
+    "This validation does not claim every app, TCC state or every physical action is covered."
+  ]
+}

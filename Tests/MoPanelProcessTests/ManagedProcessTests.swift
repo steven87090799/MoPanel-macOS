@@ -111,6 +111,26 @@ final class ManagedProcessTests: XCTestCase {
         XCTAssertEqual(String(decoding: observed, as: UTF8.self), "one\ntwo\nthree\n")
     }
 
+    @MainActor func testStreamingDiagnosticsKeepOnlyTheTailWithoutStoppingTheCollector() async throws {
+        let session = ManagedProcess(helperURL: try helper())
+        var observedErrors = 0
+        session.onError = { observedErrors += $0.count }
+        try session.start(request: shell("/usr/bin/head -c 131072 /dev/zero >&2; printf STREAM-END >&2; printf complete", outputLimit: 2048, retainsOutput: false))
+        let result = await session.wait()
+        XCTAssertTrue(result.succeeded, "A continuous stream must not stop because its diagnostic history reached a retention limit.")
+        XCTAssertEqual(observedErrors, 131082)
+        XCTAssertLessThanOrEqual(result.stderr.count, 2048)
+        XCTAssertEqual(String(decoding: result.stderr.suffix(10), as: UTF8.self), "STREAM-END")
+        XCTAssertTrue(result.stdout.isEmpty)
+    }
+
+    @MainActor func testCaptureStderrLimitStillStopsCommand() async throws {
+        let result = try await ProcessRunner.capture(shell("/usr/bin/yes warning >&2", outputLimit: 2048), helperURL: helper())
+        XCTAssertEqual(result.stderr.count, 2048)
+        XCTAssertTrue(result.outputTruncated)
+        XCTAssertFalse(result.succeeded)
+    }
+
     @MainActor func testCaptureCannotAnswerConfirmation() async throws {
         let result = try await ProcessRunner.capture(shell("if read answer; then exit 12; else printf no-input; fi"), helperURL: helper())
         XCTAssertTrue(result.succeeded)

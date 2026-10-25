@@ -119,7 +119,65 @@ import MoPanelCore
             "native_ui": nativeUIObject,
             "navigation_sections_selected": AppSection.allCases.map(\.rawValue),
             "note": "Native window and route selection survival, adapter, safe system API probes, private Startup mock and explicitly identified own-process accessibility button actions. Route selection alone does not prove every page rendered correctly. This does not verify every physical interaction, TCC permission, real cleanup, app update or hardware control."
-        ], success: success)
+        ], success: success, previewTools: systemTools)
+    }
+
+    private static func seedReviewPreview(_ model: AppModel) {
+        // These data are reachable only from the explicitly bounded manual
+        // fixture preview. Both controllers remain unable to change files.
+        guard model.fixtureMode, model.isTestLaunch else { return }
+        model.nativeHardware.pressure = .normal
+        model.nativeHardware.cpuTemperature = 52
+        model.nativeHardware.gpuTemperature = 49
+        model.nativeHardware.gpuUsage = 18
+        model.nativeHardware.fans = [2300, 2500]
+        model.networkInterfaceNames = ["en0": "Wi-Fi"]
+        model.applicationUsage = [ApplicationUsage(id: "preview.editor", name: "範例編輯器", appPath: nil, pid: 1234,
+            memory: 1_200_000_000, cpu: 12.4, processCount: 6),
+            ApplicationUsage(id: "preview.browser", name: "範例瀏覽器", appPath: nil, pid: 2345,
+            memory: 820_000_000, cpu: 3.2, processCount: 4)]
+        let examples: [(String, String, String, String, Bool)] = [
+            ("App 快取與紀錄", "範例瀏覽器快取", "280 MB", "網頁暫存，下次開啟時會重新建立。", true),
+            ("App 快取與紀錄", "範例 App 診斷紀錄", "12 MB", "舊的問題紀錄；不包含個人文件。", true),
+            ("開發工具", "範例建置快取", "1.2 GB", "可重新產生的編譯快取，首次建置會較慢。", false),
+            ("需確認用途", "範例 App 個人資料", "65 MB", "可能包含設定與登入資料，建議先保留。", false)]
+        model.cleanupReview.files = examples.enumerated().map { index, item in
+            ReviewFile(url: URL(fileURLWithPath: "/MoPanel-synthetic-preview/\(index)/" + item.1), category: item.0,
+                       title: item.1, size: item.2, purpose: item.3, recommended: item.4, blockedReason: nil,
+                       device: 0, inode: 0, modified: timespec(), directory: true, identity: nil)
+        }
+        model.cleanupReview.files.append(ReviewFile(url: URL(fileURLWithPath: "/MoPanel-synthetic-preview/protected/系統保護的快取"),
+            category: "App 快取與紀錄", title: "系統保護的快取", size: "大小未能讀取", purpose: "系統服務的快取；無法確認內容時先保留。",
+            recommended: true, blockedReason: "macOS 未允許讀取此項目，已保留原處。", device: 0, inode: 0, modified: timespec(), directory: true, identity: nil))
+        model.cleanupReview.sourceDate = Date()
+        model.cleanupReview.message = "合成掃描結果；此模式無法移除檔案。"
+        model.cleanupReview.recommend()
+        if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates" {
+            model.stopMonitoring(); model.section = .dashboard; model.monitoring = true
+            let now = Date()
+            var samples: [TrendSample] = []
+            for index in 0..<120 {
+                let date = now.addingTimeInterval(Double(index - 119) * 2.0)
+                let cpu = Double(15 + (index * 17) % 70)
+                let memory = Double(60 + index % 20)
+                let read = Double(index % 9), write = Double(index % 4)
+                samples.append(TrendSample(date: date, cpu: cpu, memory: memory, diskRead: read, diskWrite: write,
+                                           down: nil, up: nil, gpu: 20, networkInterfaces: [:], sampleInterval: 2))
+            }
+            model.trends = samples
+        }
+        if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "trend-gaps" {
+            model.stopMonitoring()
+            let start = Date().addingTimeInterval(-424)
+            let seconds: [Double] = [0, 2, 4, 6, 420, 422, 424]
+            let cpu: [Double] = [15, 35, 67, 50, 17, 39, model.status?.cpu.usage ?? 31]
+            let memory: [Double] = [78, 78, 79, 80, 77, 78, model.status?.memory.usedPercent ?? 78]
+            model.trends = seconds.enumerated().map { index, time in
+                TrendSample(date: start.addingTimeInterval(time), cpu: cpu[index], memory: memory[index],
+                            diskRead: index.isMultiple(of: 2) ? 2 : 0.3, diskWrite: index.isMultiple(of: 2) ? 0.2 : 1,
+                            down: nil, up: nil, gpu: 20, sampleInterval: 2, startsNewSegment: index == 4)
+            }
+        }
     }
 
     /// Fixed stage names only. Diagnostic output is restricted to an explicit
@@ -225,9 +283,55 @@ import MoPanelCore
         ], success: success)
     }
 
-    private static func finish(_ model: AppModel, environmentKey: String, report: [String: Any], success: Bool) async {
+    private static func finish(_ model: AppModel, environmentKey: String, report: [String: Any], success: Bool,
+                               previewTools: SystemToolsController? = nil) async {
         if model.fixtureMode, ProcessInfo.processInfo.arguments == [ProcessInfo.processInfo.arguments[0], "--smoke-test"] {
             model.section = .dashboard
+            // An explicit, bounded developer preview keeps this already-tested
+            // fixture window available for manual visual review. Normal smoke
+            // drivers remove this flag so their deadline remains unchanged.
+            if let value = ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_SECONDS"],
+               let seconds = Int(value), (1...300).contains(seconds) {
+                seedReviewPreview(model)
+                if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "official-dashboard" {
+                    model.section = .settings
+                }
+                var previewWindow: NSWindow?
+                if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "menubar",
+                   let previewTools {
+                    let panel = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 390, height: 790),
+                                         styleMask: [.titled, .closable], backing: .buffered, defer: false)
+                    panel.title = "MoPanel · Menu Bar Preview"
+                    panel.isReleasedWhenClosed = false
+                    panel.contentView = NSHostingView(rootView: MenuBarPanel()
+                        .environmentObject(model).environmentObject(previewTools)
+                        .preferredColorScheme(model.colorScheme))
+                    panel.center()
+                    panel.makeKeyAndOrderFront(nil)
+                    previewWindow = panel
+                }
+                checkpoint("manual_preview.ready")
+                if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates",
+                   let source = AppResources.bundle?.url(forResource: "status", withExtension: "json", subdirectory: "Fixtures"),
+                   let bytes = try? Data(contentsOf: source),
+                   let original = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any] {
+                    // Exact fixture launch plus the existing 300-second bound.
+                    // No timer or synthetic values are installed in production.
+                    for index in 0..<((seconds + 1) / 2) {
+                        var object = original
+                        var cpu = object["cpu"] as? [String: Any] ?? [:]
+                        cpu["usage"] = 10 + (index * 23) % 80
+                        object["cpu"] = cpu
+                        object["collected_at"] = ISO8601DateFormatter().string(from: Date())
+                        if let data = try? JSONSerialization.data(withJSONObject: object), let snapshot = try? MoleJSON.decodeStatus(data) {
+                            model.receiveScrollPreview(snapshot)
+                        }
+                        try? await Task.sleep(for: .seconds(min(2, seconds - index * 2)))
+                    }
+                } else { try? await Task.sleep(for: .seconds(seconds)) }
+                previewWindow?.close()
+                model.section = .dashboard
+            }
             try? await Task.sleep(for: .milliseconds(150))
             checkpoint("own_window_capture.begin")
             saveOwnWindowScreenshot()

@@ -42,6 +42,72 @@ def process_tree(root_pid):
             "process_count": len(measured)}
 
 
+def process_identity(pid):
+    if pid <= 1:
+        raise ValueError("Select the PID of a running MoPanel app")
+    try:
+        text = subprocess.check_output(["/bin/ps", "-ww", "-p", str(pid), "-o", "lstart=,comm="], text=True,
+                                       env=dict(os.environ, LC_ALL="C")).strip()
+    except subprocess.CalledProcessError:
+        return None
+    fields = text.split(None, 5)
+    if len(fields) != 6:
+        return None
+    return {"started": " ".join(fields[:5]), "executable": fields[5]}
+
+
+def observe_process(pid, duration, interval, output, scenario):
+    """Observe an explicitly selected app; never launch, stop or reconfigure it."""
+    identity = process_identity(pid)
+    if identity is None or pathlib.Path(identity["executable"]).name != "MoPanel":
+        raise ValueError("PID must identify a running MoPanel executable")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    samples_path = output.with_suffix(".samples.jsonl")
+    if output.exists() or samples_path.exists():
+        raise FileExistsError("Choose a fresh report path; prior evidence will not be overwritten")
+    started = time.monotonic()
+    count, cpu_total, rss_total, peak_cpu, peak_rss, peak_processes = 0, 0.0, 0, 0.0, 0, 0
+    first_rss = last_rss = None
+    status = "interrupted"
+    with samples_path.open("x") as stream:
+        try:
+            while True:
+                elapsed = time.monotonic() - started
+                if process_identity(pid) != identity:
+                    status = "process_exited_or_identity_changed"
+                    break
+                sample = process_tree(pid)
+                if sample["process_count"] <= 0:
+                    status = "process_exited"
+                    break
+                sample.update(elapsed_seconds=round(elapsed, 3), observed_at_epoch=time.time())
+                stream.write(json.dumps(sample) + "\n")
+                stream.flush()
+                count += 1
+                cpu_total += sample["cpu_percent"]; rss_total += sample["rss_bytes"]
+                peak_cpu = max(peak_cpu, sample["cpu_percent"])
+                peak_rss = max(peak_rss, sample["rss_bytes"])
+                peak_processes = max(peak_processes, sample["process_count"])
+                if first_rss is None: first_rss = sample["rss_bytes"]
+                last_rss = sample["rss_bytes"]
+                if elapsed >= duration:
+                    status = "duration_reached"
+                    break
+                time.sleep(min(interval, duration - elapsed))
+        except KeyboardInterrupt:
+            status = "interrupted"
+    result = {"scenario": scenario, "pid": pid, "identity": identity, "host": platform.platform(),
+              "completed": status == "duration_reached", "stop_reason": status,
+              "requested_duration_seconds": duration, "sample_interval_seconds": interval, "sample_count": count,
+              "cpu_mean_percent": cpu_total / count if count else None, "cpu_peak_percent": peak_cpu if count else None,
+              "rss_mean_bytes": rss_total // count if count else None, "rss_peak_bytes": peak_rss if count else None,
+              "rss_first_bytes": first_rss, "rss_last_bytes": last_rss, "max_process_count": peak_processes,
+              "energy_impact": None, "leaks_verified": False, "samples_file": samples_path.name,
+              "limitation": "Passive ps lifetime-average CPU and summed observed-process RSS. Short-lived children may be missed; shared pages may be counted twice. This does not measure Energy Impact or prove absence of leaks. The observer keeps only aggregate values in memory; samples stream to disk."}
+    with output.open("x") as summary: summary.write(json.dumps(result, indent=2) + "\n")
+    return result
+
+
 def prepare_real_manifest(directory, mode, cli):
     """Create only our own fresh, flat corpus; never accept a user's scan root."""
     if mode not in ("idle", "monitor", "scan"):
@@ -182,11 +248,28 @@ def run_mode(executable, mode, directory, real_cli=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("app", type=pathlib.Path)
+    parser.add_argument("app", nargs="?", type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--real-cli", type=pathlib.Path,
                         help="Explicit verified CI engine; never an installed user CLI")
+    parser.add_argument("--observe-pid", type=int, help="Passively observe an existing MoPanel; no workload is launched")
+    parser.add_argument("--duration-seconds", type=float, default=3600)
+    parser.add_argument("--sample-interval", type=float, default=30)
+    parser.add_argument("--scenario", choices=["idle", "menu-bar-only", "dashboard", "scan", "sleep-wake", "custom"], default="custom")
     args = parser.parse_args()
+    if args.observe_pid is not None:
+        if args.app or args.real_cli or platform.system() != "Darwin":
+            parser.error("Passive observation requires macOS and cannot be mixed with a launch workload")
+        if (not math.isfinite(args.duration_seconds) or not 60 <= args.duration_seconds <= 86400
+                or not math.isfinite(args.sample_interval) or not 5 <= args.sample_interval <= 1800
+                or args.sample_interval > args.duration_seconds):
+            parser.error("Duration must be 60–86400 seconds; interval must be 5–1800 seconds and no longer than duration")
+        result = observe_process(args.observe_pid, args.duration_seconds, args.sample_interval, args.output, args.scenario)
+        print("Recorded passive observation:", args.output, result["stop_reason"])
+        if not result["completed"]: raise SystemExit(1)
+        return
+    if args.app is None:
+        parser.error("Supply an app bundle or --observe-pid")
     executable = args.app.resolve() / "Contents/MacOS/MoPanel"
     if platform.system() != "Darwin" or not executable.is_file():
         parser.error("A compiled macOS bundle and macOS host are required")
