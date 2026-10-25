@@ -24,6 +24,7 @@ HARNESS = r'''
         let cache = home.appendingPathComponent("Library/Caches/" + nonce)
         let prefs = home.appendingPathComponent("Library/Preferences/" + nonce + ".plist")
         let info = app.appendingPathComponent("Contents/Info.plist")
+        let preview = fm.temporaryDirectory.appendingPathComponent(nonce + ".preview.txt")
         var receipts: [ReviewMoveReceipt] = []
         var checks: [String: Bool] = [:]
         func require(_ key: String, _ value: Bool) throws {
@@ -34,7 +35,7 @@ HARNESS = r'''
         // their confirmed system-returned Trash destinations.
         defer {
             try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cache.path)
-            for url in [app, cache, prefs] + receipts.map(\.trash) {
+            for url in [app, cache, prefs, preview] + receipts.map(\.trash) {
                 if url.lastPathComponent.contains(nonce), fm.fileExists(atPath: url.path) { try? fm.removeItem(at: url) }
             }
             if createdAppRoot, (try? fm.contentsOfDirectory(atPath: appRoot.path).isEmpty) == true { try? fm.removeItem(at: appRoot) }
@@ -54,6 +55,15 @@ HARNESS = r'''
             return try JSONDecoder().decode(InstalledApp.self, from: data)
         }
         let controller = FileReviewController()
+        let missing = home.appendingPathComponent("Library/Caches/" + nonce + ".missing")
+        let previewText = "# Mole Cleanup Preview - fixture\n=== App caches ===\n" + cache.path + "  # 1 KB\n" + missing.path + "  # 0 B\n# Summary\n# Items: 2\n# Categories: 1\n"
+        try Data(previewText.utf8).write(to: preview, options: .withoutOverwriting)
+        await controller.loadCleanupPreview(previewURL: preview)
+        try require("stale_scan_hides_removed_items_and_requires_rescan", controller.files.map(\.id) == [cache.path] && controller.needsRescan && controller.selected.isEmpty)
+        try require("stale_scan_cannot_execute", !controller.canExecute)
+        try Data(previewText.replacingOccurrences(of: missing.path + "  # 0 B\n", with: "").utf8).write(to: preview)
+        await controller.loadCleanupPreview(previewURL: preview)
+        try require("fresh_scan_restores_recommended_selection", !controller.needsRescan && controller.selected == Set([cache.path]))
         await controller.prepareApps([try inventory()])
         try require("app_cache_and_personal_file_discovered", Set(controller.files.map(\.id)) == Set([app.path, cache.path, prefs.path]))
         try require("recommended_app_and_cache_preselected", controller.selected == Set([app.path, cache.path]))

@@ -19,6 +19,7 @@ struct ReviewFile: Identifiable {
     let modified: timespec
     let directory: Bool
     let identity: ReviewFileIdentity?
+    var existsAtScan = true
     var associatedApp: String? = nil
     var expectedBundleID: String? = nil
     var selectable: Bool { blockedReason == nil }
@@ -114,11 +115,11 @@ struct ReviewMoveFailure: Identifiable {
         }
     }
 
-    func loadCleanupPreview() async {
+    func loadCleanupPreview(previewURL: URL? = nil) async {
         guard !busy, !preparing else { return }
         preparing = true; confirming = false
         defer { preparing = false }
-        let url = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/mole/clean-list.txt")
+        let url = previewURL ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/mole/clean-list.txt")
         do {
             var info = stat()
             guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
@@ -137,11 +138,16 @@ struct ReviewMoveFailure: Identifiable {
                 items.map { item in Self.describe(URL(fileURLWithPath: item.path), category: Self.categoryName(item.category), size: item.size,
                                                   purpose: nil, defaultRecommended: nil, extraBlock: item.includedInParent ? "容量已包含在上層項目；請選取上層項目" : nil) }
             }.value
-            files = loaded
+            files = loaded.filter(\.existsAtScan)
+            let staleItems = loaded.count - files.count
+            needsRescan = needsRescan || staleItems > 0
             sourceDate = Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
             recommend()
             message = files.isEmpty ? "掃描完成，沒有可列出的清理項目。" : "掃描完成，請確認要移到垃圾桶的項目。"
-            if needsRescan { message = "保護清單比掃描結果新，請先重新掃描。" }
+            if needsRescan {
+                selected = []
+                message = staleItems > 0 ? "上次掃描後已有 \(staleItems) 項變更或移除，請重新掃描；不會重複列出已移除的檔案。" : "保護清單比掃描結果新，請先重新掃描。"
+            }
         } catch { files = []; selected = []; needsRescan = true; errors = [error.localizedDescription] }
     }
 
@@ -332,7 +338,7 @@ struct ReviewMoveFailure: Identifiable {
         return ReviewFile(url: url, category: category, title: url.lastPathComponent, size: displaySize,
             purpose: purpose ?? kind.explanation,
             recommended: recommended, blockedReason: block, device: info.st_dev, inode: info.st_ino,
-            modified: info.st_mtimespec, directory: directory, identity: identity)
+            modified: info.st_mtimespec, directory: directory, identity: identity, existsAtScan: exists)
     }
     nonisolated private static func directorySize(_ url: URL) -> String {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileAllocatedSizeKey]
