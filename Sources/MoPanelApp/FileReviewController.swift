@@ -96,6 +96,11 @@ struct ReviewMoveFailure: Identifiable {
     var selectableFiles: [ReviewFile] { files.filter(\.selectable) }
     var selectedSize: String { sizeSummary(chosen) }
     var totalSize: String { sizeSummary(selectableFiles) }
+    var inventorySize: String {
+        let roots = CleanupPreviewDocument.capacityRoots(files.map(\.id))
+        return sizeSummary(files.filter { roots.contains($0.id) })
+    }
+    var retainedFiles: [ReviewFile] { files.filter { !$0.selectable } }
     func categoryExplanation(_ category: String) -> String {
         switch category {
         case "App 快取與紀錄": return "App 與瀏覽器的暫存、舊紀錄；清理後會按需重建。"
@@ -405,8 +410,15 @@ struct FileReviewView: View {
             if showsActions {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(controller.lastRun == nil ? t("準備開始清理", "Ready to Clean") : t("清理結果", "Cleanup Results")).font(.title2.bold())
-                    Text(t("可選 ", "Available: ") + controller.totalSize + " · \(controller.selectableFiles.count) " + t("項", "items") + " · \(controller.categories.count) " + t("類", "categories"))
+                    Text(t("本次預覽列出 ", "Listed in this preview: ") + controller.inventorySize + " · \(controller.files.count) " + t("項", "items"))
                         .font(.callout).foregroundStyle(.secondary).monospacedDigit()
+                    Text(t("已選清理 ", "Selected to clean: ") + controller.selectedSize + t(" · 可自行勾選 ", " · Selectable: ") + controller.totalSize)
+                        .font(.callout).monospacedDigit()
+                    if !controller.retainedFiles.isEmpty {
+                        Text(t("保留／另外處理 ", "Kept / managed separately: ") + controller.sizeSummary(controller.retainedFiles)
+                             + " · \(controller.retainedFiles.count) " + t("項；展開「手動管理」查看原因。", "items; expand Manual Management for reasons."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     Text(t("Mole 提供掃描候選 · MoPanel 判斷預選，可自行取消", "Candidates from Mole · Preselection by MoPanel; uncheck any item"))
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(.bottom, 6)
@@ -461,6 +473,8 @@ struct FileReviewView: View {
             if showsActions {
                 DisclosureGroup(t("更多資訊與執行方式", "More Information and Execution Method")) {
                     if let date = controller.sourceDate { Text(t("掃描時間：", "Scanned: ") + date.formatted(date: .abbreviated, time: .shortened)).font(.caption) }
+                    Text(t("這裡列出已安裝 Mole CLI 本次預覽提供的項目，並非整台 Mac 的暫存總量。Mole 圖形版可能另外計入垃圾桶、開發產物與保留項目；已在垃圾桶的檔案不能再移至垃圾桶，須由 Finder 另行管理。", "This lists candidates supplied by the installed Mole CLI preview, not all cache storage on this Mac. Mole's GUI may also count Trash, development artifacts and retained data. Files already in Trash are managed separately in Finder."))
+                        .font(.caption).foregroundStyle(.secondary)
                     Text(t("掃描指令：mo clean --dry-run。勾選後使用 macOS 原生移至垃圾桶（NSWorkspace.recycle），可從垃圾桶還原。執行前重新確認檔案身分與存取權限；未勾選及手動管理項目不會移動。", "Scan: mo clean --dry-run. Selected files use macOS NSWorkspace.recycle and can be restored from Trash. File identity and access are checked again; unchecked and manual items stay in place."))
                         .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 }.padding(.top, 6)

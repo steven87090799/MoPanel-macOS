@@ -82,6 +82,7 @@ import MoPanelProcess
     @Published var operationSession = ManagedProcess()
     @Published var operationResult: ProcessResult?
     @Published var operationIsInteractive = true
+    private(set) var officialDashboardWindow: OfficialDashboardWindowController?
     @Published var operationProgressEntries: [OperationProgressEntry] = []
     @Published var operationInputPrompt: String?
     private var operationProgress = OperationProgressSummary()
@@ -598,6 +599,14 @@ import MoPanelProcess
         } catch { self.error = error.localizedDescription }
     }
 
+    var canOpenOfficialDashboard: Bool { officialDashboardWindow != nil || (canStart && pending == nil) }
+
+    func openOfficialDashboard() {
+        if let window = officialDashboardWindow { window.present(); return }
+        guard pending == nil else { return }
+        request(.status, title: t("官方 Mole 即時儀表板", "Official Mole Live Dashboard"))
+    }
+
     func confirmPending() {
         guard let pending else { return }
         self.pending = nil
@@ -650,7 +659,8 @@ import MoPanelProcess
         moleSelector.reset()
         operationProgress = OperationProgressSummary()
         operationProgressEntries = []; operationInputPrompt = nil
-        session.onActivity = { [weak self, weak session] bytes in
+        let separateDashboard = invocation.command == .status && invocation.requiresPTY
+        if !separateDashboard { session.onActivity = { [weak self, weak session] bytes in
             guard let self, let session, self.operationSession === session else { return }
             self.operationProgress.append(bytes)
             self.operationProgressEntries = self.operationProgress.entries
@@ -658,7 +668,7 @@ import MoPanelProcess
             if pending.lowercased().contains("password"), pending.hasSuffix(":") { self.operationInputPrompt = "password" }
             else if pending.lowercased().contains("y/n") { self.operationInputPrompt = String(pending.suffix(300)) }
             else { self.operationInputPrompt = nil }
-        }
+        } }
         operationWasPreview = invocation.isPreview
         operationIsInteractive = invocation.requiresPTY
         rawResult = ""
@@ -695,7 +705,17 @@ import MoPanelProcess
             environment["MOPANEL_LANGUAGE"] = language
         }
         try session.start(request: ProcessRequest(executable: cli.executable, arguments: invocation.arguments, environment: environment, workingDirectory: benchmarkConfiguration?.home, timeout: invocation.requiresPTY ? 7200 : 1800, cooperativeCancellation: invocation.command == .slim && !invocation.isPreview), interactive: invocation.requiresPTY)
-        showOperation = true
+        if separateDashboard {
+            let controller = OfficialDashboardWindowController(session: session, english: language == "en",
+                command: invocation.displayCommand, colorScheme: colorScheme)
+            controller.onClose = { [weak self, weak controller] in
+                guard let self, self.officialDashboardWindow === controller else { return }
+                self.officialDashboardWindow = nil
+            }
+            officialDashboardWindow = controller
+            showOperation = false
+            controller.present()
+        } else { showOperation = true }
     }
 
     func uninstall(selected: Set<String>, preview: Bool, withData: Bool, permanent: Bool, debug: Bool = false) async {
@@ -734,6 +754,7 @@ import MoPanelProcess
         cleanupReview.cancel()
         uninstallReview.cancel()
         moleSelector.suspend()
+        officialDashboardWindow?.close()
         operationSession.cancel()
     }
 

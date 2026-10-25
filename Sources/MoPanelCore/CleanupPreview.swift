@@ -10,6 +10,20 @@ public struct CleanupPreviewItem: Identifiable, Sendable {
 
 /// Display adapter for Mole's clean-list.txt. It is not a deletion instruction.
 public enum CleanupPreviewDocument {
+    /// Count a listed directory once even when the CLI also lists its children.
+    public static func capacityRoots(_ paths: [String]) -> Set<String> {
+        let all = Set(paths)
+        return Set(all.filter { path in
+            var parent = (path as NSString).deletingLastPathComponent
+            while !parent.isEmpty {
+                if all.contains(parent) { return false }
+                if parent == "/" { break }
+                parent = (parent as NSString).deletingLastPathComponent
+            }
+            return true
+        })
+    }
+
     public static func parse(_ text: String) throws -> [CleanupPreviewItem] {
         guard text.utf8.count <= 2_000_000, text.hasPrefix("# Mole Cleanup Preview - "),
               text.contains("\n# Summary\n"), text.contains("\n# Items: "), text.contains("\n# Categories: ") else {

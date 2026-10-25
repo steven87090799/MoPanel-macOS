@@ -156,7 +156,7 @@ struct SettingsView: View {
     private var monitor: some View {
         GroupBox(model.t("低負載監控", "Monitoring")) {
             VStack(alignment: .leading, spacing: 14) {
-                Toggle(model.t("在選單列顯示即時監控（MoPanel 新實作）", "Show live monitoring in menu bar (MoPanel addition)"), isOn: $model.menuBarEnabled)
+                Toggle(model.t("在選單列顯示即時監控", "Show live monitoring in menu bar"), isOn: $model.menuBarEnabled)
                 Text(model.t("預設關閉。開啟後，即使切換頁面或使用其他 App，也會共用現有的單一監控串流。關閉最後一個 MoPanel 視窗或結束 App 時全部停止。", "Off by default. When enabled, the existing single stream continues across pages and while using other apps. Closing the last MoPanel window or quitting stops it."))
                     .font(.caption).foregroundStyle(.secondary)
                 Picker(model.t("總覽更新間隔", "Dashboard Interval"), selection: $model.monitoringInterval) { ForEach(MonitoringPreferences.foregroundIntervals, id: \.self) { Text("\($0) s").tag($0) } }.pickerStyle(.segmented)
@@ -167,8 +167,10 @@ struct SettingsView: View {
                 Picker(model.t("持續時間視窗", "Sustained Window"), selection: $model.processCPUWindow) { ForEach([60, 120, 300, 600], id: \.self) { Text("\($0) s").tag($0) } }.pickerStyle(.segmented)
                 Text(model.t("設定會自動儲存並套用。最多保留 120 筆樣本；睡眠時停止採樣，喚醒後依原本需求恢復。低耗電模式至少間隔 5 秒更新。選單列模式不會比總覽更頻繁。", "Settings save and apply automatically. Keeps at most 120 samples. Sampling stops for sleep and resumes on demand after wake. Low Power Mode uses at least five seconds; menu-bar-only monitoring never runs faster than Dashboard."))
                     .font(.caption).foregroundStyle(.secondary)
-                Button(model.t("開啟官方 TUI 儀表板", "Open Official TUI Dashboard")) { model.request(.status) }.disabled(!model.canStart)
                 }
+                NativeActionButton(model.t("開啟官方 TUI 儀表板", "Open Official TUI Dashboard"), identifier: "mopanel.settings.dashboard.open") {
+                    model.openOfficialDashboard()
+                }.disabled(!model.canOpenOfficialDashboard)
             }.padding(12)
         }
     }

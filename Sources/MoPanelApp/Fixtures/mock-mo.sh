@@ -45,6 +45,18 @@ case "$command_name" in
                 while true; do cat "$fixture_root/status.ndjson"; sleep 2; done
             fi
         done
+        if [[ "$#" -eq 1 && -t 0 ]]; then
+            trap 'exit 130' INT TERM HUP
+            stty -echo -icanon min 1 time 0
+            printf '\033[2J\033[HMOLE DASHBOARD · SYNTHETIC FIXTURE\nCPU 25%%   GPU 18%%   Memory 50%%\nPress R to read terminal size, Q to leave.\n'
+            while true; do
+                key=''; IFS= read -r -s -n 1 key || exit 0
+                case "$key" in
+                    r|R) printf '\nFIXTURE_SIZE=%s\n' "$(stty size)" ;;
+                    q|Q) exit 0 ;;
+                esac
+            done
+        fi
         cat "$fixture_root/status.json"
         ;;
     analyze)

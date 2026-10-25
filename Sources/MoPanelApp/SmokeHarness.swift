@@ -293,6 +293,9 @@ import MoPanelCore
             if let value = ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_SECONDS"],
                let seconds = Int(value), (1...300).contains(seconds) {
                 seedReviewPreview(model)
+                if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "official-dashboard" {
+                    model.section = .settings
+                }
                 var previewWindow: NSWindow?
                 if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "menubar",
                    let previewTools {

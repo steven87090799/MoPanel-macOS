@@ -2,6 +2,13 @@ import XCTest
 @testable import MoPanelCore
 
 final class CleanupPreviewTests: XCTestCase {
+    func testListedCapacityDoesNotDoubleCountNestedDirectories() {
+        XCTAssertEqual(CleanupPreviewDocument.capacityRoots(["/Users/test/Cache", "/Users/test/Cache/child", "/Users/test/Cache/child/grandchild", "/Users/test/Cache"]), ["/Users/test/Cache"])
+    }
+    func testListedCapacityKeepsSeparateDirectoriesAndComponentBoundaries() {
+        XCTAssertEqual(CleanupPreviewDocument.capacityRoots(["/Users/test/Cache", "/Users/test/Cache2", "/Users/test/Other/child"]), ["/Users/test/Cache", "/Users/test/Cache2", "/Users/test/Other/child"])
+        XCTAssertEqual(CleanupPreviewDocument.capacityRoots([]), [])
+    }
     func testOfficialPreviewPreservesPathsSizesAndNestedAccounting() throws {
         let text = "# Mole Cleanup Preview - fixture\n=== User essentials ===\n/Users/test/Library/Caches/My App  # 1.3MB, 3 items\n/Users/test/Library/Caches/My App/child  # 1KB, counted under parent\n/Users/test/Library/Caches/My App  # 1.3MB\n# Summary\n# Items: 3\n# Categories: 1\n"
         let items = try CleanupPreviewDocument.parse(text)

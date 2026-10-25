@@ -72,6 +72,7 @@ private struct NativeTerminal: NSViewRepresentable {
         view.allowMouseReporting = false
         view.isHidden = !isVisible
         view.setAccessibilityLabel("\(engineName) interactive terminal")
+        view.identifier = NSUserInterfaceItemIdentifier("mopanel.terminal.viewport")
         context.coordinator.view = view
         context.coordinator.onScreen = onScreen
         let coordinator = context.coordinator

@@ -122,6 +122,7 @@ private enum NativeUIControl: String, CaseIterable {
     case layoutReset = "mopanel.dashboard.layout.reset"
     case layoutGPUUp = "mopanel.dashboard.layout.summary.gpu.up"
     case releaseCheck = "mopanel.settings.release.check"
+    case officialDashboard = "mopanel.settings.dashboard.open"
     case appScan = "mopanel.uninstall.scan"
     case overview = "mopanel.analyze.overview"
     case rescan = "mopanel.analyze.rescan"
@@ -355,7 +356,7 @@ private enum NativeUIFailure: LocalizedError {
 @MainActor private final class OwnWindowRunner {
     private let model: AppModel
     private let window: NSWindow
-    private let deadline = ContinuousClock.now.advanced(by: .seconds(25))
+    private let deadline = ContinuousClock.now.advanced(by: .seconds(35))
     private var contextWasValidated = false
     private var publicAccessibilityEnvironmentEnabled: Bool?
     private var environmentWasObserved = false
@@ -462,6 +463,40 @@ private enum NativeUIFailure: LocalizedError {
             try await waitFor("second release check produces a new completion") { self.model.releaseCheck.checkedAt != checkedAt && !self.model.releaseCheck.isChecking }
             try record("release_button_can_check_same_version_again", model.releaseCheck.failure == nil)
             try verifyLastPress(.releaseCheck)
+
+            try await press(.officialDashboard)
+            try await waitFor("status TUI opens its own window") { self.model.officialDashboardWindow?.window?.isVisible == true && self.model.operationSession.running }
+            guard let dashboard = model.officialDashboardWindow, let dashboardWindow = dashboard.window else { throw NativeUIFailure.missingWindow }
+            let dashboardSession = model.operationSession
+            try record("official_dashboard_is_separate_not_bottom_panel", dashboardWindow !== window && !model.showOperation && !model.monitoring)
+            try verifyLastPress(.officialDashboard)
+            try await waitFor("large terminal viewport laid out") {
+                dashboardWindow.contentView?.layoutSubtreeIfNeeded()
+                return self.terminalViewport(in: dashboardWindow).map { $0.bounds.width >= 850 && $0.bounds.height >= 440 } == true
+            }
+            try record("official_dashboard_has_large_resizable_terminal", dashboardWindow.styleMask.contains(.resizable) && dashboardWindow.collectionBehavior.contains(.fullScreenPrimary))
+            var terminalOutput = ""
+            dashboardSession.onActivity = { data in terminalOutput = String((terminalOutput + String(decoding: data, as: UTF8.self)).suffix(4096)) }
+            dashboardSession.send(Data("r".utf8))
+            try await waitFor("fixture reports real PTY dimensions") { self.ptyDimensions(terminalOutput) != nil }
+            let firstSize = ptyDimensions(terminalOutput)
+            try record("official_dashboard_pty_receives_input", firstSize.map { $0[0] >= 25 && $0[1] >= 100 } == true)
+            terminalOutput = ""
+            dashboardWindow.setContentSize(NSSize(width: 1000, height: 700))
+            dashboardWindow.contentView?.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(120))
+            dashboardSession.send(Data("r".utf8))
+            try await waitFor("resized PTY dimensions differ") { self.ptyDimensions(terminalOutput).map { $0 != firstSize } == true }
+            try record("official_dashboard_resize_reaches_pty", true)
+            try await press(.officialDashboard)
+            try record("official_dashboard_reopen_reuses_session_and_window", model.operationSession === dashboardSession && model.officialDashboardWindow === dashboard && NSApp.windows.filter { $0.identifier?.rawValue == "MoPanel.officialDashboard" && $0.isVisible }.count == 1)
+            try verifyLastPress(.officialDashboard)
+            guard let closeButton = dashboardWindow.standardWindowButton(.closeButton) else { throw NativeUIFailure.missingWindow }
+            closeButton.performClick(nil)
+            try await waitFor("closing TUI stops its owned child") { !dashboardSession.running && self.model.officialDashboardWindow == nil && !self.model.hasRunningOperation }
+            try record("official_dashboard_close_cancels_session_and_releases_view", dashboardWindow.contentView == nil && !dashboardWindow.isVisible)
+            dashboardSession.onActivity = nil
+            window.makeKeyAndOrderFront(nil)
 
             model.section = .uninstall
             let inventoryActivity = model.activities.first?.id
@@ -671,6 +706,7 @@ private enum NativeUIFailure: LocalizedError {
         case .sidebarRegion: valid = false // Geometry only; never an action target.
         case .snapshot, .layoutEdit, .layoutReset, .layoutGPUUp: valid = model.section == .dashboard && model.canStart
         case .releaseCheck: valid = model.section == .settings && !model.releaseCheck.isChecking
+        case .officialDashboard: valid = model.section == .settings && model.canOpenOfficialDashboard
         case .appScan: valid = model.section == .uninstall && model.canStart
         case .overview, .rescan, .parent: valid = model.section == .analyze && model.canStart
         case .scanStop: valid = model.section == .analyze && model.busy == "mo analyze --json"
@@ -693,6 +729,24 @@ private enum NativeUIFailure: LocalizedError {
         checks[name] = value
         breadcrumb(value ? "postcondition.pass" : "postcondition.fail")
         if !value { throw NativeUIFailure.unexpectedState(name) }
+    }
+
+    private func ptyDimensions(_ text: String) -> [Int]? {
+        guard text.contains("FIXTURE_SIZE="), let tail = text.components(separatedBy: "FIXTURE_SIZE=").last else { return nil }
+        let values = tail.split(whereSeparator: { $0.isWhitespace }).prefix(2).compactMap { Int($0) }
+        return values.count == 2 && values.allSatisfy { $0 > 0 } ? values : nil
+    }
+
+    private func terminalViewport(in target: NSWindow) -> NSView? {
+        guard let content = target.contentView else { return nil }
+        var pending = [content], visited = 0
+        while let view = pending.popLast() {
+            visited += 1
+            guard visited <= 4096 else { return nil }
+            if view.identifier?.rawValue == "mopanel.terminal.viewport" { return view }
+            pending.append(contentsOf: view.subviews)
+        }
+        return nil
     }
 
     private func sidebarWidth() -> CGFloat? {
