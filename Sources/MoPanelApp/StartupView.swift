@@ -15,7 +15,15 @@ struct StartupView: View {
     private var visible: [StartupRow] {
         controller.rows.filter { row in
             (scope == "all" || row.item.scope.rawValue == scope) && (!onlyManageable || controller.canReview(row)) &&
-            (search.isEmpty || [row.item.url.path, row.item.snapshot?.label ?? "", row.item.snapshot?.executable ?? ""].contains(where: { $0.localizedCaseInsensitiveContains(search) }))
+            (search.isEmpty || [displayName(row), row.item.url.path, row.item.snapshot?.label ?? "", row.item.snapshot?.executable ?? ""].contains(where: { $0.localizedCaseInsensitiveContains(search) }))
+        }
+    }
+
+    private var extraServices: [BackgroundStartupItem] {
+        controller.backgroundItems.filter { item in
+            guard item.kind == .service, controller.plistRow(matching: item) == nil, matchesSearch(item), !onlyManageable else { return false }
+            let serviceScope: StartupScope = item.isDaemon ? .systemDaemon : (item.url?.path.hasPrefix("/Library/LaunchAgents/") == true ? .sharedAgent : .userAgent)
+            return scope == "all" || scope == serviceScope.rawValue
         }
     }
 
@@ -42,7 +50,7 @@ struct StartupView: View {
                 }
                 ExecutionCommandView(command: "sfltool dumpbtm")
                 HStack {
-                    TextField(t("搜尋標籤、執行檔或路徑", "Search label, executable or path"), text: $search).textFieldStyle(.roundedBorder)
+                    TextField(t("搜尋 App、服務或路徑", "Search app, service or path"), text: $search).textFieldStyle(.roundedBorder)
                     Picker(t("來源", "Source"), selection: $scope) {
                         Text(t("全部", "All")).tag("all")
                         ForEach(StartupScope.allCases, id: \.rawValue) { value in Text(scopeTitle(value)).tag(value.rawValue) }
@@ -51,11 +59,15 @@ struct StartupView: View {
                 }
                 }
                 if !controller.statusMessage.isEmpty { Text(controller.statusMessage).font(.callout) }
+                if let date = controller.backgroundReadAt {
+                    Text((controller.backgroundIsImported ? t("系統清單快照 · ", "Imported system snapshot · ") : t("系統清單 · ", "System list · ")) + date.formatted(date: .abbreviated, time: .standard))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if let problem = controller.backgroundReadError { Text(problem).font(.caption).foregroundStyle(.secondary) }
                 ForEach(controller.warnings, id: \.self) { Text($0).font(.caption).foregroundStyle(.orange) }
                 if !controller.hasLoaded {
                     ContentUnavailableView(t("尚未讀取啟動項目", "No Startup Inventory"), systemImage: "power.circle", description: Text(t("按「讀取」開始；不會自動啟用、停用或執行任何工作。", "Read metadata to begin. Nothing is automatically enabled, disabled or executed.")))
-                } else if visible.isEmpty {
+                } else if visible.isEmpty && extraServices.isEmpty && !controller.backgroundItems.contains(where: { $0.kind != .service && matchesSearch($0) && !onlyManageable }) {
                     ContentUnavailableView(t("沒有符合的項目", "No Matching Items"), systemImage: "line.3.horizontal.decrease.circle", description: Text(t("部分項目只能由系統設定管理；未知狀態不會當成已停用。", "Some items are managed only by System Settings. Unknown state is never treated as disabled.")))
                 }
                 if !onlyManageable {
@@ -63,7 +75,7 @@ struct StartupView: View {
                     backgroundSection(.backgroundApp, title: t("允許在背景執行", "Allow in Background"))
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    let extra = controller.backgroundItems.filter { $0.kind == .service && controller.plistRow(matching: $0) == nil && matchesSearch($0) && !onlyManageable }
+                    let extra = extraServices
                     Text(t("背景服務", "Background Services") + " · \(visible.count + extra.count)").font(.headline)
                     LazyVStack(spacing: 8) {
                         ForEach(visible) { row in rowView(row) }
@@ -102,27 +114,37 @@ struct StartupView: View {
     }
 
     private func backgroundRow(_ item: BackgroundStartupItem) -> some View {
-        let path = associatedApp(item.url?.path ?? item.executable ?? "", identifier: item.launchLabel)
+        let path = appPath(item)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                AppIcon(path: path ?? item.url?.path ?? "")
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(item.name).font(.headline)
-                    Text(item.developer ?? (item.kind == .service ? t("背景服務", "Background service") : "App")).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text(item.enabled.map { $0 ? t("已啟用", "Enabled") : t("已停用", "Disabled") } ?? t("狀態待確認", "State unknown"))
+                Button { toggleExpanded(item.id) } label: {
+                    HStack(spacing: 12) {
+                        AppIcon(path: path ?? item.url?.path ?? "")
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.name).font(.headline)
+                            Text(item.developer ?? (item.kind == .service ? t("背景服務", "Background service") : "App")).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }.contentShape(Rectangle())
+                }.buttonStyle(.plain)
+                Text(item.enabled.map { $0 ? (item.kind == .backgroundApp ? t("已允許", "Allowed") : t("已啟用", "Enabled")) : (item.kind == .backgroundApp ? t("未允許", "Not allowed") : t("已停用", "Disabled")) } ?? t("狀態待確認", "State unknown"))
                     .font(.caption).foregroundStyle(item.enabled == true ? MoPanelTheme.positive : Color.secondary)
                 Button { toggleExpanded(item.id) } label: { Image(systemName: "info.circle") }.buttonStyle(.plain)
                     .accessibilityLabel(t("查看 ", "Details for ") + item.name)
                 Button(t("管理…", "Manage…")) { controller.openLoginItemsSettings() }.buttonStyle(.borderless)
             }
             if expandedRows.contains(item.id) {
-                Text(item.kind == .login ? t("登入 Mac 時可自動開啟；由 macOS 登入項目設定管理。", "May open automatically when you log in. Managed by macOS Login Items.") : t("允許這個 App 的背景功能執行，不代表它現在正在使用 CPU。由系統設定管理。", "Allows this app's background features; it does not mean it is currently using CPU. Managed in System Settings."))
+                Text(item.kind == .login ? t("登入 Mac 時可自動開啟；由 macOS 登入項目設定管理。", "May open automatically when you log in. Managed by macOS Login Items.") : item.kind == .service ? t("提供 App 的背景功能，依登入、排程或需求啟動；已啟用不代表現在正在執行。", "Provides app background features at login, on a schedule or on demand. Enabled does not mean currently running.") : t("允許這個 App 的背景功能執行，不代表它現在正在使用 CPU。由系統設定管理。", "Allows this app's background features; it does not mean it is currently using CPU. Managed in System Settings."))
                     .font(.callout).foregroundStyle(.secondary)
                 if let url = item.url { Text(url.path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
                 if let executable = item.executable { LabeledContent(t("執行檔", "Executable"), value: executable).font(.caption).textSelection(.enabled) }
                 LabeledContent(t("識別碼", "Identifier"), value: item.launchLabel).font(.caption)
+                if item.kind == .service {
+                    LabeledContent(t("範圍", "Scope"), value: item.isDaemon ? t("系統背景服務", "System service") : t("使用者背景服務", "User service")).font(.caption)
+                }
+                ForEach(Array(item.loginHelpers.enumerated()), id: \.offset) { _, helper in
+                    LabeledContent(helper.name, value: helper.enabled.map { $0 ? t("登入輔助程式：已啟用", "Login helper: enabled") : t("登入輔助程式：已停用", "Login helper: disabled") } ?? t("登入輔助程式：狀態待確認", "Login helper: state unknown")).font(.caption)
+                }
                 if let date = controller.backgroundReadAt { Text(t("清單更新於 ", "Report updated ") + date.formatted(date: .abbreviated, time: .standard)).font(.caption).foregroundStyle(.secondary) }
                 Text(t("查看資料使用 sfltool dumpbtm；此處不會修改登錄資料。", "Read using sfltool dumpbtm. Registration data is not changed here.")).font(.caption).foregroundStyle(.secondary)
             }
@@ -205,12 +227,22 @@ struct StartupView: View {
     }
 
     private func appPath(_ row: StartupRow) -> String? {
-        if let item = controller.backgroundItem(matching: row), let path = associatedApp(item.url?.path ?? item.executable ?? "", identifier: item.parentIdentifier ?? item.launchLabel) { return path }
+        if let item = controller.backgroundItem(matching: row), let path = appPath(item) { return path }
         return associatedApp(row.item.snapshot?.executable ?? "", identifier: row.item.snapshot?.label ?? "")
     }
+    private func appPath(_ item: BackgroundStartupItem) -> String? {
+        for path in [item.associatedAppURL?.path, item.executable, item.url?.path].compactMap({ $0 }) {
+            if let app = associatedApp(path, identifier: item.bundleIdentifier ?? item.launchLabel) { return app }
+        }
+        return associatedApp("", identifier: item.bundleIdentifier ?? item.launchLabel)
+    }
     private func associatedApp(_ path: String, identifier: String) -> String? {
-        if let range = path.range(of: ".app/") { return String(path[..<range.lowerBound]) + ".app" }
-        if path.hasSuffix(".app") { return path }
+        var app: String?
+        if let range = path.range(of: ".app/") { app = String(path[..<range.lowerBound]) + ".app" }
+        else if path.hasSuffix(".app") { app = path }
+        // Reports can retain a no-longer-present registration path. Resolve the
+        // current app through Launch Services rather than inventing a home path.
+        if let app, FileManager.default.fileExists(atPath: app) { return app }
         var candidate = identifier
         for _ in 0..<8 {
             if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: candidate) { return url.path }
@@ -220,6 +252,7 @@ struct StartupView: View {
         return nil
     }
     private func displayName(_ row: StartupRow) -> String {
+        if let item = controller.backgroundItem(matching: row) { return item.name }
         if let path = appPath(row), let bundle = Bundle(path: path) {
             return (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
         }

@@ -42,6 +42,7 @@ private struct StartupCommandResult {
     @Published private(set) var statusMessage = ""
     @Published private(set) var backgroundItems: [BackgroundStartupItem] = []
     @Published private(set) var backgroundReadAt: Date?
+    @Published private(set) var backgroundIsImported = false
     @Published private(set) var backgroundReadError: String?
     @Published var pendingPlan: StartupCommandPlan?
     @Published var errorMessage: String?
@@ -160,9 +161,9 @@ private struct StartupCommandResult {
             try checkCancellation()
             guard result.exitCode == 0, !result.timedOut, !result.outputTruncated else { throw StartupContractError.unverifiableState }
             let items = try BackgroundStartupParser.parse(String(decoding: result.stdout, as: UTF8.self), userID: userID)
-            backgroundItems = items; backgroundReadAt = Date(); backgroundReadError = nil
+            backgroundItems = items; backgroundReadAt = Date(); backgroundIsImported = false; backgroundReadError = nil
         } catch {
-            backgroundReadError = t("macOS 尚未提供完整清單。目前仍可查看背景服務；登入項目與背景 App 可在系統設定查看，或從更多選項匯入系統清單。", "macOS has not provided the complete list. Background services remain available. View login and background apps in System Settings, or import a system report under More Options.")
+            backgroundReadError = (backgroundReadAt != nil ? t("目前保留上次清單。", "Keeping the previous report. ") : "") + t("macOS 尚未提供完整清單。目前仍可查看背景服務；登入項目與背景 App 可在系統設定查看，或從更多選項匯入系統清單。", "macOS has not provided the complete list. Background services remain available. View login and background apps in System Settings, or import a system report under More Options.")
         }
     }
 
@@ -177,17 +178,19 @@ private struct StartupCommandResult {
             let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey, .contentModificationDateKey])
             guard values.isRegularFile == true, let size = values.fileSize, size <= 2 * 1024 * 1024 else { throw StartupContractError.invalidOutput }
             let items = try BackgroundStartupParser.parse(String(contentsOf: url, encoding: .utf8), userID: userID)
-            backgroundItems = items; backgroundReadAt = values.contentModificationDate ?? Date(); backgroundReadError = nil
+            backgroundItems = items; backgroundReadAt = values.contentModificationDate ?? Date(); backgroundIsImported = true; backgroundReadError = nil
             statusMessage = t("已匯入系統清單；啟用狀態以清單產生時間為準。", "System report imported. Its enabled states reflect the report's creation time.")
         } catch { errorMessage = t("無法讀取這份系統清單，請確認是 sfltool dumpbtm 的完整輸出。", "This report could not be read. Use complete sfltool dumpbtm output.") }
     }
 
     func backgroundItem(matching row: StartupRow) -> BackgroundStartupItem? {
-        backgroundItems.first { $0.kind == .service && ($0.url?.standardizedFileURL == row.item.url.standardizedFileURL || $0.launchLabel == row.item.snapshot?.label) }
+        let candidates = backgroundItems.filter { $0.matchesPlist(url: row.item.url, label: row.item.snapshot?.label, scope: row.item.scope) }
+        return candidates.first { $0.url?.standardizedFileURL == row.item.url.standardizedFileURL } ?? (candidates.count == 1 ? candidates[0] : nil)
     }
 
     func plistRow(matching item: BackgroundStartupItem) -> StartupRow? {
-        rows.first { $0.item.url.standardizedFileURL == item.url?.standardizedFileURL || $0.item.snapshot?.label == item.launchLabel }
+        let candidates = rows.filter { item.matchesPlist(url: $0.item.url, label: $0.item.snapshot?.label, scope: $0.item.scope) }
+        return candidates.first { $0.item.url.standardizedFileURL == item.url?.standardizedFileURL } ?? (candidates.count == 1 ? candidates[0] : nil)
     }
 
     func inspectState(id: String) async {
