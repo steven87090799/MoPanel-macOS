@@ -1,6 +1,6 @@
-> 最新本機驗證：`145ede9` 完成 release 建置、248 項 XCTest（0 失敗／略過）、20 項 fixture 檢查、46 項原生介面斷言、29 次已驗證按鈕派送、17 項 Guardian 測試及 App／ZIP 檢查。一次授權完整清單與圖表分段修正見 [最新驗證](docs/audit-2026-10-25/authorization-and-chart-gaps.md)。依使用者要求，**尚未替換已安裝版本**。
+> 最新本機驗證：`6970c52` 完成 release 建置、254 項 XCTest（0 失敗／略過）、20 項 fixture 檢查、46 項原生介面斷言、29 次已驗證按鈕派送、17 項 Guardian 測試及 App／ZIP 檢查；另有 24 項原生垃圾桶／權限整合檢查與 11 項 Mole 選單檢查。分類清理、部分失敗與主頁選取驗證見 [最新紀錄](docs/audit-2026-10-25/maintenance-review.md)。使用者已授權更新，本機版本已替換，舊版保留備份。
 >
-> 啟動清單逐項比對見 [前一輪驗證](docs/audit-2026-10-25/startup-inventory.md)。開發審查見 [PRODUCT_READINESS_AUDIT.md](docs/PRODUCT_READINESS_AUDIT.md)。以下保留歷史報告，不能當成目前版本已全面驗收。
+> 完整清單授權與圖表分段見 [前一輪驗證](docs/audit-2026-10-25/authorization-and-chart-gaps.md)。以下保留歷史報告，不能當成目前版本已全面驗收。
 
 # 實際建置與驗證報告
 
