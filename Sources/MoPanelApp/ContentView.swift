@@ -65,7 +65,9 @@ struct ContentView: View {
                     else if model.installation == nil { MissingEngineView() }
                     else {
                         switch model.section {
-                        case .dashboard: DashboardView()
+                        case .dashboard:
+                            if model.windowActive { DashboardView() }
+                            else { Color.clear }
                         case .uninstall: UninstallView()
                         case .analyze: AnalyzeView()
                         case .history: HistoryView()

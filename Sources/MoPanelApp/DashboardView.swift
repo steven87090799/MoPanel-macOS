@@ -53,6 +53,7 @@ struct DashboardView: View {
                         }
                         .modifier(DashboardTargetFrame(target: DashboardDragTarget(group: .sections, item: section), enabled: editingLayout))
                         .overlay { dropHighlight(section, in: .sections) }
+                        .id(section)
                     }
                     if !model.monitorWarnings.isEmpty {
                         Notice(text: model.t("部分指標可能無法取得；官方診斷：\n", "Some metrics may be unavailable. Mole diagnostics:\n") + model.monitorWarnings, warning: true)
@@ -60,8 +61,9 @@ struct DashboardView: View {
                 } else {
                     ContentUnavailableView(model.t("等待第一筆真實資料", "Waiting for real metrics"), systemImage: "waveform.path.ecg", description: Text(model.t("可開始監控或取得單次快照；尚未提供的數據不會以假數字代替。", "Start monitoring or request a snapshot. Missing data is never replaced by invented values.")))
                 }
-            }.padding(26)
+            }.padding(26).scrollTargetLayout()
         }
+        .scrollPosition(id: Binding(get: { model.dashboardScrollAnchor }, set: { model.dashboardScrollAnchor = $0 }))
         .coordinateSpace(name: "dashboardLayout")
         .onPreferenceChange(DashboardFramePreference.self) { value in
             if layoutFrames != value { layoutFrames = value }

@@ -16,6 +16,9 @@ import MoPanelProcess
     @Published var dashboardLayout = DashboardLayout() {
         didSet { if !isTestLaunch, oldValue != dashboardLayout { dashboardLayout.save(to: .standard) } }
     }
+    // In-memory anchor survives suspension of the hidden dashboard. It does
+    // not publish every scroll movement or change preferences in test launches.
+    var dashboardScrollAnchor: String?
     @Published var monitoringInterval = 2 { didSet { if oldValue != monitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarMonitoringInterval = 5 { didSet { if oldValue != menuBarMonitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarEnabled = false {
