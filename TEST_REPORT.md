@@ -1,6 +1,6 @@
-> 最新本機驗證：`2e3e574` 完成 release 建置、260 項 XCTest（0 失敗／略過）、20 項 fixture、46 項原生介面斷言／29 次已驗證按鈕派送、17 項 Guardian 及 App／ZIP 驗證；另有 24 項合成檔案整合檢查。新增預選與推薦來源見 [規則紀錄](docs/audit-2026-10-25/cleanup-recommendations.md)。本機已更新，未執行使用者清理。
+> 最新本機驗證：`c76d138` 完成 release 建置、265 項 XCTest（0 失敗／略過）、20 項 fixture、46 項原生介面斷言／29 次已驗證按鈕派送、17 項 Guardian 及 App／ZIP 驗證。另已實際操作持續更新的 120 筆趨勢、捲動、詳情跳轉與拖曳排列，並完成短時間真實資料／背景耗用觀察，見 [捲動與效能紀錄](docs/audit-2026-10-25/dashboard-scroll.md)。本機已更新，未執行使用者清理。
 >
-> 介面與權限結果見 [前輪紀錄](docs/audit-2026-10-25/maintenance-review.md)。以下為歷史報告。
+> 預選來源見 [規則紀錄](docs/audit-2026-10-25/cleanup-recommendations.md)；24 項 nonce 檔案整合檢查屬前輪結果，本輪未改檔案操作、未重跑該檢查。介面與權限結果見 [前輪紀錄](docs/audit-2026-10-25/maintenance-review.md)。以下為歷史報告。
 
 # 實際建置與驗證報告
 
