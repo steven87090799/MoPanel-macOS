@@ -40,6 +40,7 @@ import MoPanelProcess
     @Published var error: String?
     let moleSelector = MoleSelectorController()
     let cleanupReview = FileReviewController()
+    let aiReview = FileReviewController()
     let uninstallReview = FileReviewController()
     @Published var nativeRemovalRunning = false
     @Published var status: StatusSnapshot?
@@ -136,8 +137,10 @@ import MoPanelProcess
         testLaunchError = launchError
         fixtureURL = fixtureMode ? AppResources.bundle?.url(forResource: "mock-mo", withExtension: "sh", subdirectory: "Fixtures") : nil
         cleanupReview.allowsChanges = !isTestLaunch
+        aiReview.allowsChanges = !isTestLaunch
         uninstallReview.allowsChanges = !isTestLaunch
         cleanupReview.onBusyChanged = { [weak self] value in self?.nativeRemovalRunning = value; self?.updateMonitoringDemand() }
+        aiReview.onBusyChanged = { [weak self] value in self?.nativeRemovalRunning = value; self?.updateMonitoringDemand() }
         uninstallReview.onBusyChanged = { [weak self] value in self?.nativeRemovalRunning = value; self?.updateMonitoringDemand() }
         menuBarEnabled = !isTestLaunch && UserDefaults.standard.bool(forKey: "menuBarEnabled")
         if !isTestLaunch {
@@ -212,10 +215,11 @@ import MoPanelProcess
     }
     var canStart: Bool { installation != nil && !isDetecting && !hasRunningOperation && !shuttingDown }
     var nativeReviewSection: AppSection? {
-        cleanupReview.busy ? .clean : uninstallReview.busy ? .uninstall : nil
+        cleanupReview.busy || aiReview.busy || aiReview.preparing ? .clean : uninstallReview.busy ? .uninstall : nil
     }
+    var nativeReviewController: FileReviewController { aiReview.busy || aiReview.preparing ? aiReview : cleanupReview.busy ? cleanupReview : uninstallReview }
     func cancelCurrentOperation() {
-        cancelScan(); cleanupReview.cancel(); uninstallReview.cancel(); operationSession.cancel()
+        cancelScan(); cleanupReview.cancel(); aiReview.cancel(); uninstallReview.cancel(); operationSession.cancel()
     }
     var moleOperationInProgress: Bool { nativeRemovalRunning || busy != nil || scanSession?.running == true || operationSession.running || operationTask != nil }
     var hasRunningOperation: Bool { moleOperationInProgress || nativeOperationInProgress?() == true }
@@ -624,7 +628,10 @@ import MoPanelProcess
                 guard let self else { return }
                 try self.startOperation(invocation, title: title)
             }
-        } catch { self.error = error.localizedDescription; showOperation = false }
+        } catch {
+            if invocation.command == .clean, invocation.isPreview { cleanupReview.finishCleanupScan(error: error.localizedDescription) }
+            self.error = error.localizedDescription; showOperation = false
+        }
     }
 
     private func prepareOperation(command: String, start: @escaping @MainActor () throws -> Void) {
@@ -764,6 +771,7 @@ import MoPanelProcess
         nativeSampleTask?.cancel()
         nativeReadings.close()
         cleanupReview.cancel()
+        aiReview.cancel()
         uninstallReview.cancel()
         moleSelector.suspend()
         officialDashboardWindow?.close()

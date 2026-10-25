@@ -68,10 +68,11 @@ public enum ReviewPathPolicy {
 }
 
 public enum CleanupItemKind: Equatable, Sendable {
-    case appCache, logs, packageCache, buildCache, updaterCache, generatedAppCache, pythonCache, trash, unknown
+    case appCache, aiCache, logs, packageCache, buildCache, updaterCache, generatedAppCache, pythonCache, trash, unknown
     public static func classify(_ path: String, home: String) -> Self {
         func inside(_ suffix: String) -> Bool { path == home + "/" + suffix || path.hasPrefix(home + "/" + suffix + "/") }
         if inside(".Trash") { return .trash }
+        if AIToolCachePolicy.location(for: path, home: home) != nil { return .aiCache }
         if PythonCacheProof.isCandidate(path, home: home) { return .pythonCache }
         if inside("Library/Application Support/Google/GoogleUpdater/crx_cache") { return .updaterCache }
         if ["updater.log.old", "updater_history.jsonl.old"].contains(URL(fileURLWithPath: path).lastPathComponent),
@@ -87,9 +88,13 @@ public enum CleanupItemKind: Equatable, Sendable {
         if inside("Library/Caches") || inside(".cache") { return .appCache }
         return .unknown
     }
-    public var recommended: Bool { [.appCache, .logs, .packageCache, .updaterCache, .generatedAppCache, .pythonCache].contains(self) }
-    public var needsIdleApplication: Bool { self == .updaterCache || self == .generatedAppCache }
+    public var recommended: Bool { [.appCache, .aiCache, .logs, .packageCache, .updaterCache, .generatedAppCache, .pythonCache].contains(self) }
+    public var needsIdleApplication: Bool { self == .updaterCache || self == .generatedAppCache || self == .aiCache }
     public static func activeCacheOwner(path: String, executablePaths: [String]) -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        if AIToolCachePolicy.location(for: path, home: home) != nil {
+            return AIToolCachePolicy.ownerIsActive(path: path, home: home, executables: executablePaths)
+        }
         let lower = path.lowercased()
         let tokens: [String]
         if lower.contains("/google/googleupdater/") { tokens = ["google chrome", "googleupdater", "google updater"] }
@@ -101,6 +106,7 @@ public enum CleanupItemKind: Equatable, Sendable {
     public var explanation: String {
         switch self {
         case .appCache: return "App 暫存資料；清理後，下次使用可能需要重新載入。"
+        case .aiCache: return "AI 工具可重新建立的網頁與程式快取；不包含對話、登入、設定或模型。工具執行中先保留。"
         case .logs: return "診斷與執行紀錄；清理後無法再查看這些舊紀錄。"
         case .packageCache: return "開發工具下載的套件快取；清理後會在需要時重新下載，不會移除專案原始碼。"
         case .updaterCache: return "Google 更新下載快取；清理後可能重新下載。Chrome 或更新器執行時先保留。"

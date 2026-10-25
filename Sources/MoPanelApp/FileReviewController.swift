@@ -55,6 +55,7 @@ struct ReviewMoveFailure: Identifiable {
     @Published var sourceDate: Date?
     @Published var needsRescan = false
     @Published private(set) var cleanupScanInProgress = false
+    @Published private(set) var isAICleanup = false
     var onBusyChanged: ((Bool) -> Void)?
     var allowsChanges = false
     private var cancelRequested = false
@@ -65,6 +66,7 @@ struct ReviewMoveFailure: Identifiable {
     private var cleanupPolicyFingerprint: String?
     private var cleanupPreviewFingerprint: String?
     private var cleanupScanStartedAt: Date?
+    private var aiPreparationTask: Task<[ReviewFile], Never>?
     var canExecute: Bool { allowsChanges && !needsRescan && !preparing && !cleanupScanInProgress }
     var selectionSummary: String { "\(chosen.count) 項 · " + sizeSummary(chosen) }
     func sizeSummary(_ items: [ReviewFile]) -> String {
@@ -125,6 +127,7 @@ struct ReviewMoveFailure: Identifiable {
     @discardableResult func beginCleanupScan() -> Bool {
         guard !busy, !preparing, !cleanupScanInProgress else { return false }
         cleanupScanInProgress = true
+        isAICleanup = false
         cleanupScanStartedAt = Date()
         files = []; selected = []; sourceDate = nil
         errors = []; failures = []; receipts = []; lastRun = nil
@@ -137,6 +140,45 @@ struct ReviewMoveFailure: Identifiable {
     func finishCleanupScan(error: String? = nil) {
         cleanupScanInProgress = false
         if let error { errors = [error]; message = "掃描未完成，請重新掃描。"; needsRescan = true }
+    }
+
+    func scanAICaches() async {
+        guard beginCleanupScan() else { return }
+        isAICleanup = true; preparing = true; onBusyChanged?(true)
+        cancelRequested = false
+        defer {
+            aiPreparationTask = nil; preparing = false; cleanupScanInProgress = false
+            onBusyChanged?(false)
+        }
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let policy = try? Self.cleanupPolicy()
+        cleanupPolicyFingerprint = policy?.fingerprint
+        // Until custom Mole wildcard rules have a verified native adapter,
+        // retain every AI row when such a list exists or cannot be read.
+        let protectionBlock: String? = policy?.fingerprint == "absent" ? nil
+            : "此 Mac 已設定或無法驗證 Mole 保護清單；本頁先保留這些快取，避免略過保護規則。"
+        let task = Task.detached(priority: .utility) { () -> [ReviewFile] in
+            let active = Self.runningExecutablePaths()
+            var output: [ReviewFile] = []
+            for location in AIToolCachePolicy.locations {
+                if Task.isCancelled { break }
+                let url = home.appendingPathComponent(location.relativePath)
+                var info = stat()
+                guard lstat(url.path, &info) == 0 else { continue }
+                let block = protectionBlock ?? (active == nil ? "無法確認工具是否仍在使用這些快取，先保留。" : nil)
+                let ordinary = info.st_mode & S_IFMT == S_IFDIR && info.st_uid == getuid() &&
+                    url.resolvingSymlinksInPath().standardizedFileURL == url.standardizedFileURL
+                let measured = ordinary && ReviewAccessIssue.inspect(url) == nil ? Self.directorySize(url) : nil
+                output.append(Self.describe(url, category: location.tool, size: measured,
+                    purpose: CleanupItemKind.aiCache.explanation, defaultRecommended: true, extraBlock: block, activePaths: active))
+            }
+            return output
+        }
+        aiPreparationTask = task
+        let loaded = await task.value
+        guard !cancelRequested, !task.isCancelled else { message = "掃描已停止，未顯示舊結果。"; return }
+        files = loaded; sourceDate = Date(); recommend()
+        message = files.isEmpty ? "掃描完成，支援範圍內沒有可列出的 AI 快取。" : "掃描完成；執行中的工具會先保留，請確認後再清理。"
     }
 
     func loadCleanupPreview(previewURL: URL? = nil) async {
@@ -325,7 +367,7 @@ struct ReviewMoveFailure: Identifiable {
             : lastRun?.hasUnresolvedItems == true ? "已清理 \(completed.count) 項，其餘項目尚未完成；請重新掃描。"
             : "已清理 \(completed.count) 項，可從垃圾桶還原。"
     }
-    func cancel() { cancelRequested = true }
+    func cancel() { cancelRequested = true; aiPreparationTask?.cancel() }
 
     nonisolated private static func bundleIdentifier(at path: String) -> String? {
         let url = URL(fileURLWithPath: path).appendingPathComponent("Contents/Info.plist")
@@ -445,7 +487,8 @@ struct FileReviewView: View {
         VStack(alignment: .leading, spacing: 12) {
             if showsActions {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(controller.lastRun == nil ? t("準備開始清理", "Ready to Clean") : t("清理結果", "Cleanup Results")).font(.title2.bold())
+                    Text(controller.lastRun != nil ? t("清理結果", "Cleanup Results") : !controller.errors.isEmpty && controller.files.isEmpty ? t("掃描未完成", "Scan Incomplete") : t("準備開始清理", "Ready to Clean")).font(.title2.bold())
+                    if !controller.files.isEmpty {
                     Text(t("本次預覽列出 ", "Listed in this preview: ") + controller.inventorySize + " · \(controller.files.count) " + t("項", "items"))
                         .font(.callout).foregroundStyle(.secondary).monospacedDigit()
                     Text(t("已選清理 ", "Selected to clean: ") + controller.selectedSize + t(" · 可自行勾選 ", " · Selectable: ") + controller.totalSize)
@@ -455,8 +498,9 @@ struct FileReviewView: View {
                              + " · \(controller.retainedFiles.count) " + t("項；展開「手動管理」查看原因。", "items; expand Manual Management for reasons."))
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text(t("Mole 提供掃描候選 · MoPanel 判斷預選，可自行取消", "Candidates from Mole · Preselection by MoPanel; uncheck any item"))
+                    Text(controller.isAICleanup ? t("MoPanel 本機 AI 快取掃描 · 可自行取消預選", "MoPanel local AI cache scan · Uncheck any item") : t("Mole 提供掃描候選 · MoPanel 判斷預選，可自行取消", "Candidates from Mole · Preselection by MoPanel; uncheck any item"))
                         .font(.caption).foregroundStyle(.secondary)
+                    }
                 }.padding(.bottom, 6)
                 FileReviewResultView(controller: controller, language: language)
                 if controller.preparing { ProgressView(t("正在整理掃描結果…", "Preparing scan results…")) }
@@ -509,9 +553,9 @@ struct FileReviewView: View {
             if showsActions {
                 DisclosureGroup(t("更多資訊與執行方式", "More Information and Execution Method")) {
                     if let date = controller.sourceDate { Text(t("掃描時間：", "Scanned: ") + date.formatted(date: .abbreviated, time: .shortened)).font(.caption) }
-                    Text(t("這裡列出已安裝 Mole CLI 本次預覽提供的項目，並非整台 Mac 的暫存總量。Mole 圖形版可能另外計入垃圾桶、開發產物與保留項目；已在垃圾桶的檔案不能再移至垃圾桶，須由 Finder 另行管理。", "This lists candidates supplied by the installed Mole CLI preview, not all cache storage on this Mac. Mole's GUI may also count Trash, development artifacts and retained data. Files already in Trash are managed separately in Finder."))
+                    Text(controller.isAICleanup ? t("掃描方式：macOS 檔案 API（無 CLI 指令）。只掃描指定工具的固定快取位置，不掃描對話、設定、模型或整個家目錄。", "Scan method: macOS file APIs, with no CLI command. Only fixed cache locations are inspected; conversations, settings and models are retained.") : t("這裡列出已安裝 Mole CLI 本次預覽提供的項目，並非整台 Mac 的暫存總量。Mole 圖形版可能另外計入垃圾桶、開發產物與保留項目；已在垃圾桶的檔案不能再移至垃圾桶，須由 Finder 另行管理。", "This lists candidates supplied by the installed Mole CLI preview, not all cache storage on this Mac. Mole's GUI may also count Trash, development artifacts and retained data. Files already in Trash are managed separately in Finder."))
                         .font(.caption).foregroundStyle(.secondary)
-                    Text(t("掃描指令：mo clean --dry-run。勾選後使用 macOS 原生移至垃圾桶（NSWorkspace.recycle），可從垃圾桶還原。執行前重新確認檔案身分與存取權限；未勾選及手動管理項目不會移動。", "Scan: mo clean --dry-run. Selected files use macOS NSWorkspace.recycle and can be restored from Trash. File identity and access are checked again; unchecked and manual items stay in place."))
+                    Text(t(controller.isAICleanup ? "清理方式：macOS 原生移至垃圾桶（NSWorkspace.recycle），可還原。執行前重新驗證工具狀態、路徑身分與權限。" : "掃描指令：mo clean --dry-run。勾選後使用 macOS 原生移至垃圾桶（NSWorkspace.recycle），可從垃圾桶還原。執行前重新確認檔案身分與存取權限；未勾選及手動管理項目不會移動。", "Selected files use macOS NSWorkspace.recycle and can be restored from Trash. File identity, tool state and access are checked again; unchecked and manual items stay in place."))
                         .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 }.padding(.top, 6)
             }

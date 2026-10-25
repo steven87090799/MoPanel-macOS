@@ -83,6 +83,8 @@ struct GitWorktreeView: View {
                     .accessibilityIdentifier("mopanel.worktrees.choose")
                 Spacer()
             }
+            Text(t("工作目錄是同一專案的額外工作副本，例如 AI 為不同任務建立的副本。掃描後可查看是否有修改、是否能安全移除。", "A worktree is an extra working copy of the same project, such as one created for an AI task. Scan to inspect changes and removal eligibility."))
+                .font(.callout).foregroundStyle(.secondary)
             if let repository = controller.selectedRepository { Text(repository.path).font(.caption.monospaced()).textSelection(.enabled) }
             if let path = controller.gitPath { DisclosureGroup(t("Git 工具詳細資訊", "Git Tool Details")) { Text((controller.gitVersion ?? "Git") + " · " + path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) } }
             if operationInProgress { Text(t("其他作業執行中，暫停 Git 操作。", "Git actions are paused while another operation is running.")).foregroundStyle(.orange) }

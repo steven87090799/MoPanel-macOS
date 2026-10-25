@@ -9,6 +9,7 @@ struct MaintenanceView: View {
     @State private var volume = ""
     @State private var includeEmpty = false
     @State private var unattended = false
+    @State private var aiMode = false
     private var command: MoleCommand { section.command ?? .help }
     private var options: [MoleOption] {
         var value: [MoleOption] = debug ? [.debug] : []
@@ -17,9 +18,16 @@ struct MaintenanceView: View {
         return value
     }
     var body: some View {
+        if section == .clean && (aiMode || model.aiReview.busy || model.aiReview.preparing) {
+            AICleanupView(controller: model.aiReview, onBack: { aiMode = false }).onAppear { aiMode = true }
+        } else {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 PageHeader(title: model.t(section.zh, section.en), subtitle: subtitle, symbol: section.symbol) {
+                    if section == .clean {
+                        NativeActionButton(model.t("AI 清理", "AI Cleanup"), identifier: "mopanel.cleanup.ai", systemImage: "moon.stars") { aiMode = true }
+                            .disabled(model.hasRunningOperation)
+                    }
                     scanAction
                 }
                 if model.nativeSelectionOnPage {
@@ -128,6 +136,7 @@ struct MaintenanceView: View {
             } else if section == .clean, !model.cleanupReview.cleanupScanInProgress && !model.cleanupReview.files.isEmpty {
                 FileReviewActionBar(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation)
             }
+        }
         }
     }
     @ViewBuilder private var scanAction: some View {

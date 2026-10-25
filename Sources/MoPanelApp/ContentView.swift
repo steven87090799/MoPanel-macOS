@@ -80,7 +80,7 @@ struct ContentView: View {
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     if let section = model.nativeReviewSection {
                         if model.section != section {
-                            NativeReviewProgressPanel(controller: section == .clean ? model.cleanupReview : model.uninstallReview,
+                            NativeReviewProgressPanel(controller: model.nativeReviewController,
                                                       section: section).padding(.horizontal, 16).padding(.bottom, 12)
                         }
                     } else if let pending = model.pending {
