@@ -31,8 +31,14 @@ struct StartupView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 PageHeader(title: t("啟動與背景項目", "Startup and Background Items"), subtitle: t("檢視登入時啟動與背景服務。點選項目可查看詳細資料。", "Review startup and background services. Select an item for details."), symbol: "power.circle") {
-                    Button(t("讀取／重新整理", "Read / Refresh")) { Task { await controller.refresh() } }.buttonStyle(.borderedProminent)
+                    Button(t("讀取／重新整理", "Read / Refresh")) { Task { await controller.refresh() } }.buttonStyle(.bordered)
                         .disabled(controller.isBusy || operationInProgress)
+                    if controller.backgroundNeedsAuthorization || controller.backgroundUsedAuthorization || controller.backgroundIsImported {
+                        Button(t("授權讀取完整清單", "Authorize Complete Read")) { Task { await controller.refreshBackgroundItems(authorized: true) } }
+                            .buttonStyle(.borderedProminent).disabled(controller.isBusy || operationInProgress)
+                            .accessibilityIdentifier("mopanel.startup.authorize")
+                            .help(t("macOS 會驗證管理員；只讀取清單，不變更設定。", "macOS verifies an administrator for a read-only query; no settings are changed."))
+                    }
                 }
                 HStack {
                     Button(t("開啟登入項目系統設定", "Open Login Items Settings")) { controller.openLoginItemsSettings() }
@@ -49,6 +55,10 @@ struct StartupView: View {
                     Button(t("匯入系統清單…", "Import System Report…")) { controller.importBackgroundItems() }.disabled(controller.isBusy || operationInProgress)
                 }
                 ExecutionCommandView(command: "sfltool dumpbtm")
+                DisclosureGroup(t("授權讀取的執行方式", "Authorized Read Details")) {
+                    Text(t("由 macOS 驗證後只執行一次唯讀查詢，最長 12 秒；不安裝服務、不儲存密碼。", "macOS authorizes one read-only query with a 12-second execution limit. No service is installed and no password is stored.")).font(.caption).foregroundStyle(.secondary)
+                    ExecutionCommandView(command: BackgroundStartupReadPlan.rootCommand)
+                }
                 HStack {
                     TextField(t("搜尋 App、服務或路徑", "Search app, service or path"), text: $search).textFieldStyle(.roundedBorder)
                     Picker(t("服務範圍", "Service scope"), selection: $scope) {
@@ -60,7 +70,7 @@ struct StartupView: View {
                 }
                 if !controller.statusMessage.isEmpty { Text(controller.statusMessage).font(.callout) }
                 if let date = controller.backgroundReadAt {
-                    Text((controller.backgroundIsImported ? t("系統清單快照 · ", "Imported system snapshot · ") : t("系統清單 · ", "System list · ")) + date.formatted(date: .abbreviated, time: .standard))
+                    Text((controller.backgroundIsImported ? t("系統清單快照 · ", "Imported system snapshot · ") : controller.backgroundUsedAuthorization ? t("已授權讀取 · ", "Authorized read · ") : t("系統清單 · ", "System list · ")) + date.formatted(date: .abbreviated, time: .standard))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if let problem = controller.backgroundReadError { Text(problem).font(.caption).foregroundStyle(.secondary) }
