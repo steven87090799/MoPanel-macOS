@@ -7,6 +7,7 @@ struct DashboardView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var editingLayout = false
     @State private var scrolling = false
+    @State private var scrollAnchor: String?
     @State private var layoutFrames: [DashboardDragTarget: CGRect] = [:]
     @State private var activeLayoutDrag: DashboardDragTarget?
     @State private var layoutDragPoint = CGPoint.zero
@@ -64,7 +65,9 @@ struct DashboardView: View {
                 }
             }.padding(26).scrollTargetLayout()
         }
-        .scrollPosition(id: Binding(get: { model.dashboardScrollAnchor }, set: { model.dashboardScrollAnchor = $0 }))
+        .scrollPosition(id: $scrollAnchor)
+        .onAppear { scrollAnchor = model.dashboardScrollAnchor }
+        .onChange(of: scrollAnchor) { _, value in model.dashboardScrollAnchor = value }
         .onScrollPhaseChange { _, phase in scrolling = phase != .idle }
         .environment(\.dashboardScrolling, scrolling)
         .coordinateSpace(name: "dashboardLayout")

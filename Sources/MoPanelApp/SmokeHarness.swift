@@ -153,7 +153,7 @@ import MoPanelCore
         model.cleanupReview.message = "合成掃描結果；此模式無法移除檔案。"
         model.cleanupReview.recommend()
         if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates" {
-            model.stopMonitoring(); model.monitoring = true
+            model.stopMonitoring(); model.section = .dashboard; model.monitoring = true
             let now = Date()
             var samples: [TrendSample] = []
             for index in 0..<120 {
