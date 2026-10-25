@@ -1,6 +1,6 @@
-> 最新本機驗證：`6970c52` 完成 release 建置、254 項 XCTest（0 失敗／略過）、20 項 fixture 檢查、46 項原生介面斷言、29 次已驗證按鈕派送、17 項 Guardian 測試及 App／ZIP 檢查；另有 24 項原生垃圾桶／權限整合檢查與 11 項 Mole 選單檢查。分類清理、部分失敗與主頁選取驗證見 [最新紀錄](docs/audit-2026-10-25/maintenance-review.md)。使用者已授權更新，本機版本已替換，舊版保留備份。
+> 最新本機驗證：`2e3e574` 完成 release 建置、260 項 XCTest（0 失敗／略過）、20 項 fixture、46 項原生介面斷言／29 次已驗證按鈕派送、17 項 Guardian 及 App／ZIP 驗證；另有 24 項合成檔案整合檢查。新增預選與推薦來源見 [規則紀錄](docs/audit-2026-10-25/cleanup-recommendations.md)。本機已更新，未執行使用者清理。
 >
-> 完整清單授權與圖表分段見 [前一輪驗證](docs/audit-2026-10-25/authorization-and-chart-gaps.md)。以下保留歷史報告，不能當成目前版本已全面驗收。
+> 介面與權限結果見 [前輪紀錄](docs/audit-2026-10-25/maintenance-review.md)。以下為歷史報告。
 
 # 實際建置與驗證報告
 
