@@ -1,0 +1,35 @@
+{
+  "source_revision": "c53bcc10d32c34cec4579eb2de5cd358cd86adae",
+  "installation_on_hold": true,
+  "installed_application_unchanged": true,
+  "user_startup_settings_changed": false,
+  "private_inventory_uploaded": false,
+  "startup_parity": {
+    "login": 4,
+    "background_app": 14,
+    "service": 24,
+    "all_42_identities_matched": true
+  },
+  "validation": {
+    "xctest_passed": 236,
+    "skipped": 0,
+    "fixture_smoke": 20,
+    "native_assertions": 46,
+    "verified_native_actions": 29,
+    "guardian_tests": 17,
+    "strict_app_and_zip": true,
+    "manual_import_icons_search_details": true,
+    "manual_failed_read_and_stop_keep_snapshot": true,
+    "qa_processes_remaining": 0
+  },
+  "startup_minimized_menu_off": {
+    "duration_seconds": 35.00194,
+    "sample_count": 17,
+    "cpu_mean_percent": 0.00496328,
+    "cpu_peak_percent": 0.051005,
+    "footprint_first_mib": 96.42304229736328,
+    "footprint_last_mib": 96.43866729736328,
+    "limitations": "Short sample of the startup page after import, minimized without menu monitoring. Not Energy Impact, a leak proof or long-term stability acceptance."
+  },
+  "archive_sha256": "dc835bc013c01e59d1d19a900e4d11eeaaadcf92be65564d7b2846fae35da378"
+}

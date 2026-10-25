@@ -1,10 +1,6 @@
-> 最新本機驗證：`4ae0669` 已完成 release 建置、185 項 XCTest、20 項 fixture 介面檢查、23 次按壓與效果驗證、17 項 Guardian 測試及簽章／ZIP 檢查。精簡證據見 [native-interface-validation.json](docs/audit-2026-10-24/native-interface-validation.json)。
+> 最新本機驗證：`c53bcc1` 完成 release 建置、236 項 XCTest（0 失敗／略過）、20 項 fixture 檢查、46 項原生介面斷言、29 次已驗證按鈕派送、17 項 Guardian 測試及 App／ZIP 檢查。啟動清單與官方逐項核對為 4／14／24，詳細結果與限制見 [啟動清單驗證](docs/audit-2026-10-25/startup-inventory.md)。依使用者要求，**尚未替換已安裝版本**。
 >
-> 開發中審查與未完成項目見 [PRODUCT_READINESS_AUDIT.md](docs/PRODUCT_READINESS_AUDIT.md)。以下保留歷史版本的成功報告，不能當成目前版本已全面驗收。
->
-> 發行驗收版本：MoPanel 0.1.0 本機測試版。以下原始報告來自成功的 macOS 建置；文中的 `Reports/` 是發行 ZIP 內的原始證據目錄。
-> 建置提交：`5e3d84a13e4a01caa1576f0d8585d92e18138955`。
-> 實際 CI：[run 40082801624](https://github.com/steven87090799/MoPanel-macOS/actions/runs/40082801624)。
+> 開發審查見 [PRODUCT_READINESS_AUDIT.md](docs/PRODUCT_READINESS_AUDIT.md)。以下保留歷史報告，不能當成目前版本已全面驗收。
 
 # 實際建置與驗證報告
 
