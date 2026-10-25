@@ -79,8 +79,10 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     if let section = model.nativeReviewSection {
-                        NativeReviewProgressPanel(controller: section == .clean ? model.cleanupReview : model.uninstallReview,
-                                                  section: section).padding(.horizontal, 16).padding(.bottom, 12)
+                        if model.section != section {
+                            NativeReviewProgressPanel(controller: section == .clean ? model.cleanupReview : model.uninstallReview,
+                                                      section: section).padding(.horizontal, 16).padding(.bottom, 12)
+                        }
                     } else if let pending = model.pending {
                         ConfirmationPanel(pending: pending).id(pending.id)
                             .padding(.horizontal, 16).padding(.bottom, 12)
@@ -90,8 +92,13 @@ struct ContentView: View {
                         AppUpdateOperationView(controller: appUpdates, session: session, language: model.language)
                             .id(ObjectIdentifier(session)).padding(.horizontal, 16).padding(.bottom, 12)
                     } else if model.showOperation {
+                        // Keep the hidden terminal mounted: it supplies the
+                        // acknowledged Mole selector's live screen callbacks.
                         OperationPanel(session: model.operationSession).id(ObjectIdentifier(model.operationSession))
-                            .padding(.horizontal, 16).padding(.bottom, 12)
+                            .frame(height: model.nativeSelectionOnPage ? 0 : nil).clipped()
+                            .accessibilityHidden(model.nativeSelectionOnPage)
+                            .padding(.horizontal, model.nativeSelectionOnPage ? 0 : 16)
+                            .padding(.bottom, model.nativeSelectionOnPage ? 0 : 12)
                     } else if appUpdates.showOperation, let session = appUpdates.operationSession {
                         AppUpdateOperationView(controller: appUpdates, session: session, language: model.language)
                             .id(ObjectIdentifier(session)).padding(.horizontal, 16).padding(.bottom, 12)

@@ -13,7 +13,7 @@ struct ReviewFile: Identifiable {
     let size: String
     let purpose: String
     let recommended: Bool
-    let blockedReason: String?
+    var blockedReason: String?
     let device: Int32
     let inode: UInt64
     let modified: timespec
@@ -30,6 +30,13 @@ struct ReviewMoveReceipt: Identifiable {
     var id: String { original.path }
 }
 
+struct ReviewMoveFailure: Identifiable {
+    let url: URL
+    let summary: String
+    let detail: String
+    var id: String { url.path }
+}
+
 @MainActor final class FileReviewController: ObservableObject {
     @Published var files: [ReviewFile] = []
     @Published var categoryTitles: [String: String] = [:]
@@ -42,6 +49,8 @@ struct ReviewMoveReceipt: Identifiable {
     @Published var confirming = false
     @Published var errors: [String] = []
     @Published private(set) var receipts: [ReviewMoveReceipt] = []
+    @Published private(set) var failures: [ReviewMoveFailure] = []
+    @Published private(set) var lastRun: ReviewRunOutcome?
     @Published var sourceDate: Date?
     @Published var needsRescan = false
     var onBusyChanged: ((Bool) -> Void)?
@@ -73,7 +82,30 @@ struct ReviewMoveReceipt: Identifiable {
         return "包含需確認用途的資料，建議保留；展開後可逐項選擇。"
     }
     var chosen: [ReviewFile] { files.filter { selected.contains($0.id) && $0.selectable } }
-    var categories: [String] { Array(Set(files.map(\.category))).sorted() }
+    var isCleanup: Bool { categoryTitles.isEmpty }
+    func group(_ file: ReviewFile) -> String { isCleanup && !file.selectable ? "手動管理" : file.category }
+    var categories: [String] {
+        let order = ["App 快取與紀錄", "開發工具", "解除安裝殘留", "App 資料（需確認）", "系統資料", "垃圾桶", "手動管理"]
+        return Set(files.map { group($0) }).sorted {
+            let a = order.firstIndex(of: $0) ?? 5, b = order.firstIndex(of: $1) ?? 5
+            return a == b ? $0.localizedStandardCompare($1) == .orderedAscending : a < b
+        }
+    }
+    func items(in category: String) -> [ReviewFile] { files.filter { group($0) == category } }
+    var selectableFiles: [ReviewFile] { files.filter(\.selectable) }
+    var selectedSize: String { sizeSummary(chosen) }
+    var totalSize: String { sizeSummary(selectableFiles) }
+    func categoryExplanation(_ category: String) -> String {
+        switch category {
+        case "App 快取與紀錄": return "App 與瀏覽器的暫存、舊紀錄；清理後會按需重建。"
+        case "開發工具": return "套件與建置快取；清理後首次下載或建置可能較慢。"
+        case "解除安裝殘留": return "已移除 App 留下的內容，請確認是否仍需保留。"
+        case "App 資料（需確認）": return "可能包含設定、登入資訊或個人內容，預設保留。"
+        case "垃圾桶": return "已移至垃圾桶的檔案；請到 Finder 確認後再清空。"
+        case "手動管理": return "受保護、無法讀取或不適合直接移除；不參與本次清理。"
+        default: return "展開查看項目、用途與保留原因。"
+        }
+    }
 
     func recommend() { selected = Set(files.filter { $0.selectable && $0.recommended }.map(\.id)) }
     func set(_ ids: [String], selected value: Bool) {
@@ -99,7 +131,7 @@ struct ReviewMoveReceipt: Identifiable {
             let previewFingerprint = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             if cleanupPreviewFingerprint == previewFingerprint, cleanupPolicyFingerprint == policy.fingerprint, !needsRescan { return }
             cleanupPreviewFingerprint = previewFingerprint; cleanupPolicyFingerprint = policy.fingerprint
-            errors = []; selected = []
+            errors = []; selected = []; failures = []; lastRun = nil; receipts = []
             needsRescan = policy.modified.map { $0 > Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec) + Double(info.st_mtimespec.tv_nsec) / 1e9) } ?? false
             let loaded = await Task.detached(priority: .utility) {
                 items.map { item in Self.describe(URL(fileURLWithPath: item.path), category: Self.categoryName(item.category), size: item.size,
@@ -160,7 +192,7 @@ struct ReviewMoveReceipt: Identifiable {
             return output
         }.value
         guard preparationID == token else { return }
-        files = loaded; sourceDate = Date(); recommend(); errors = []; message = ""
+        files = loaded; sourceDate = Date(); recommend(); errors = []; message = ""; failures = []; lastRun = nil
     }
 
     func requestQuit(_ path: String) async {
@@ -188,15 +220,24 @@ struct ReviewMoveReceipt: Identifiable {
         if let fingerprint = cleanupPolicyFingerprint, (try? Self.cleanupPolicy().fingerprint) != fingerprint {
             needsRescan = true; confirming = false; message = "保護清單已變更，請重新掃描。"; return
         }
-        confirming = false; busy = true; onBusyChanged?(true); cancelRequested = false; progress = 0; errors = []; receipts = []
+        confirming = false; busy = true; onBusyChanged?(true); cancelRequested = false; progress = 0; errors = []; receipts = []; failures = []; lastRun = nil
         defer { busy = false; onBusyChanged?(false) }
         // Never move both a directory and its descendant independently.
         let ordered = chosen.sorted { $0.url.path.count < $1.url.path.count }
         var plan: [ReviewFile] = []
         for file in ordered where !plan.contains(where: { file.id.hasPrefix($0.id + "/") }) { plan.append(file) }
         var completed = Set<String>()
+        var failedCount = 0
+        func fail(_ file: ReviewFile, _ summary: String, detail: String = "") {
+            failedCount += 1
+            errors.append(file.title + "：" + summary)
+            failures.append(ReviewMoveFailure(url: file.url, summary: summary, detail: detail))
+            if let index = files.firstIndex(where: { $0.id == file.id }) { files[index].blockedReason = summary }
+            selected.remove(file.id)
+        }
         for (index, file) in plan.enumerated() {
             if cancelRequested { break }
+            defer { progress = Double(index + 1) / Double(max(plan.count, 1)) }
             if let fingerprint = cleanupPolicyFingerprint, (try? Self.cleanupPolicy().fingerprint) != fingerprint {
                 needsRescan = true; errors.append("保護清單已變更，停止其餘項目。請重新掃描。"); break
             }
@@ -204,12 +245,12 @@ struct ReviewMoveReceipt: Identifiable {
             if let app = file.associatedApp,
                (!completed.contains(app) || FileManager.default.fileExists(atPath: app)),
                Self.bundleIdentifier(at: app) != file.expectedBundleID {
-                errors.append(file.title + "：App 識別已變更，請重新掃描。"); continue
+                fail(file, "App 識別已變更，請重新掃描。"); continue
             }
             if let app = file.associatedApp, NSWorkspace.shared.runningApplications.contains(where: { $0.bundleURL?.path == app }) {
-                errors.append(file.title + "：App 已在執行，請先結束後重試。"); continue
+                fail(file, "App 已在執行，請先結束後重試。"); continue
             }
-            guard Self.stillMatches(file) else { errors.append(file.title + "：檔案已變更、路徑不安全或權限不足，已略過。"); continue }
+            guard Self.stillMatches(file) else { fail(file, "檔案狀態或存取權限已變更，已保留原處；請重新掃描。"); continue }
             let requested = file.url
             let result: (URL?, Error?) = await withCheckedContinuation { continuation in
                 NSWorkspace.shared.recycle([requested]) { mapping, error in
@@ -217,16 +258,24 @@ struct ReviewMoveReceipt: Identifiable {
                     continuation.resume(returning: (destination, error))
                 }
             }
-            if let failure = result.1 { errors.append(file.title + "：" + failure.localizedDescription) }
+            if let failure = result.1 {
+                let summary = ReviewAccessIssue.isPermissionError(failure)
+                    ? "macOS 未允許移動此項目，已保留原處；不影響其他項目的清理。"
+                    : "未能移至垃圾桶，檔案仍保留原處。"
+                fail(file, summary, detail: failure.localizedDescription)
+            }
             else if let destination = result.0 {
                 completed.insert(file.id); removedPaths.insert(file.id)
                 receipts.append(ReviewMoveReceipt(original: requested, trash: destination))
-            } else { errors.append(file.title + "：系統未確認此項目已移到垃圾桶。") }
-            progress = Double(index + 1) / Double(max(plan.count, 1))
+            } else { fail(file, "系統未確認此項目已移到垃圾桶，請到 Finder 檢查。") }
         }
         files.removeAll { file in completed.contains(file.id) || completed.contains(where: { file.id.hasPrefix($0 + "/") }) }
         selected.formIntersection(Set(files.map(\.id)))
-        message = cancelRequested ? "已停止；完成的項目仍可到垃圾桶復原。" : "完成，已移動 \(completed.count) 個項目。可在垃圾桶復原。"
+        lastRun = ReviewRunOutcome(requested: plan.count, moved: completed.count, failed: failedCount, cancelled: cancelRequested)
+        if failedCount > 0 { cleanupPreviewFingerprint = nil }
+        message = cancelRequested ? "已停止；已移動 \(completed.count) 項，其餘保留原處。"
+            : failedCount > 0 ? "已清理 \(completed.count) 項，\(failedCount) 項未處理；已移動的項目可從垃圾桶還原。"
+            : "已清理 \(completed.count) 項，可從垃圾桶還原。"
     }
     func cancel() { cancelRequested = true }
 
@@ -277,7 +326,9 @@ struct ReviewMoveReceipt: Identifiable {
         let directory = exists && info.st_mode & S_IFMT == S_IFDIR
         let identity = try? ReviewFileIdentity.capture(url, home: home)
         if identity == nil, block == nil { block = "路徑、檔案身分或權限尚未通過驗證" }
-        let displaySize = size ?? (block != nil ? "未讀取大小" : directory ? directorySize(url) : ByteCountFormatter.string(fromByteCount: max(0, info.st_size), countStyle: .binary))
+        let accessIssue = exists && block == nil ? ReviewAccessIssue.inspect(url) : nil
+        if let accessIssue { block = accessIssue.explanation }
+        let displaySize = accessIssue != nil ? "大小未能讀取" : size ?? (block != nil ? "未讀取大小" : directory ? directorySize(url) : ByteCountFormatter.string(fromByteCount: max(0, info.st_size), countStyle: .binary))
         return ReviewFile(url: url, category: category, title: url.lastPathComponent, size: displaySize,
             purpose: purpose ?? kind.explanation,
             recommended: recommended, blockedReason: block, device: info.st_dev, inode: info.st_ino,
@@ -303,10 +354,11 @@ struct ReviewMoveReceipt: Identifiable {
     nonisolated private static func categoryName(_ value: String) -> String {
         let name = value.lowercased()
         if name.contains("developer") { return "開發工具" }
-        if name.contains("system") { return "系統資料" }
-        if name.contains("user") { return "App 快取與紀錄" }
-        if name.contains("app") { return "App 專用快取" }
         if name.contains("trash") { return "垃圾桶" }
+        if name.contains("orphan") || name.contains("remnant") { return "解除安裝殘留" }
+        if name.contains("support") { return "App 資料（需確認）" }
+        if name.contains("system") { return "系統資料" }
+        if name.contains("user") || name.contains("app") || name.contains("browser") { return "App 快取與紀錄" }
         return value
     }
 }
@@ -318,90 +370,226 @@ struct FileReviewView: View {
     var categoryFilter: String? = nil
     var showsActions = true
     var showsCategories = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expanded = Set<String>()
     @State private var expandedFiles = Set<String>()
     private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
+    private var categories: [String] { categoryFilter.map { [$0] } ?? controller.categories }
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             if showsActions {
-            HStack {
-                Text(t("選擇要移除的項目", "Choose Items to Remove")).font(.title3.bold())
-                Spacer()
-                Button(t("建議項目", "Recommended")) { controller.recommend() }.disabled(controller.busy || controller.preparing)
-                Button(t("全選", "Select All")) { controller.set(controller.files.map(\.id), selected: true) }.disabled(controller.busy || controller.preparing)
-                Button(t("全不選", "Select None")) { controller.selected = [] }.disabled(controller.busy || controller.preparing)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(controller.lastRun == nil ? t("準備開始清理", "Ready to Clean") : t("清理結果", "Cleanup Results")).font(.title2.bold())
+                    Text(t("可選 ", "Available: ") + controller.totalSize + " · \(controller.selectableFiles.count) " + t("項", "items") + " · \(controller.categories.count) " + t("類", "categories"))
+                        .font(.callout).foregroundStyle(.secondary).monospacedDigit()
+                }.padding(.bottom, 6)
+                FileReviewResultView(controller: controller, language: language)
+                if controller.preparing { ProgressView(t("正在整理掃描結果…", "Preparing scan results…")) }
             }
-            if controller.preparing { ProgressView(t("正在整理相關檔案…", "Reading related files…")) }
-            if let date = controller.sourceDate { Text(t("掃描時間：", "Scanned: ") + date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary) }
-            }
-            ForEach(showsCategories ? (categoryFilter.map { [$0] } ?? controller.categories) : [], id: \.self) { category in
-                let items = controller.files.filter { $0.category == category }
-                let eligible = items.filter(\.selectable).map(\.id)
-                HStack {
-                    Toggle("", isOn: Binding(get: { !eligible.isEmpty && eligible.allSatisfy { controller.selected.contains($0) } }, set: { controller.set(eligible, selected: $0) })).labelsHidden().accessibilityLabel(controller.categoryTitles[category] ?? category).disabled(eligible.isEmpty)
-                    DisclosureGroup(isExpanded: Binding(get: { expanded.contains(category) }, set: { if $0 { expanded.insert(category) } else { expanded.remove(category) } })) {
-                        LazyVStack(spacing: 12) {
-                            ForEach(items) { file in
-                                HStack(alignment: .top, spacing: 10) {
-                                    Toggle("", isOn: Binding(get: { controller.selected.contains(file.id) }, set: { controller.set([file.id], selected: $0) })).labelsHidden().accessibilityLabel(file.title).disabled(!file.selectable)
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        HStack {
-                                            Text(file.title).font(.callout.weight(.medium)); Spacer(); Text(file.size).font(.caption.monospacedDigit())
-                                            Button {
-                                                if expandedFiles.contains(file.id) { expandedFiles.remove(file.id) } else { expandedFiles.insert(file.id) }
-                                            } label: { Image(systemName: "info.circle") }.buttonStyle(.plain).help(t("詳細資訊", "Details"))
-                                                .accessibilityLabel(t("查看 ", "Details for ") + file.title)
-                                        }
-                                        Text(file.purpose).font(.caption).foregroundStyle(.secondary)
-                                        Text(!file.selectable ? t("需要另外處理", "Needs another action") : file.recommended ? t("建議清理", "Recommended") : t("建議保留", "Recommended to keep"))
-                                            .font(.caption.weight(.medium)).foregroundStyle(!file.selectable ? Color.orange : file.recommended ? MoPanelTheme.positive : .red)
-                                        if expandedFiles.contains(file.id) {
-                                            Text(file.url.path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
-                                            if let reason = file.blockedReason { Text(reason).font(.caption).foregroundStyle(.secondary) }
-                                            Button(t("在 Finder 查看內容", "Inspect in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }.font(.caption)
-                                        }
+            ForEach(showsCategories ? categories : [], id: \.self) { category in
+                let items = categoryFilter != nil ? controller.files.filter { $0.category == category } : controller.items(in: category)
+                let eligible = Set(items.filter(\.selectable).map(\.id))
+                let selected = items.filter { $0.selectable && controller.selected.contains($0.id) }
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 12) {
+                        ReviewSelectionBox(state: ReviewSelectionState.resolve(eligible: eligible, selected: controller.selected),
+                            label: controller.categoryTitles[category] ?? category,
+                            identifier: "mopanel.review.category." + category) {
+                            controller.set(Array(eligible), selected: !eligible.isSubset(of: controller.selected))
+                        }.disabled(eligible.isEmpty || controller.busy || controller.preparing)
+                        Button {
+                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
+                                if expanded.contains(category) { expanded.remove(category) } else { expanded.insert(category) }
+                            }
+                        } label: {
+                            HStack(spacing: 14) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    HStack(spacing: 8) {
+                                        Text(categoryFilter != nil ? t("清除", "Remove") : controller.categoryTitles[category] ?? category).font(.headline)
+                                        Text(t("已選 ", "Selected ") + "\(selected.count)/\(items.count)").font(.caption).foregroundStyle(.secondary)
                                     }
-                                }.padding(.vertical, 4)
+                                    if categoryFilter == nil {
+                                        Text(language == "en" ? (eligible.isEmpty ? "Kept in place; expand for the reason." : "Expand to select individual items and review their purpose.") : controller.categoryExplanation(category))
+                                            .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                    }
+                                }
+                                Spacer(minLength: 10)
+                                Text(controller.sizeSummary(selected) + " / " + controller.sizeSummary(items))
+                                    .font(.callout.weight(.semibold)).monospacedDigit().foregroundStyle(MoPanelTheme.accent)
+                                Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                                    .rotationEffect(.degrees(expanded.contains(category) ? 90 : 0)).foregroundStyle(.secondary)
+                            }.contentShape(Rectangle())
+                        }.buttonStyle(.plain).accessibilityLabel((controller.categoryTitles[category] ?? category) + t("，展開或收合明細", ", expand or collapse details"))
+                    }.padding(16)
+                    if expanded.contains(category) {
+                        LazyVStack(spacing: 0) {
+                            ForEach(items) { file in
+                                Divider().opacity(0.4)
+                                fileRow(file)
                             }
-                        }.padding(.top, 12)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack {
-                                Text(categoryFilter != nil ? t("相關檔案", "Related Files") : controller.categoryTitles[category] ?? category).font(.headline)
-                                Spacer()
-                                Text(controller.sizeSummary(items)).font(.callout).monospacedDigit()
-                            }
-                            Text("\(items.filter { controller.selected.contains($0.id) }.count) / \(items.count) " + t("項已選", "selected")).font(.caption).foregroundStyle(.secondary)
-                            if categoryFilter == nil { Text(language == "en" ? "Expand to review individual items and recommendations." : controller.categoryPurpose(items)).font(.caption).foregroundStyle(.secondary) }
-                        }
+                        }.padding(.leading, categoryFilter == nil ? 28 : 8).padding(.trailing, 14).padding(.bottom, 8)
                     }
-                }.padding(16).moPanelGlass(cornerRadius: 16).disabled(controller.busy || controller.preparing)
+                }.moPanelGlass(cornerRadius: 16)
             }
             if showsActions {
-            if !controller.message.isEmpty { Text(controller.message).font(.callout) }
-            ForEach(controller.errors, id: \.self) { Text($0).font(.caption).foregroundStyle(.red) }
-            if controller.busy {
-                ProgressView(value: controller.progress)
-                Button(t("停止", "Stop")) { controller.cancel() }
-            } else if controller.confirming {
-                Text(t("將選取項目移至垃圾桶，可復原。未勾選項目會保留。", "Move selected items to Trash; unchecked items stay in place.")).font(.callout)
-                HStack { Button(t("取消", "Cancel")) { controller.confirming = false }; Spacer(); Button(t("確認移至垃圾桶", "Confirm Move to Trash")) { Task { await controller.execute() } }.buttonStyle(.borderedProminent).disabled(operationInProgress || !controller.canExecute || controller.chosen.isEmpty) }
-            } else {
-                HStack { Text(controller.selectionSummary); Spacer(); Button(t("移至垃圾桶…", "Move to Trash…")) { controller.confirming = true }.buttonStyle(.borderedProminent).disabled(controller.chosen.isEmpty || operationInProgress || !controller.canExecute) }
+                DisclosureGroup(t("更多資訊與執行方式", "More Information and Execution Method")) {
+                    if let date = controller.sourceDate { Text(t("掃描時間：", "Scanned: ") + date.formatted(date: .abbreviated, time: .shortened)).font(.caption) }
+                    Text(t("掃描指令：mo clean --dry-run。勾選後使用 macOS 原生移至垃圾桶（NSWorkspace.recycle），可從垃圾桶還原。執行前重新確認檔案身分與存取權限；未勾選及手動管理項目不會移動。", "Scan: mo clean --dry-run. Selected files use macOS NSWorkspace.recycle and can be restored from Trash. File identity and access are checked again; unchecked and manual items stay in place."))
+                        .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                }.padding(.top, 6)
             }
+        }.onAppear { if let categoryFilter { expanded.insert(categoryFilter) } }
+    }
+    private func fileRow(_ file: ReviewFile) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                ReviewSelectionBox(state: controller.selected.contains(file.id) ? .all : .none, label: file.title, identifier: "mopanel.review.item." + file.id) {
+                    controller.set([file.id], selected: !controller.selected.contains(file.id))
+                }.disabled(!file.selectable || controller.busy || controller.preparing)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(file.title).font(.callout.weight(.semibold)).lineLimit(1)
+                    Text(file.url.path.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path + "/", with: "~/"))
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                }
+                Spacer(minLength: 8)
+                Text(file.size).font(.callout).monospacedDigit().foregroundStyle(.secondary)
+                Button { if expandedFiles.contains(file.id) { expandedFiles.remove(file.id) } else { expandedFiles.insert(file.id) } } label: {
+                    Image(systemName: file.selectable ? "info.circle" : "lock.shield")
+                }.buttonStyle(.plain).foregroundStyle(file.selectable ? Color.secondary : .orange)
+                    .help(t("用途與保留原因", "Purpose and reason to keep")).accessibilityLabel(t("查看 ", "Details for ") + file.title)
+                Button { NSWorkspace.shared.activateFileViewerSelecting([file.url]) } label: { Image(systemName: "folder") }
+                    .buttonStyle(.plain).help(t("在 Finder 顯示", "Show in Finder")).disabled(!controller.allowsChanges)
+                    .accessibilityLabel(t("在 Finder 顯示 ", "Show in Finder: ") + file.title)
+            }
+            if expandedFiles.contains(file.id) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(file.purpose).font(.caption).foregroundStyle(.secondary)
+                    Text(file.selectable ? (file.recommended ? t("建議清理 · 可重新建立的暫存或舊紀錄", "Recommended · Rebuildable cache or old logs") : t("建議保留 · 請先確認是否仍需使用", "Recommended to keep · Review before selecting")) : t("已保留 · 不參與本次清理", "Kept · Excluded from this cleanup"))
+                        .font(.caption.weight(.medium)).foregroundStyle(!file.selectable ? .orange : file.recommended ? MoPanelTheme.positive : .red)
+                    if let reason = file.blockedReason { Text(reason).font(.caption).foregroundStyle(.secondary) }
+                    Text(file.url.path).font(.caption.monospaced()).textSelection(.enabled)
+                }.padding(.leading, 32)
+            }
+        }.padding(.vertical, 12)
+            .contextMenu {
+                Button(t("本次保留", "Keep This Time")) { controller.set([file.id], selected: false) }.disabled(controller.busy || controller.preparing)
+                Button(t("複製路徑", "Copy Path")) {
+                    NSPasteboard.general.clearContents(); NSPasteboard.general.setString(file.url.path, forType: .string)
+                }.disabled(!controller.allowsChanges)
+            }
+    }
+}
+
+/// A native checkbox retains macOS' mixed-selection appearance and keyboard
+/// accessibility instead of presenting a partially selected group as empty.
+private struct ReviewSelectionBox: NSViewRepresentable {
+    let state: ReviewSelectionState
+    let label: String
+    let identifier: String
+    let action: () -> Void
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeNSView(context: Context) -> NSButton {
+        let button = NSButton(checkboxWithTitle: "", target: context.coordinator, action: #selector(Coordinator.change))
+        button.allowsMixedState = true
+        return button
+    }
+    func updateNSView(_ button: NSButton, context: Context) {
+        context.coordinator.action = action
+        button.state = state == .all ? .on : state == .mixed ? .mixed : .off
+        button.isEnabled = context.environment.isEnabled
+        button.setAccessibilityLabel(label)
+        button.setAccessibilityIdentifier(identifier)
+    }
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSButton, context: Context) -> CGSize? { CGSize(width: 22, height: 24) }
+    final class Coordinator: NSObject {
+        var action: (() -> Void)?
+        @objc func change() { action?() }
+    }
+}
+
+struct FileReviewActionBar: View {
+    @ObservedObject var controller: FileReviewController
+    let language: String
+    var operationInProgress = false
+    var uninstall = false
+    private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
+    var body: some View {
+        VStack(spacing: 10) {
+            if controller.busy { ProgressView(value: controller.progress).tint(MoPanelTheme.accent) }
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(controller.busy ? controller.message : t("已選 ", "Selected ") + "\(controller.chosen.count) " + t("項", "items")).font(.callout.weight(.medium)).lineLimit(1)
+                    if !controller.busy {
+                        HStack(spacing: 12) {
+                            Button(t("全選", "All")) { controller.set(controller.files.map(\.id), selected: true) }
+                            Button(t("全不選", "None")) { controller.selected = [] }
+                            Button(t("建議", "Recommended")) { controller.recommend() }
+                        }.buttonStyle(.borderless).font(.caption).disabled(controller.preparing || operationInProgress)
+                    }
+                }
+                Spacer()
+                if controller.busy { Button(t("停止", "Stop")) { controller.cancel() } }
+                else {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        NativeActionButton(t(uninstall ? "移除" : "清理", uninstall ? "Remove" : "Clean") + " · " + controller.selectedSize,
+                                           identifier: uninstall ? "mopanel.uninstall.execute" : "mopanel.cleanup.execute", systemImage: "trash", appearance: .prominent) {
+                            controller.confirming = true
+                            Task { await controller.execute() }
+                        }.controlSize(.large).disabled(controller.chosen.isEmpty || operationInProgress || !controller.canExecute)
+                        Text(t("移至垃圾桶，可還原", "Moves to Trash; restorable")).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }.padding(16).moPanelGlass(cornerRadius: 18).padding(.horizontal, 20).padding(.vertical, 12)
+    }
+}
+
+struct FileReviewResultView: View {
+    @ObservedObject var controller: FileReviewController
+    let language: String
+    @State private var failuresExpanded = true
+    private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let run = controller.lastRun {
+                HStack(spacing: 20) {
+                    Label(t("已移至垃圾桶", "Moved to Trash") + " \(run.moved)", systemImage: "checkmark.circle.fill").foregroundStyle(MoPanelTheme.positive)
+                    if run.failed > 0 { Label(t("未處理", "Not moved") + " \(run.failed)", systemImage: "exclamationmark.circle").foregroundStyle(.orange) }
+                    if run.unprocessed > 0 { Text(t("尚未處理", "Unprocessed") + " \(run.unprocessed)").foregroundStyle(.secondary) }
+                    Spacer()
+                }.font(.callout.weight(.semibold))
+                Text(run.cancelled ? t("已停止；未處理的檔案保留原處。", "Stopped; unprocessed files remain in place.") : t("移動成功的項目可從垃圾桶還原。其餘項目保留原處。", "Restore moved items from Trash. All other items remain in place.")).font(.caption).foregroundStyle(.secondary)
+            } else if !controller.message.isEmpty && !controller.busy { Text(controller.message).font(.callout).foregroundStyle(.secondary) }
+            if !controller.failures.isEmpty {
+                DisclosureGroup(t("未處理的項目", "Items Not Moved") + " · \(controller.failures.count)", isExpanded: $failuresExpanded) {
+                    ForEach(controller.failures) { failure in
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(failure.url.lastPathComponent).font(.callout.weight(.semibold))
+                            Text(failure.summary).font(.caption).foregroundStyle(.secondary)
+                            DisclosureGroup(t("詳細資訊", "Details")) {
+                                Text(failure.url.path).font(.caption.monospaced()).textSelection(.enabled)
+                                if !failure.detail.isEmpty { Text(failure.detail).font(.caption).textSelection(.enabled) }
+                                Text(t("不會自動更改權限或強制刪除。需要重試時，先檢查 Finder 權限，再重新掃描。", "No permission changes or forced deletion. Check access in Finder and scan again before retrying.")).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.padding(.vertical, 5)
+                    }
+                }.tint(.orange)
+            }
+            ForEach(controller.errors.filter { error in
+                !controller.failures.contains { error == $0.url.lastPathComponent + "：" + $0.summary }
+            }, id: \.self) { Text($0).font(.caption).foregroundStyle(.orange) }
             if !controller.receipts.isEmpty {
                 DisclosureGroup(t("已移除的項目", "Removed Items") + " · \(controller.receipts.count)") {
                     ForEach(Array(controller.receipts.prefix(100))) { receipt in
                         HStack {
-                            Text(receipt.original.lastPathComponent).font(.caption).textSelection(.enabled)
+                            Text(receipt.original.lastPathComponent).font(.caption).lineLimit(1)
                             Spacer()
-                            Button(t("在垃圾桶中顯示", "Show in Trash")) { NSWorkspace.shared.activateFileViewerSelecting([receipt.trash]) }.font(.caption)
+                            Button(t("在垃圾桶顯示", "Show in Trash")) { NSWorkspace.shared.activateFileViewerSelecting([receipt.trash]) }.font(.caption).disabled(!controller.allowsChanges)
                         }
                     }
+                    if controller.receipts.count > 100 { Text(t("先顯示前 100 項；完整內容可在垃圾桶查看。", "Showing the first 100 items; inspect Trash for the full list.")).font(.caption).foregroundStyle(.secondary) }
                 }
             }
-            DisclosureGroup(t("詳細執行方式", "Execution Details")) { Text(t("macOS 原生移至垃圾桶：NSWorkspace.recycle。執行前會重新確認每個路徑與檔案身分，不使用 rm、不取得管理員權限，也不永久刪除。", "macOS NSWorkspace.recycle; paths and file identities are rechecked before each move. No rm, administrator access or permanent deletion.")).font(.caption).foregroundStyle(.secondary) }
-            }
-        }.onAppear { if let categoryFilter { expanded.insert(categoryFilter) } }
+        }
     }
 }

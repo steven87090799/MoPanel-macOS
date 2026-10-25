@@ -146,6 +146,9 @@ import MoPanelCore
                        title: item.1, size: item.2, purpose: item.3, recommended: item.4, blockedReason: nil,
                        device: 0, inode: 0, modified: timespec(), directory: true, identity: nil)
         }
+        model.cleanupReview.files.append(ReviewFile(url: URL(fileURLWithPath: "/MoPanel-synthetic-preview/protected/系統保護的快取"),
+            category: "App 快取與紀錄", title: "系統保護的快取", size: "大小未能讀取", purpose: "系統服務的快取；無法確認內容時先保留。",
+            recommended: true, blockedReason: "macOS 未允許讀取此項目，已保留原處。", device: 0, inode: 0, modified: timespec(), directory: true, identity: nil))
         model.cleanupReview.sourceDate = Date()
         model.cleanupReview.message = "合成掃描結果；此模式無法移除檔案。"
         model.cleanupReview.recommend()

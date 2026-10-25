@@ -59,6 +59,7 @@ struct StartupView: View {
                     Text(t("由 macOS 驗證後只執行一次唯讀查詢，最長 12 秒；不安裝服務、不儲存密碼。", "macOS authorizes one read-only query with a 12-second execution limit. No service is installed and no password is stored.")).font(.caption).foregroundStyle(.secondary)
                     ExecutionCommandView(command: BackgroundStartupReadPlan.rootCommand)
                 }
+                }
                 HStack {
                     TextField(t("搜尋 App、服務或路徑", "Search app, service or path"), text: $search).textFieldStyle(.roundedBorder)
                     Picker(t("服務範圍", "Service scope"), selection: $scope) {
@@ -66,7 +67,6 @@ struct StartupView: View {
                         ForEach(StartupScope.allCases, id: \.rawValue) { value in Text(scopeTitle(value)).tag(value.rawValue) }
                     }.frame(width: 210)
                     Toggle(t("僅可管理", "Manageable only"), isOn: $onlyManageable).toggleStyle(.checkbox)
-                }
                 }
                 if !controller.statusMessage.isEmpty { Text(controller.statusMessage).font(.callout) }
                 if let date = controller.backgroundReadAt {
@@ -86,10 +86,11 @@ struct StartupView: View {
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     let extra = extraServices
-                    Text(t("背景服務", "Background Services") + " · \(visible.count + extra.count)").font(.headline)
+                    DisclosureGroup(t("其他背景服務", "Other Background Services") + " · \(visible.count + extra.count)") {
                     LazyVStack(spacing: 8) {
                         ForEach(visible) { row in rowView(row) }
                         ForEach(extra) { item in backgroundRow(item) }
+                    }
                     }
                 }
             }.padding(26)

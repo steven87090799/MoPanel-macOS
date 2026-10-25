@@ -107,12 +107,14 @@ struct GitWorktreeView: View {
                                     Text(URL(fileURLWithPath: row.entry.path).lastPathComponent).font(.headline)
                                     Text(row.entry.branch ?? (row.entry.bare ? "bare" : "detached HEAD")).font(.caption.monospaced())
                                     Text(row.entry.path).font(.caption.monospaced()).textSelection(.enabled)
-                                    if let head = row.entry.head { Text("HEAD: " + head).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
+
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                                 Button("Finder") { controller.reveal(row.entry.path) }.disabled(!controller.actionsAllowed)
                                 Button(t("移除預覽…", "Preview Removal…")) { Task { await controller.prepareRemoval(row) } }
                                     .disabled(disabled || !row.canRemove)
                             }
+                            DisclosureGroup(t("詳細資訊與保護原因", "Details and Protection Reasons")) {
+                            if let head = row.entry.head { Text("HEAD: " + head).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
                             ForEach(row.protection, id: \.self) { reason in
                                 Label(reason.explanation(language: language), systemImage: "shield").font(.caption).foregroundStyle(.secondary)
                             }
@@ -122,6 +124,7 @@ struct GitWorktreeView: View {
                             if row.canRemove {
                                 Text(t("目前通過檢查。確認前與執行前會再次驗證；這不是 Git 原生 dry-run。",
                                        "Currently passes checks. State is revalidated before review and execution; this is not a Git-provided dry run.")).font(.caption).foregroundStyle(.secondary)
+                            }
                             }
                         }.padding(.vertical, 13)
                         Divider()

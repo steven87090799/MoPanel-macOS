@@ -12,6 +12,7 @@ struct AppUpdatesView: View {
     @State private var search = ""
     @State private var onlyAvailable = false
     @State private var refreshConfirmation = false
+    @State private var expandedCasks = Set<String>()
 
     init(language: String, helperURL: URL? = nil, operationInProgress: Bool = false) {
         _controller = StateObject(wrappedValue: AppUpdatesController(language: language, helperURL: helperURL))
@@ -131,37 +132,40 @@ struct AppUpdatesView: View {
                         }
                     }
                 }
+                DisclosureGroup(t("直接更新的條件與限制", "Direct Update Conditions")) {
                 Text(t("直接升級支援：官方 homebrew/cask、可驗證 checksum、一般 App／連結 artifact，且沒有套件相依或自訂安裝／卸載腳本。預覽前還會讀取安裝時的 JSON 配方與收據；舊版 Ruby、缺失、歧義、變更或不安全的卸載紀錄都會停止直接更新。其他 cask 仍列出版本，交由原 App 或 Homebrew 自行處理。MoPanel 不加入 --force、--zap、--no-quarantine 或全體升級。", "Direct upgrades support official homebrew/cask entries with a checksum, ordinary app/link artifacts, and no package dependencies or custom install/uninstall hooks. Before previewing, the installed JSON recipe and receipt are checked too. Legacy Ruby, missing, ambiguous, changed or unsafe uninstall records block direct updates. Other casks still show versions for handling in the app or Homebrew. MoPanel never adds --force, --zap, --no-quarantine or upgrade-all.")).font(.caption).foregroundStyle(.secondary)
+                }
             }.padding(12)
         }
     }
 
     private func caskRow(_ item: BrewUpdateItem) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "app.gift").font(.title2).foregroundStyle(MoPanelTheme.accent).frame(width: 30)
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                AppIcon(path: item.installed.applicationPaths.first ?? "")
+                VStack(alignment: .leading, spacing: 4) {
                     Text(item.installed.title).font(.headline)
-                    Text(stateTitle(item.state)).font(.caption).foregroundStyle(item.state == .available ? MoPanelTheme.accent : Color.secondary)
+                    Text((item.installed.installed ?? t("版本待確認", "Version unknown")) + " → " + item.installed.version).font(.callout).foregroundStyle(.secondary)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                Text(stateTitle(item.state)).font(.caption).foregroundStyle(item.state == .available ? MoPanelTheme.accent : Color.secondary)
+                Button {
+                    if expandedCasks.contains(item.id) { expandedCasks.remove(item.id) } else { expandedCasks.insert(item.id) }
+                } label: { Image(systemName: "info.circle") }.buttonStyle(.plain).accessibilityLabel(t("查看 ", "Details for ") + item.installed.title)
+                if item.state == .available {
+                    Button(t("更新…", "Update…")) { Task { await controller.prepareUpdate(item) } }.disabled(locked || !controller.canUpgrade)
                 }
-                Text(t("已安裝：", "Installed: ") + (item.installed.installed ?? t("未確認", "Unconfirmed")) + "  →  " + t("索引版本：", "Metadata version: ") + item.installed.version).font(.callout.monospaced())
+            }
+            if expandedCasks.contains(item.id) {
                 Text((item.installed.tap ?? t("未知來源", "Unknown source")) + " · " + item.id).font(.caption).foregroundStyle(.secondary)
-                if item.installed.applicationPaths.isEmpty {
-                    Text(t("Homebrew 未提供可確認的 App 目標路徑。", "Homebrew did not provide a confirmed app target path.")).font(.caption).foregroundStyle(.secondary)
-                }
                 ForEach(item.installed.applicationPaths, id: \.self) { path in
                     HStack {
                         Text(path).font(.caption.monospaced()).textSelection(.enabled)
-                        Button(t("Finder 顯示", "Show in Finder")) { controller.reveal(path) }.buttonStyle(.link).disabled(!controller.actionsAllowed)
+                        Button(t("在 Finder 顯示", "Show in Finder")) { controller.reveal(path) }.buttonStyle(.link).disabled(!controller.actionsAllowed)
                     }
                 }
                 if item.state == .unsupported {
-                    Text(t("未滿足直接更新的安全條件；不會執行自訂安裝器或猜測目標。請使用原 App 更新入口。", "Direct-update safety conditions are not met. No custom installer runs or guessed target is used; use the app's own updater.")).font(.caption).foregroundStyle(.secondary)
+                    Text(t("這個 App 需要使用自己的更新功能，或由 Homebrew 處理。", "Use this app's own updater or Homebrew for this item.")).font(.caption).foregroundStyle(.secondary)
                 }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            if item.state == .available {
-                Button(t("預覽更新…", "Preview Update…")) { Task { await controller.prepareUpdate(item) } }
-                    .disabled(locked || !controller.canUpgrade)
             }
         }.padding(.vertical, 12)
     }
@@ -189,12 +193,14 @@ struct AppUpdatesView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(app.name).font(.headline)
                                 Text((app.version ?? t("版本未提供", "Version unavailable")) + " · " + sourceTitle(app.source)).font(.caption).foregroundStyle(.secondary)
+                                DisclosureGroup(t("詳細資訊", "Details")) {
                                 Text(app.url.path).font(.caption.monospaced()).textSelection(.enabled)
                                 if let feed = app.publisherFeed {
                                     Text(t("App 宣告的 feed：", "App-declared feed: ") + feed.absoluteString).font(.caption).textSelection(.enabled)
                                 } else if app.feedWasWithheld {
-                                    Text(t("偵測到 feed 設定，但簽章／URL 不符合顯示條件，未傳送或顯示網址。", "A feed setting exists, but its signature or URL is unsuitable for display. The URL was neither sent nor displayed.")).font(.caption).foregroundStyle(.secondary)
+                                    Text(t("偵測到更新來源，但暫時無法驗證；請使用 App 自己的更新功能。", "The declared update source could not be verified. Use the app's own updater.")).font(.caption).foregroundStyle(.secondary)
                                 }
+                                }.font(.caption)
                             }.frame(maxWidth: .infinity, alignment: .leading)
                             Button(t("Finder", "Finder")) { controller.reveal(app.url.path) }.disabled(!controller.actionsAllowed)
                             if app.source == .appStoreReceipt {
@@ -207,7 +213,9 @@ struct AppUpdatesView: View {
                     }
                 }
                 if !controller.localInventoryNote.isEmpty { Text(controller.localInventoryNote).font(.caption).foregroundStyle(.orange).textSelection(.enabled) }
+                DisclosureGroup(t("來源判讀的限制", "Source Detection Limits")) {
                 Text(t("「App Store 收據存在」只是本機來源線索；Sparkle 設定也可能由 App 執行時改變。開啟 App 後，請使用它自己的「檢查更新」。", "An App Store receipt is local source evidence, and an app may change its Sparkle settings at runtime. After opening an app, use its own Check for Updates command.")).font(.caption).foregroundStyle(.secondary)
+                }
             }.padding(12)
         }
     }
@@ -220,14 +228,14 @@ struct AppUpdatesView: View {
         case .unversioned: return t("上游使用 latest；無法比較版本", "Upstream uses latest; version comparison unavailable")
         case .pinned: return t("版本已釘選", "Pinned")
         case .disabled: return t("Homebrew 已停用此 cask", "Disabled by Homebrew")
-        case .unsupported: return t("需由來源 App／Homebrew 處理", "Handle in the source app or Homebrew")
+        case .unsupported: return t("到 App 內更新", "Update in App")
         }
     }
     private func sourceTitle(_ source: LocalUpdateApp.Source) -> String {
         switch source {
-        case .appStoreReceipt: return t("App Store 收據存在", "App Store receipt present")
-        case .sparkle: return t("Sparkle 設定存在；尚未查版", "Sparkle setting present; version not checked")
-        case .manual: return t("未找到可識別的自動更新來源", "No recognized automatic update source")
+        case .appStoreReceipt: return "App Store"
+        case .sparkle: return t("使用 App 內的更新功能", "Use the app’s own updater")
+        case .manual: return t("到 App 或開發者網站檢查", "Check in the app or on its website")
         }
     }
 }

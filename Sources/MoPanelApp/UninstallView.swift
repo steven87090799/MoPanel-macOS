@@ -10,6 +10,7 @@ struct UninstallView: View {
     @State private var withData = false
     @State private var permanent = false
     @State private var debug = false
+    @State private var foldedApps = Set<String>()
     private var rows: [InstalledApp] {
         let filtered = model.apps.filter { app in !model.uninstallReview.removedPaths.contains(app.path) && (search.isEmpty || app.name.localizedCaseInsensitiveContains(search) || app.path.localizedCaseInsensitiveContains(search) || app.bundleID.localizedCaseInsensitiveContains(search)) }
         return filtered.sorted {
@@ -39,10 +40,11 @@ struct UninstallView: View {
                     ContentUnavailableView(model.t("尚無 App 清單", "No App Inventory"), systemImage: "app.dashed", description: Text(model.t("按「掃描」取得官方清單；無權限或掃描失敗會顯示錯誤。", "Scan to retrieve the official inventory. Permission or scan failures appear explicitly.")))
                         .frame(maxWidth: .infinity, minHeight: 180)
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
+                    Text("\(rows.count) " + model.t("個 App", "apps")).font(.caption).foregroundStyle(.secondary)
+                    LazyVStack(spacing: 8) {
                             ForEach(rows) { app in
                                 VStack(alignment: .leading, spacing: 10) {
+                                    HStack {
                                     Toggle(isOn: Binding(get: { selected.contains(app.id) }, set: { value in
                                         if value { selected.insert(app.id) } else { selected.remove(app.id) }
                                     })) {
@@ -57,6 +59,13 @@ struct UninstallView: View {
                                         }
                                     }.toggleStyle(.checkbox).disabled(model.hasRunningOperation)
                                     if selected.contains(app.id) {
+                                        Button {
+                                            if foldedApps.contains(app.id) { foldedApps.remove(app.id) } else { foldedApps.insert(app.id) }
+                                        } label: { Image(systemName: foldedApps.contains(app.id) ? "chevron.down" : "chevron.up") }
+                                            .buttonStyle(.plain).accessibilityLabel(model.t("展開或收合相關檔案", "Expand or collapse related files"))
+                                    }
+                                    }
+                                    if selected.contains(app.id) && !foldedApps.contains(app.id) {
                                         if model.uninstallReview.appsNeedingQuit.contains(app.path) {
                                             Button(model.t("先結束此 App", "Quit This App First")) { Task { await model.uninstallReview.requestQuit(app.path) } }.disabled(model.hasRunningOperation)
                                         }
@@ -67,10 +76,8 @@ struct UninstallView: View {
                                     .contextMenu { Button(model.t("在 Finder 顯示", "Show in Finder")) { model.reveal(app.path) } }
                             }
                         }
-                    }.frame(height: min(max(CGFloat(rows.count) * 64 + CGFloat(selected.intersection(Set(rows.map(\.id))).count) * 240, 260), 500))
-                    Text("\(rows.count) " + model.t("個 App；選取 ", "apps; selected ") + "\(selected.intersection(Set(rows.map(\.id))).count)").font(.caption).foregroundStyle(.secondary)
                 }
-                if !selected.isEmpty || !model.uninstallReview.message.isEmpty { FileReviewView(controller: model.uninstallReview, language: model.language, operationInProgress: model.hasRunningOperation, showsCategories: selected.intersection(Set(rows.map(\.id))).isEmpty) }
+                FileReviewResultView(controller: model.uninstallReview, language: model.language)
                 if model.apps.contains(where: { selected.contains($0.id) && ($0.source.lowercased().contains("brew") || $0.source.lowercased().contains("cask")) }) {
                     HStack {
                         Text(model.t("選取的 App 包含 Homebrew 套件，需透過完整卸載更新套件紀錄；接下來會重新確認移除範圍。", "Your selection includes Homebrew packages. Full Uninstall updates package records and asks you to review its scope again.")).font(.callout)
@@ -101,7 +108,14 @@ struct UninstallView: View {
                 }
                 }
             }.padding(26)
-        }.onAppear { selected = model.uninstallSelected }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !model.apps.isEmpty {
+                FileReviewActionBar(controller: model.uninstallReview, language: model.language,
+                                    operationInProgress: model.hasRunningOperation, uninstall: true)
+            }
+        }
+        .onAppear { selected = model.uninstallSelected }
         .onChange(of: selected) { _, ids in
             model.uninstallSelected = ids
             Task { await model.uninstallReview.prepareApps(model.apps.filter { ids.contains($0.id) && !model.uninstallReview.removedPaths.contains($0.path) }) }

@@ -22,8 +22,12 @@ struct MaintenanceView: View {
                 PageHeader(title: model.t(section.zh, section.en), subtitle: subtitle, symbol: section.symbol) {
                     scanAction
                 }
+                if model.nativeSelectionOnPage {
+                    MoleSelectorView(controller: model.moleSelector, language: model.language, running: true,
+                                     preview: model.operationWasPreview, showsActions: false, listHeight: nil)
+                }
                 if section == .clean && (model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty || !model.cleanupReview.errors.isEmpty) { FileReviewView(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation) }
-                if section != .clean || model.cleanupReview.sourceDate == nil || model.fixtureMode {
+                if !model.nativeSelectionOnPage && (section != .clean || model.cleanupReview.sourceDate == nil || model.fixtureMode) {
                 GlassEffectContainer(spacing: 18) {
                     GlassCard {
                         Label(model.t("先看結果，再決定", "Preview before making changes"), systemImage: "eye").font(.title3.bold())
@@ -44,16 +48,6 @@ struct MaintenanceView: View {
                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))
                     }
                 }
-                }
-                if section == .clean, model.cleanupReview.files.contains(where: { !$0.selectable }) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(model.t("有些項目需要另外處理", "Some items need another action")).font(.headline)
-                            Text(model.t("系統資料可能需要管理員授權。完整清理會重新檢查全部項目，再由你確認範圍。", "System data may require administrator approval. Full Cleanup reviews all eligible items again before you confirm the scope.")).font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Button(model.t("完整清理…", "Full Cleanup…")) { model.request(.clean, options: options) }.disabled(!model.canStart)
-                    }.padding(16).moPanelGlass(cornerRadius: 16)
                 }
                 DisclosureGroup(model.t("更多選項", "More Options")) {
                 if model.canOpenSelection(command) {
@@ -108,7 +102,20 @@ struct MaintenanceView: View {
                 }
                 }
             }.padding(26)
-        }.task { if section == .clean && !model.fixtureMode { await model.cleanupReview.loadCleanupPreview() } }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if model.nativeSelectionOnPage {
+                HStack {
+                    Button(model.t("取消", "Cancel")) { model.operationSession.cancel() }
+                    Button(model.t("詳細資訊", "Details")) { model.operationDetailsExpanded = true; model.moleSelector.suspend() }
+                    Spacer()
+                    MoleSelectorActions(controller: model.moleSelector, language: model.language, preview: model.operationWasPreview)
+                }.padding(16).moPanelGlass(cornerRadius: 18).padding(.horizontal, 20).padding(.vertical, 12)
+            } else if section == .clean, model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty {
+                FileReviewActionBar(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation)
+            }
+        }
+        .task { if section == .clean && !model.fixtureMode { await model.cleanupReview.loadCleanupPreview() } }
     }
     @ViewBuilder private var scanAction: some View {
         Group {

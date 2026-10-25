@@ -101,52 +101,79 @@ struct MoleSelectorView: View {
     let language: String
     let running: Bool
     let preview: Bool
-    @State private var resultsExpanded = true
+    var showsActions = true
+    var listHeight: CGFloat? = 200
+    @State private var resultsExpanded = false
+    @State private var details = Set<String>()
     private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     var body: some View {
         if let screen = controller.screen, running {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(t("勾選要處理的項目", "Choose Items to Process")).font(.headline)
-                Text(t("清單與預選由 Mole 提供。選取後按繼續，還可檢查最後確認。", "Mole supplies the list and initial selection. Continue to its final review.")).font(.caption).foregroundStyle(.secondary)
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 9) {
-                        ForEach(screen.rows) { row in
-                            Toggle(isOn: Binding(get: { row.selected }, set: { _ in controller.toggle(row) })) {
-                                Text(row.text).font(.callout).textSelection(.enabled)
-                            }.toggleStyle(.checkbox).disabled(controller.busy)
-                        }
-                    }
-                }.frame(maxHeight: 200)
+            VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Button(t("往上", "Previous")) { controller.navigate(down: false) }
-                    Button(t("往下查看更多", "Next")) { controller.navigate(down: true) }
+                    Text(t("選擇要處理的項目", "Choose Items to Process")).font(.title3.bold())
                     Spacer()
-                    Button(t("繼續", "Continue")) { controller.submitSelection() }.buttonStyle(.borderedProminent)
-                }.disabled(controller.busy)
-                DisclosureGroup(t("清單狀態", "Selection Status")) { Text(screen.title).font(.caption).textSelection(.enabled) }
+                    Text(t("目前清單已選 ", "Selected in this list: ") + "\(screen.rows.filter(\.selected).count)/\(screen.rows.count)")
+                        .font(.callout).monospacedDigit().foregroundStyle(.secondary)
+                }
+                Text(t("已保留 Mole 的預選項目；取消勾選即可保留。", "Mole's initial selection is preserved. Uncheck any item to keep it.")).font(.caption).foregroundStyle(.secondary)
+                if let listHeight { ScrollView { selectionRows(screen) }.frame(maxHeight: listHeight) }
+                else { selectionRows(screen) }
+                if showsActions { HStack { Spacer(); MoleSelectorActions(controller: controller, language: language, preview: preview) } }
+                DisclosureGroup(t("掃描範圍與原始資訊", "Scan Scope and Original Information")) { Text(screen.title).font(.caption).textSelection(.enabled) }
             }
         } else if let confirmation = controller.confirmation, running {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(preview ? t("確認這次預覽範圍", "Confirm Preview Scope") : t("確認執行範圍", "Confirm Operation Scope")).font(.headline)
+            VStack(alignment: .leading, spacing: 12) {
+                Text(preview ? t("檢查選取範圍", "Review Selected Scope") : t("準備開始", "Ready to Start")).font(.title3.bold())
                 Text(confirmation).font(.callout).textSelection(.enabled)
-                if !preview { Text(t("Mole 將執行選取範圍；清理可能永久刪除。", "Mole will process the selection; cleanup may permanently delete files.")).font(.caption).foregroundStyle(.orange) }
-                HStack {
-                    Button(t("取消", "Cancel")) { controller.cancelConfirmation() }
-                    Spacer()
-                    Button(preview ? t("顯示預覽結果", "Show Preview Results") : t("確認開始", "Confirm and Start")) { controller.confirm() }.buttonStyle(.borderedProminent)
-                }
-            }
+                if !preview { Text(t("這項操作由 Mole 執行；清理會永久移除已確認的項目。", "Mole executes this operation; confirmed cleanup items are permanently removed.")).font(.caption).foregroundStyle(.orange) }
+                if showsActions { HStack { Button(t("取消", "Cancel")) { controller.cancelConfirmation() }; Spacer(); MoleSelectorActions(controller: controller, language: language, preview: preview) } }
+            }.padding(16).moPanelGlass(cornerRadius: 16)
         }
         if !controller.message.isEmpty { Text(controller.message).font(.caption).foregroundStyle(.orange) }
         if !running, !controller.reviewed.isEmpty {
-            DisclosureGroup(t("本次查看與選取的項目", "Items Reviewed in This Session"), isExpanded: $resultsExpanded) {
+            DisclosureGroup(t("本次選取紀錄", "Selection Record") + " · \(controller.reviewed.count)", isExpanded: $resultsExpanded) {
                 ScrollView {
                     ForEach(controller.reviewed.keys.sorted(), id: \.self) { item in
                         Label(item, systemImage: controller.reviewed[item] == true ? "checkmark.circle" : "minus.circle").font(.caption).textSelection(.enabled)
                     }
                 }.frame(maxHeight: 180)
-                Text(t("這是選取紀錄；實際處理結果以上方 Mole 回報為準。", "This records selection; Mole's results above describe actual processing.")).font(.caption2).foregroundStyle(.secondary)
+                Text(t("此處是選取紀錄；實際結果以上方執行摘要為準。", "This records selection; see the operation summary for actual results.")).font(.caption2).foregroundStyle(.secondary)
             }
         }
+    }
+    private func selectionRows(_ screen: MoleSelectionScreen) -> some View {
+        LazyVStack(spacing: 8) {
+            ForEach(screen.rows) { row in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        Toggle(isOn: Binding(get: { row.selected }, set: { _ in controller.toggle(row) })) {
+                            Text(row.text).font(.callout.weight(.medium)).lineLimit(2)
+                        }.toggleStyle(.checkbox).disabled(controller.busy)
+                        Spacer(minLength: 8)
+                        Button { if details.contains(row.id) { details.remove(row.id) } else { details.insert(row.id) } } label: { Image(systemName: "info.circle") }
+                            .buttonStyle(.plain).accessibilityLabel(t("查看 ", "Details for ") + row.text)
+                    }
+                    if details.contains(row.id) { Text(row.text).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
+                }.padding(14).moPanelGlass(cornerRadius: 14)
+            }
+        }
+    }
+}
+
+struct MoleSelectorActions: View {
+    @ObservedObject var controller: MoleSelectorController
+    let language: String
+    let preview: Bool
+    private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
+    var body: some View {
+        HStack(spacing: 12) {
+            if controller.screen != nil {
+                Button(t("上一列", "Previous Row")) { controller.navigate(down: false) }
+                Button(t("下一列／更多項目", "Next Row / More Items")) { controller.navigate(down: true) }
+                Button(t("下一步", "Next")) { controller.submitSelection() }.buttonStyle(.borderedProminent)
+            } else if controller.confirmation != nil {
+                Button(preview ? t("顯示結果", "Show Results") : t("開始執行", "Start")) { controller.confirm() }.buttonStyle(.borderedProminent)
+            }
+        }.disabled(controller.busy)
     }
 }

@@ -2,7 +2,7 @@
 """Run the production native review controller against nonce-owned macOS fixtures.
 
 No installed user application, real app preferences or existing file is selected.
-The only actual Trash moves are a freshly created fake app and its fake cache.
+The only actual Trash moves are freshly created fake app/cache fixtures.
 """
 import argparse
 import json
@@ -33,6 +33,7 @@ HARNESS = r'''
         // Only exact random names created in this run may be removed, including
         // their confirmed system-returned Trash destinations.
         defer {
+            try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cache.path)
             for url in [app, cache, prefs] + receipts.map(\.trash) {
                 if url.lastPathComponent.contains(nonce), fm.fileExists(atPath: url.path) { try? fm.removeItem(at: url) }
             }
@@ -57,6 +58,12 @@ HARNESS = r'''
         try require("app_cache_and_personal_file_discovered", Set(controller.files.map(\.id)) == Set([app.path, cache.path, prefs.path]))
         try require("recommended_app_and_cache_preselected", controller.selected == Set([app.path, cache.path]))
         try require("personal_data_unselected_and_keep_recommendation", controller.files.first { $0.id == prefs.path }?.recommended == false && !controller.selected.contains(prefs.path))
+        try fm.setAttributes([.posixPermissions: 0], ofItemAtPath: cache.path)
+        await controller.prepareApps([try inventory()], force: true)
+        try require("unreadable_cache_blocked_before_selection", controller.files.first { $0.id == cache.path }?.selectable == false && !controller.selected.contains(cache.path))
+        try require("unreadable_capacity_not_reported_as_zero", controller.files.first { $0.id == cache.path }?.size == "大小未能讀取")
+        try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cache.path)
+        await controller.prepareApps([try inventory()], force: true)
         controller.confirming = true
         await controller.execute()
         try require("disabled_test_controller_cannot_mutate", fm.fileExists(atPath: app.path) && fm.fileExists(atPath: cache.path))
@@ -84,6 +91,23 @@ HARNESS = r'''
         try require("unchecked_personal_preference_retained", fm.fileExists(atPath: prefs.path))
         try require("system_returned_trash_destinations_exist", receipts.allSatisfy { $0.trash.lastPathComponent.contains(nonce) && fm.fileExists(atPath: $0.trash.path) })
         try require("removed_results_remain_visible_and_retained_file_stays_in_review", controller.removedPaths == Set([app.path, cache.path]) && controller.files.map(\.id) == [prefs.path])
+        try require("successful_run_has_no_unresolved_items", controller.lastRun?.moved == 2 && controller.lastRun?.hasUnresolvedItems == false && controller.progress == 1)
+        // Re-create only the same nonce-owned fixture names. One item becomes
+        // inaccessible after selection, so the production pre-execution check
+        // must preserve it while accurately retaining the successful receipt.
+        try fm.createDirectory(at: info.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fm.createDirectory(at: cache, withIntermediateDirectories: true)
+        try writeID(nonce)
+        await controller.prepareApps([try inventory()], force: true)
+        try fm.setAttributes([.posixPermissions: 0], ofItemAtPath: cache.path)
+        controller.confirming = true
+        await controller.execute()
+        receipts += controller.receipts
+        try require("partial_run_has_one_success_and_one_failure", controller.lastRun?.moved == 1 && controller.lastRun?.failed == 1 && controller.lastRun?.hasUnresolvedItems == true)
+        try require("failed_item_not_selected_or_retried", controller.files.first { $0.id == cache.path }?.selectable == false && !controller.selected.contains(cache.path))
+        try require("failed_item_kept_and_detailed_result_retained", fm.fileExists(atPath: cache.path) && controller.failures.count == 1 && controller.failures.first?.url.path == cache.path)
+        try require("partial_run_progress_reaches_processed_plan", controller.progress == 1 && controller.lastRun?.unprocessed == 0)
+        try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cache.path)
         let report: [String: Any] = ["success": true, "checks": checks, "real_trash_moves": receipts.count, "user_files_changed": false,
                                     "scope": "Production FileReviewController; only nonce-owned fake .app/cache/preferences created in this run. Fixtures and their confirmed Trash destinations cleaned afterwards."]
         print(String(decoding: try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]), as: UTF8.self))

@@ -67,6 +67,12 @@ import MoPanelProcess
     @Published var rawResult = ""
     @Published var activities: [ActivityEntry] = []
     @Published var pending: PendingOperation?
+    var nativeSelectionOnPage: Bool {
+        guard showOperation, operationSession.running, !operationDetailsExpanded,
+              section.command == operationKind, let operationKind,
+              [.installer, .purge, .slim].contains(operationKind) else { return false }
+        return moleSelector.screen != nil || moleSelector.confirmation != nil
+    }
     @Published var showOperation = false
     @Published var operationTitle = ""
     @Published var operationCommand = ""
@@ -544,9 +550,11 @@ import MoPanelProcess
     func updateSelectorScreen(_ lines: [String]) {
         guard let command = operationKind else { return }
         let supported = fixtureMode || MoleSelectionScreen.supports(command: command, version: installation?.version ?? "")
+        let wasOnPage = nativeSelectionOnPage
         moleSelector.update(lines, command: command,
             enabled: supported && operationSession.running && !operationDetailsExpanded,
             send: { [weak self] data in self?.operationSession.send(data) })
+        if nativeSelectionOnPage != wasOnPage { objectWillChange.send() }
     }
 
     func canOpenSelection(_ command: MoleCommand) -> Bool {
