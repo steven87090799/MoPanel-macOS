@@ -64,6 +64,15 @@ HARNESS = r'''
         try Data(previewText.replacingOccurrences(of: missing.path + "  # 0 B\n", with: "").utf8).write(to: preview)
         await controller.loadCleanupPreview(previewURL: preview)
         try require("fresh_scan_restores_recommended_selection", !controller.needsRescan && controller.selected == Set([cache.path]))
+        try require("new_scan_can_begin", controller.beginCleanupScan())
+        try require("new_scan_immediately_discards_prior_rows_selection_and_results", controller.cleanupScanInProgress && controller.files.isEmpty && controller.selected.isEmpty && controller.sourceDate == nil && controller.lastRun == nil && controller.receipts.isEmpty && controller.errors.isEmpty)
+        try require("scan_in_progress_cannot_execute_old_plan", !controller.canExecute)
+        await controller.loadCleanupPreview(previewURL: preview)
+        try require("old_preview_timestamp_cannot_reappear_during_new_scan", controller.files.isEmpty && controller.needsRescan && !controller.errors.isEmpty)
+        try Data(previewText.replacingOccurrences(of: missing.path + "  # 0 B\n", with: "").utf8).write(to: preview)
+        await controller.loadCleanupPreview(previewURL: preview)
+        controller.finishCleanupScan()
+        try require("only_new_scan_results_return", !controller.cleanupScanInProgress && controller.files.map(\.id) == [cache.path] && controller.selected == Set([cache.path]))
         await controller.prepareApps([try inventory()])
         try require("app_cache_and_personal_file_discovered", Set(controller.files.map(\.id)) == Set([app.path, cache.path, prefs.path]))
         try require("recommended_app_and_cache_preselected", controller.selected == Set([app.path, cache.path]))
@@ -118,6 +127,18 @@ HARNESS = r'''
         try require("failed_item_kept_and_detailed_result_retained", fm.fileExists(atPath: cache.path) && controller.failures.count == 1 && controller.failures.first?.url.path == cache.path)
         try require("partial_run_progress_reaches_processed_plan", controller.progress == 1 && controller.lastRun?.unprocessed == 0)
         try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cache.path)
+        try Data("MoPanel disposable fresh cleanup".utf8).write(to: cache.appendingPathComponent("fresh.bin"))
+        try require("scan_after_partial_cleanup_can_begin", controller.beginCleanupScan())
+        try require("rescan_discards_previous_failures_and_receipts", controller.failures.isEmpty && controller.errors.isEmpty && controller.receipts.isEmpty && controller.lastRun == nil)
+        let cleanupOnly = "# Mole Cleanup Preview - fixture\n=== User essentials ===\n" + cache.path + "  # 1 KB\n" + prefs.path + "  # 1 KB\n# Summary\n# Items: 2\n# Categories: 1\n"
+        try Data(cleanupOnly.utf8).write(to: preview)
+        await controller.loadCleanupPreview(previewURL: preview)
+        controller.finishCleanupScan()
+        controller.confirming = true
+        await controller.execute()
+        receipts += controller.receipts
+        try require("successful_cleanup_resets_rows_selection_and_scan_date", controller.lastRun?.moved == 1 && controller.lastRun?.hasUnresolvedItems == false && controller.files.isEmpty && controller.selected.isEmpty && controller.sourceDate == nil)
+        try require("resetting_success_ui_does_not_remove_unchecked_personal_file", fm.fileExists(atPath: prefs.path) && !fm.fileExists(atPath: cache.path))
         let report: [String: Any] = ["success": true, "checks": checks, "real_trash_moves": receipts.count, "user_files_changed": false,
                                     "scope": "Production FileReviewController; only nonce-owned fake .app/cache/preferences created in this run. Fixtures and their confirmed Trash destinations cleaned afterwards."]
         print(String(decoding: try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]), as: UTF8.self))

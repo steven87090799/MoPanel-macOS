@@ -592,6 +592,9 @@ import MoPanelProcess
             let invocation = try MoleInvocation.make(command: command, options: options)
             _ = try validatedInstallation(for: invocation)
             let name = title ?? command.rawValue.capitalized
+            if command == .clean, invocation.isPreview {
+                guard cleanupReview.beginCleanupScan() else { throw MoleError.invalidArgument(t("正在整理掃描結果，請稍候。", "Please wait while scan results are being prepared.")) }
+            }
             showOperation = false
             if invocation.isDestructive {
                 pending = PendingOperation(invocation: invocation, title: name, details: riskDescription(invocation))
@@ -641,6 +644,7 @@ import MoPanelProcess
                 guard !self.shuttingDown else { throw CancellationError() }
                 try start()
             } catch {
+                self.cleanupReview.finishCleanupScan()
                 self.error = error is CancellationError ? self.t("作業已取消。", "Operation cancelled.") : error.localizedDescription
                 self.showOperation = false
             }
@@ -686,7 +690,15 @@ import MoPanelProcess
             self.operationProgressEntries = self.operationProgress.entries
             self.operationInputPrompt = nil
             if !self.fixtureMode, invocation.command == .clean, invocation.isPreview, result.succeeded {
-                Task { await self.cleanupReview.loadCleanupPreview(); if !self.cleanupReview.files.isEmpty { self.showOperation = false } }
+                Task {
+                    await self.cleanupReview.loadCleanupPreview()
+                    self.cleanupReview.finishCleanupScan()
+                    self.showOperation = false
+                }
+            } else if invocation.command == .clean, invocation.isPreview {
+                self.cleanupReview.finishCleanupScan(error: result.succeeded ? nil : result.cancelled
+                    ? self.t("掃描已停止，未顯示舊結果。可重新掃描。", "Scan stopped. Old results were discarded; scan again to continue.")
+                    : self.t("掃描未完成，請查看本次詳細資訊後重試。", "Scan incomplete. Review this run's details and try again."))
             }
             self.record(invocation.displayCommand, result: result)
             if !invocation.requiresPTY { self.rawResult = String(TerminalText.plain(result.stdoutText + "\n" + result.stderrText).suffix(500_000)) }

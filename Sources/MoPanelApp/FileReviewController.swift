@@ -54,6 +54,7 @@ struct ReviewMoveFailure: Identifiable {
     @Published private(set) var lastRun: ReviewRunOutcome?
     @Published var sourceDate: Date?
     @Published var needsRescan = false
+    @Published private(set) var cleanupScanInProgress = false
     var onBusyChanged: ((Bool) -> Void)?
     var allowsChanges = false
     private var cancelRequested = false
@@ -63,7 +64,8 @@ struct ReviewMoveFailure: Identifiable {
     private var preparationID = UUID()
     private var cleanupPolicyFingerprint: String?
     private var cleanupPreviewFingerprint: String?
-    var canExecute: Bool { allowsChanges && !needsRescan && !preparing }
+    private var cleanupScanStartedAt: Date?
+    var canExecute: Bool { allowsChanges && !needsRescan && !preparing && !cleanupScanInProgress }
     var selectionSummary: String { "\(chosen.count) 項 · " + sizeSummary(chosen) }
     func sizeSummary(_ items: [ReviewFile]) -> String {
         var bytes: Int64 = 0, lowerBound = false, known = 0
@@ -120,6 +122,23 @@ struct ReviewMoveFailure: Identifiable {
         }
     }
 
+    @discardableResult func beginCleanupScan() -> Bool {
+        guard !busy, !preparing, !cleanupScanInProgress else { return false }
+        cleanupScanInProgress = true
+        cleanupScanStartedAt = Date()
+        files = []; selected = []; sourceDate = nil
+        errors = []; failures = []; receipts = []; lastRun = nil
+        message = ""; progress = 0; confirming = false; needsRescan = false
+        categoryTitles = [:]; preparedApps = []; preparedAppModels = []
+        cleanupPreviewFingerprint = nil; cleanupPolicyFingerprint = nil
+        return true
+    }
+
+    func finishCleanupScan(error: String? = nil) {
+        cleanupScanInProgress = false
+        if let error { errors = [error]; message = "掃描未完成，請重新掃描。"; needsRescan = true }
+    }
+
     func loadCleanupPreview(previewURL: URL? = nil) async {
         guard !busy, !preparing else { return }
         preparing = true; confirming = false
@@ -128,7 +147,17 @@ struct ReviewMoveFailure: Identifiable {
         do {
             var info = stat()
             guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
-                  info.st_uid == getuid(), info.st_size <= 2_000_000 else { files = []; needsRescan = true; return }
+                  info.st_uid == getuid(), info.st_size <= 2_000_000 else {
+                files = []; selected = []; sourceDate = nil; needsRescan = true
+                errors = ["未能讀取這次掃描的清單，請重新掃描。"]
+                return
+            }
+            let previewDate = Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec) + Double(info.st_mtimespec.tv_nsec) / 1e9)
+            if let started = cleanupScanStartedAt, previewDate < started {
+                files = []; selected = []; sourceDate = nil; needsRescan = true
+                errors = ["Mole 尚未產生這次掃描的新清單；未顯示舊結果，請重新掃描。"]
+                return
+            }
             let handle = try FileHandle(forReadingFrom: url)
             defer { try? handle.close() }
             let data = try handle.read(upToCount: 2_000_001) ?? Data()
@@ -285,8 +314,15 @@ struct ReviewMoveFailure: Identifiable {
         selected.formIntersection(Set(files.map(\.id)))
         lastRun = ReviewRunOutcome(requested: plan.count, moved: completed.count, failed: failedCount, cancelled: cancelRequested)
         if failedCount > 0 { cleanupPreviewFingerprint = nil }
+        if isCleanup, lastRun?.hasUnresolvedItems == false {
+            // Reset the review, not the unchecked files on disk. A fresh scan
+            // is the only way to display another cleanup plan.
+            files = []; selected = []; sourceDate = nil
+            cleanupPreviewFingerprint = nil; cleanupPolicyFingerprint = nil
+        }
         message = cancelRequested ? "已停止；已移動 \(completed.count) 項，其餘保留原處。"
             : failedCount > 0 ? "已清理 \(completed.count) 項，\(failedCount) 項未處理；已移動的項目可從垃圾桶還原。"
+            : lastRun?.hasUnresolvedItems == true ? "已清理 \(completed.count) 項，其餘項目尚未完成；請重新掃描。"
             : "已清理 \(completed.count) 項，可從垃圾桶還原。"
     }
     func cancel() { cancelRequested = true }

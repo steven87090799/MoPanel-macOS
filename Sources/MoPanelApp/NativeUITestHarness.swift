@@ -627,7 +627,7 @@ private enum NativeUIFailure: LocalizedError {
             try await waitFor("confirmed operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("confirmed_operation_returned_to_page", !model.hasRunningOperation && model.error == nil)
             try verifyLastPress(.operationClose)
-            try record("all_29_dispatches_have_verified_postconditions", actions.count == 29 &&
+            try record("all_31_dispatches_have_verified_postconditions", actions.count == 31 &&
                        actions.allSatisfy { $0.hasSingleSuccessfulDispatch && $0.postconditionVerified })
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true

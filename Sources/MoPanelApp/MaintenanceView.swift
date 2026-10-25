@@ -26,8 +26,22 @@ struct MaintenanceView: View {
                     MoleSelectorView(controller: model.moleSelector, language: model.language, running: true,
                                      preview: model.operationWasPreview, showsActions: false, listHeight: nil)
                 }
-                if section == .clean && (model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty || !model.cleanupReview.errors.isEmpty) { FileReviewView(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation) }
-                if !model.nativeSelectionOnPage && (section != .clean || model.cleanupReview.sourceDate == nil || model.fixtureMode) {
+                if section == .clean {
+                    if model.cleanupReview.cleanupScanInProgress {
+                        Label(model.t("正在掃描，完成後會顯示這次的結果…", "Scanning. This run's results will appear when complete…"), systemImage: "magnifyingglass")
+                            .foregroundStyle(.secondary).padding(.vertical, 12)
+                    } else if let run = model.cleanupReview.lastRun, !run.hasUnresolvedItems {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(model.t("清理成功", "Cleanup Complete"), systemImage: "checkmark.circle.fill")
+                                .font(.title2.bold()).foregroundStyle(MoPanelTheme.positive)
+                            Text(model.t("已將 \(run.moved) 項移至垃圾桶，可從垃圾桶還原。需要再次檢查時，按右上角「掃描」。", "Moved \(run.moved) items to Trash, where they can be restored. Use Scan at the top right to check again."))
+                                .foregroundStyle(.secondary)
+                        }.padding(20).frame(maxWidth: .infinity, alignment: .leading).moPanelGlass(cornerRadius: 16)
+                    } else if model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty || !model.cleanupReview.errors.isEmpty {
+                        FileReviewView(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation)
+                    }
+                }
+                if !model.nativeSelectionOnPage && (section != .clean || (model.cleanupReview.sourceDate == nil && model.cleanupReview.lastRun == nil && !model.cleanupReview.cleanupScanInProgress && model.cleanupReview.errors.isEmpty) || (model.fixtureMode && !model.cleanupReview.cleanupScanInProgress)) {
                 GlassEffectContainer(spacing: 18) {
                     GlassCard {
                         Label(model.t("先看結果，再決定", "Preview before making changes"), systemImage: "eye").font(.title3.bold())
@@ -111,11 +125,10 @@ struct MaintenanceView: View {
                     Spacer()
                     MoleSelectorActions(controller: model.moleSelector, language: model.language, preview: model.operationWasPreview)
                 }.padding(16).moPanelGlass(cornerRadius: 18).padding(.horizontal, 20).padding(.vertical, 12)
-            } else if section == .clean, model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty {
+            } else if section == .clean, !model.cleanupReview.cleanupScanInProgress && !model.cleanupReview.files.isEmpty {
                 FileReviewActionBar(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation)
             }
         }
-        .task { if section == .clean && !model.fixtureMode { await model.cleanupReview.loadCleanupPreview() } }
     }
     @ViewBuilder private var scanAction: some View {
         Group {
@@ -128,7 +141,7 @@ struct MaintenanceView: View {
                     model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en))
                 }
             }
-        }.controlSize(.large).disabled(!model.canStart || (section == .clean && external && volume.isEmpty))
+        }.controlSize(.large).disabled(!model.canStart || (section == .clean && (model.cleanupReview.preparing || model.cleanupReview.cleanupScanInProgress || (external && volume.isEmpty))))
     }
     private var subtitle: String {
         switch section {
