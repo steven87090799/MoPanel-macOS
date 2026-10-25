@@ -34,7 +34,7 @@ final class CleanupPreviewTests: XCTestCase {
             XCTAssertFalse(ReviewPathPolicy.permits("/Users/test/" + path, home: "/Users/test"), path)
         }
         XCTAssertEqual(CleanupItemKind.classify("/Users/test/.npm/_cacache/content-v2", home: "/Users/test"), .packageCache)
-        XCTAssertFalse(CleanupItemKind.classify("/Users/test/.npm/_cacache/content-v2", home: "/Users/test").recommended, "Development caches need review, as in Mole's review list")
+        XCTAssertTrue(CleanupItemKind.classify("/Users/test/.npm/_cacache/content-v2", home: "/Users/test").recommended, "MoPanel preselects rebuildable package caches; this is not a Mole recommendation flag")
         XCTAssertEqual(CleanupItemKind.classify("/Users/test/.npmrc", home: "/Users/test"), .unknown)
         XCTAssertFalse(CleanupItemKind.classify("/Users/test/.Trash/file", home: "/Users/test").recommended)
     }

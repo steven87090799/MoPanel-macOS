@@ -135,8 +135,9 @@ struct ReviewMoveFailure: Identifiable {
             errors = []; selected = []; failures = []; lastRun = nil; receipts = []
             needsRescan = policy.modified.map { $0 > Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec) + Double(info.st_mtimespec.tv_nsec) / 1e9) } ?? false
             let loaded = await Task.detached(priority: .utility) {
-                items.map { item in Self.describe(URL(fileURLWithPath: item.path), category: Self.categoryName(item.category), size: item.size,
-                                                  purpose: nil, defaultRecommended: nil, extraBlock: item.includedInParent ? "容量已包含在上層項目；請選取上層項目" : nil) }
+                let activePaths = Self.runningExecutablePaths()
+                return items.map { item in Self.describe(URL(fileURLWithPath: item.path), category: Self.categoryName(item.category), size: item.size,
+                                                  purpose: nil, defaultRecommended: nil, extraBlock: item.includedInParent ? "容量已包含在上層項目；請選取上層項目" : nil, activePaths: activePaths) }
             }.value
             files = loaded.filter(\.existsAtScan)
             let staleItems = loaded.count - files.count
@@ -313,14 +314,14 @@ struct ReviewMoveFailure: Identifiable {
                 Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec) + Double(info.st_mtimespec.tv_nsec) / 1e9))
     }
 
-    nonisolated private static func describe(_ url: URL, category: String, size: String?, purpose: String?, defaultRecommended: Bool?, extraBlock: String?) -> ReviewFile {
+    nonisolated private static func describe(_ url: URL, category: String, size: String?, purpose: String?, defaultRecommended: Bool?, extraBlock: String?, activePaths: [String]? = nil) -> ReviewFile {
         var info = stat(); let exists = lstat(url.path, &info) == 0
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let kind = CleanupItemKind.classify(url.path, home: home)
         let recommended = defaultRecommended ?? kind.recommended
         var block = extraBlock
         if !ReviewPathPolicy.permits(url.path, home: home) {
-            block = kind == .trash ? "已在垃圾桶中，請到 Finder 確認後清空。"
+            block = kind == .pythonCache ? "編譯快取的原始碼、檔案類型或路徑尚未全部通過驗證，先保留。" : kind == .trash ? "已在垃圾桶中，請到 Finder 確認後清空。"
                 : url.path.hasPrefix("/Library/") || url.path.hasPrefix("/System/") ? "系統資料，需要管理員授權；可用下方「完整清理」重新檢查與處理。"
                 : "這個位置尚未確認可安全清理，先保留；可在 Finder 查看內容。"
         }
@@ -332,6 +333,13 @@ struct ReviewMoveFailure: Identifiable {
         let directory = exists && info.st_mode & S_IFMT == S_IFDIR
         let identity = try? ReviewFileIdentity.capture(url, home: home)
         if identity == nil, block == nil { block = "路徑、檔案身分或權限尚未通過驗證" }
+        if block == nil, kind.needsIdleApplication {
+            if let paths = activePaths ?? runningExecutablePaths() {
+                if CleanupItemKind.activeCacheOwner(path: url.path, executablePaths: paths) {
+                    block = "對應 App 或更新器正在執行，請結束後重新掃描，再清理可重建的快取。"
+                }
+            } else { block = "目前無法確認 App 是否仍在使用這些快取，先保留。" }
+        }
         let accessIssue = exists && block == nil ? ReviewAccessIssue.inspect(url) : nil
         if let accessIssue { block = accessIssue.explanation }
         let displaySize = accessIssue != nil ? "大小未能讀取" : size ?? (block != nil ? "未讀取大小" : directory ? directorySize(url) : ByteCountFormatter.string(fromByteCount: max(0, info.st_size), countStyle: .binary))
@@ -339,6 +347,17 @@ struct ReviewMoveFailure: Identifiable {
             purpose: purpose ?? kind.explanation,
             recommended: recommended, blockedReason: block, device: info.st_dev, inode: info.st_ino,
             modified: info.st_mtimespec, directory: directory, identity: identity, existsAtScan: exists)
+    }
+    nonisolated private static func runningExecutablePaths() -> [String]? {
+        let capacity = min(max(Int(proc_listallpids(nil, 0)) + 128, 256), 16384)
+        var pids = [pid_t](repeating: 0, count: capacity)
+        let count = pids.withUnsafeMutableBytes { proc_listallpids($0.baseAddress, Int32($0.count)) }
+        guard count > 0, count < capacity else { return nil }
+        return pids.prefix(Int(count)).compactMap { pid in
+            var bytes = [CChar](repeating: 0, count: 4096)
+            guard proc_pidpath(pid, &bytes, UInt32(bytes.count)) > 0 else { return nil }
+            return String(cString: bytes)
+        }
     }
     nonisolated private static func directorySize(_ url: URL) -> String {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileAllocatedSizeKey]
@@ -388,6 +407,8 @@ struct FileReviewView: View {
                     Text(controller.lastRun == nil ? t("準備開始清理", "Ready to Clean") : t("清理結果", "Cleanup Results")).font(.title2.bold())
                     Text(t("可選 ", "Available: ") + controller.totalSize + " · \(controller.selectableFiles.count) " + t("項", "items") + " · \(controller.categories.count) " + t("類", "categories"))
                         .font(.callout).foregroundStyle(.secondary).monospacedDigit()
+                    Text(t("Mole 提供掃描候選 · MoPanel 判斷預選，可自行取消", "Candidates from Mole · Preselection by MoPanel; uncheck any item"))
+                        .font(.caption).foregroundStyle(.secondary)
                 }.padding(.bottom, 6)
                 FileReviewResultView(controller: controller, language: language)
                 if controller.preparing { ProgressView(t("正在整理掃描結果…", "Preparing scan results…")) }
@@ -470,6 +491,7 @@ struct FileReviewView: View {
             if expandedFiles.contains(file.id) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(file.purpose).font(.caption).foregroundStyle(.secondary)
+                    Text(t("勾選建議來源：MoPanel 本機規則（非 Mole 推薦標記）", "Recommendation source: MoPanel local rules, not a Mole recommendation flag")).font(.caption2).foregroundStyle(.secondary)
                     Text(file.selectable ? (file.recommended ? t("建議清理 · 可重新建立的暫存或舊紀錄", "Recommended · Rebuildable cache or old logs") : t("建議保留 · 請先確認是否仍需使用", "Recommended to keep · Review before selecting")) : t("已保留 · 不參與本次清理", "Kept · Excluded from this cleanup"))
                         .font(.caption.weight(.medium)).foregroundStyle(!file.selectable ? .orange : file.recommended ? MoPanelTheme.positive : .red)
                     if let reason = file.blockedReason { Text(reason).font(.caption).foregroundStyle(.secondary) }
