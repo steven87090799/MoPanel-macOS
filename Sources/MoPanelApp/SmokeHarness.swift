@@ -155,11 +155,16 @@ import MoPanelCore
         if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "scroll-updates" {
             model.stopMonitoring(); model.monitoring = true
             let now = Date()
-            model.trends = (0..<120).map { index in
-                TrendSample(date: now.addingTimeInterval(Double(index - 119) * 2), cpu: Double(15 + (index * 17) % 70), memory: Double(60 + index % 20),
-                            diskRead: Double(index % 9), diskWrite: Double(index % 4), down: nil, up: nil, gpu: 20,
-                            networkInterfaces: [:], sampleInterval: 2)
+            var samples: [TrendSample] = []
+            for index in 0..<120 {
+                let date = now.addingTimeInterval(Double(index - 119) * 2.0)
+                let cpu = Double(15 + (index * 17) % 70)
+                let memory = Double(60 + index % 20)
+                let read = Double(index % 9), write = Double(index % 4)
+                samples.append(TrendSample(date: date, cpu: cpu, memory: memory, diskRead: read, diskWrite: write,
+                                           down: nil, up: nil, gpu: 20, networkInterfaces: [:], sampleInterval: 2))
             }
+            model.trends = samples
         }
         if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "trend-gaps" {
             model.stopMonitoring()
