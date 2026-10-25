@@ -549,9 +549,12 @@ enum MonitorFormat {
 enum TrendMetric { case cpu, memory, disk, network }
 struct TrendPoint: Identifiable {
     let id: String
+    let sampleIndex: Int
     let date: Date
     let value: Double
     let series: String
+    let segment: String
+    let isolated: Bool
 }
 struct TrendCard: View {
     @EnvironmentObject private var model: AppModel
@@ -559,26 +562,31 @@ struct TrendCard: View {
     let unit: String
     let metric: TrendMetric
     private var isRate: Bool { metric == .disk || metric == .network }
-    private var rawPoints: [TrendPoint] {
-        model.trends.flatMap { sample -> [TrendPoint] in
-            let pairs: [(String, Double?)]
-            switch metric {
-            case .cpu: pairs = [("CPU", sample.cpu)]
-            case .memory: pairs = [(model.t("記憶體", "Memory"), sample.memory)]
-            case .disk: pairs = [(model.t("讀取", "Read"), sample.diskRead), (model.t("寫入", "Write"), sample.diskWrite)]
-            case .network:
-                let interface = sample.networkInterfaces[model.selectedNetwork]
-                pairs = [(model.t("下載", "Download"), interface?.rxRateMbs), (model.t("上傳", "Upload"), interface?.txRateMbs)]
-            }
-            return pairs.compactMap { name, value in
-                guard let value, value.isFinite, value >= 0 else { return nil }
-                return TrendPoint(id: sample.id.uuidString + name, date: sample.date, value: value, series: name)
-            }
+    private var series: [(String, (TrendSample) -> Double?)] {
+        switch metric {
+        case .cpu: return [("CPU", { $0.cpu })]
+        case .memory: return [(model.t("記憶體", "Memory"), { $0.memory })]
+        case .disk: return [(model.t("讀取", "Read"), { $0.diskRead }), (model.t("寫入", "Write"), { $0.diskWrite })]
+        case .network:
+            let name = model.selectedNetwork
+            return [(model.t("下載", "Download"), { $0.networkInterfaces[name]?.rxRateMbs }), (model.t("上傳", "Upload"), { $0.networkInterfaces[name]?.txRateMbs })]
         }
     }
-    private var scale: Double { isRate && (rawPoints.map(\.value).max() ?? 0) < 1 ? 1024 : 1 }
-    private var chartUnit: String { isRate ? (scale == 1024 ? "KB/s" : "MB/s") : "%" }
-    private var peak: Double { rawPoints.map(\.value).max() ?? 0 }
+    private func plotData() -> (points: [TrendPoint], gaps: [ResourceTrendGap], domain: ClosedRange<Date>?, names: [String]) {
+        var points: [TrendPoint] = [], gaps = Set<ResourceTrendGap>()
+        var domain: ClosedRange<Date>?
+        let configuredSeries = self.series
+        for (seriesIndex, pair) in configuredSeries.enumerated() {
+            let plot = ResourceTrendPlot.make(model.trends.map { $0.observation(pair.1($0)) })
+            domain = plot.dateDomain
+            gaps.formUnion(plot.gaps)
+            points += plot.points.map { point in
+                TrendPoint(id: model.trends[point.index].id.uuidString + pair.0, sampleIndex: point.index, date: point.date,
+                           value: point.value, series: pair.0, segment: "\(seriesIndex):\(point.segment)", isolated: point.isolated)
+            }
+        }
+        return (points, gaps.sorted { $0.start < $1.start }, domain, configuredSeries.map { $0.0 })
+    }
     private var currentText: String {
         guard let status = model.status else { return "—" }
         switch metric {
@@ -600,8 +608,15 @@ struct TrendCard: View {
         }
     }
     var body: some View {
-        let points = rawPoints
-        let multiplier = scale
+        let data = plotData()
+        let points = data.points
+        let peak = points.map(\.value).max() ?? 0
+        let multiplier = isRate && peak < 1 ? 1024.0 : 1.0
+        let chartUnit = isRate ? (multiplier == 1024 ? "KB/s" : "MB/s") : "%"
+        let maximum = isRate ? max(peak * multiplier * 1.15, 1) : 100
+        let largestGap = data.gaps.max { $0.duration < $1.duration }
+        let domain = data.domain ?? (Date()...Date().addingTimeInterval(1))
+        let significantGap = largestGap.flatMap { $0.duration > domain.upperBound.timeIntervalSince(domain.lowerBound) * 0.2 ? $0 : nil }
         GroupBox {
             VStack(alignment: .leading, spacing: 8) {
                 HStack { Text(title).font(.headline); Spacer(); Text(chartUnit).font(.caption).foregroundStyle(.secondary) }
@@ -609,21 +624,35 @@ struct TrendCard: View {
                 Text(context).font(.caption).foregroundStyle(.secondary).lineLimit(1).help(context)
                 if points.isEmpty { Text(model.t("等待讀值", "Waiting for readings")).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 125) }
                 else {
-                    Chart(points) { point in
-                        LineMark(x: .value(model.t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier))
-                            .foregroundStyle(by: .value(model.t("指標", "Metric"), point.series)).interpolationMethod(.linear)
+                    Chart {
+                        if let gap = significantGap {
+                            RectangleMark(xStart: .value("Start", gap.start), xEnd: .value("End", gap.end), yStart: .value(chartUnit, 0), yEnd: .value(chartUnit, maximum))
+                                .foregroundStyle(.primary.opacity(0.025))
+                                .annotation(position: .overlay) { Text(model.t("未記錄", "No readings")).font(.caption2).foregroundStyle(.secondary) }
+                        }
+                        ForEach(points) { point in
+                            LineMark(x: .value(model.t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier), series: .value("Segment", point.segment))
+                                .foregroundStyle(by: .value(model.t("指標", "Metric"), point.series)).interpolationMethod(.linear)
+                            if point.isolated {
+                                PointMark(x: .value(model.t("時間", "Time"), point.date), y: .value(chartUnit, point.value * multiplier))
+                                    .foregroundStyle(by: .value(model.t("指標", "Metric"), point.series)).symbolSize(16)
+                            }
+                        }
                     }
-                    .chartForegroundStyleScale(range: [MoPanelTheme.accent, MoPanelTheme.chartSecondary])
-                    .chartYScale(domain: 0...(isRate ? max(peak * multiplier * 1.15, 1) : 100))
-                    .chartXAxis { AxisMarks(values: .automatic(desiredCount: 2)) { value in AxisValueLabel(format: .dateTime.hour().minute().second()) } }
+                    .chartForegroundStyleScale(domain: data.names, range: Array([MoPanelTheme.accent, MoPanelTheme.chartSecondary].prefix(data.names.count)))
+                    .chartXScale(domain: domain)
+                    .chartYScale(domain: 0...maximum)
+                    .chartXAxis { AxisMarks(values: .automatic(desiredCount: 3)) { _ in AxisValueLabel(format: .dateTime.hour().minute().second()) } }
                     .frame(height: 125)
-                    .accessibilityLabel(title + " " + currentText)
+                    .accessibilityLabel(title + " " + currentText + (data.gaps.isEmpty ? "" : model.t("，資料中斷處不連線", ", gaps are not connected")))
                 }
                 HStack {
-                    Text(model.t("最近 ", "Recent ") + String(model.trends.count) + model.t(" 筆", " samples"))
+                    Text(model.t("最近 ", "Recent ") + String(Set(points.map(\.sampleIndex)).count) + model.t(" 筆", " readings"))
                     Spacer()
                     Text(model.t("峰值 ", "Peak ") + (isRate ? MonitorFormat.rate(points.isEmpty ? nil : peak) : (points.isEmpty ? "—" : DisplayFormat.percent(peak))))
                 }.font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                Text(data.gaps.isEmpty ? " " : model.t("部分時段未記錄，圖表已分段顯示", "Some periods were not recorded; lines are separated"))
+                    .font(.caption2).foregroundStyle(.secondary).frame(height: 14, alignment: .leading).accessibilityHidden(data.gaps.isEmpty)
             }.padding(8)
         }
     }

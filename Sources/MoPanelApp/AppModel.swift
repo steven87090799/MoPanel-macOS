@@ -54,6 +54,7 @@ import MoPanelProcess
     private var lastNativeRequest = Date.distantPast
     private var nativePrimaryInterface: String?
     @Published var trends: [TrendSample] = []
+    private var nextTrendStartsSegment = false
     @Published var monitoring = false
     @Published var monitorWarnings = ""
     @Published var selectedNetwork = "" {
@@ -395,6 +396,7 @@ import MoPanelProcess
             let cli = try validatedInstallation(for: invocation)
             let session = ManagedProcess()
             watchSession = session
+            nextTrendStartsSegment = true
             runningWatchOptions = watchOptions
             watchFramer = NDJSONFramer()
             monitorWarnings = ""
@@ -433,7 +435,7 @@ import MoPanelProcess
     }
 
     func stopMonitoring() {
-        if monitoring { nativeReadings.close(); lastNativeRequest = .distantPast }
+        if monitoring { nativeReadings.close(); lastNativeRequest = .distantPast; nextTrendStartsSegment = true }
         monitorRestartRequested = false
         monitoring = false
         watchSession?.cancel()
@@ -491,7 +493,10 @@ import MoPanelProcess
                                   diskRead: snapshot.diskIO?.readRate, diskWrite: snapshot.diskIO?.writeRate,
                                   down: network?.rxRateMbs, up: network?.txRateMbs,
                                   gpu: snapshot.gpu.compactMap(\.usage).first { $0.isFinite && (0...100).contains($0) } ?? nativeHardware.gpuUsage,
-                                  networkInterfaces: Dictionary(networks.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })))
+                                  networkInterfaces: Dictionary(networks.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first }),
+                                  sampleInterval: Double(runningWatchOptions?.interval ?? requestedWatchOptions.interval),
+                                  startsNewSegment: nextTrendStartsSegment))
+        nextTrendStartsSegment = false
         if trends.count > 120 { trends.removeFirst(trends.count - 120) }
     }
 

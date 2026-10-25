@@ -93,6 +93,11 @@ struct TrendSample: Identifiable {
     let up: Double?
     var gpu: Double? = nil
     var networkInterfaces: [String: NetworkStatus] = [:]
+    var sampleInterval: TimeInterval = 2
+    var startsNewSegment = false
+    func observation(_ value: Double?) -> ResourceTrendObservation {
+        .init(date: date, value: value, interval: sampleInterval, startsNewSegment: startsNewSegment)
+    }
 }
 
 struct ActivityEntry: Identifiable {

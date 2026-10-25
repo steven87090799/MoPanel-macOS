@@ -72,13 +72,13 @@ struct MenuBarPanel: View {
                         badge: temperature(model.gpuTemperature),
                         value: percentage(gpu.flatMap { model.gpuUsage($0) }),
                         detail: gpu?.name ?? model.t("尚無 GPU 讀值", "GPU data unavailable")) {
-                MiniResourceTrend(values: model.trends.map(\.gpu), color: MoPanelTheme.accent, ceiling: 100)
+                MiniResourceTrend(observations: model.trends.map { $0.observation($0.gpu) }, color: MoPanelTheme.accent, ceiling: 100)
             }
             MonitorTile(title: model.t("記憶體", "Memory"), symbol: "memorychip", tint: MoPanelTheme.accent,
                         badge: model.memoryPressureText,
                         value: percentage(snapshot.memory.total > 0 ? snapshot.memory.usedPercent : nil),
                         detail: snapshot.memory.total > 0 ? DisplayFormat.bytes(snapshot.memory.used) + " / " + DisplayFormat.bytes(snapshot.memory.total) : model.unavailable) {
-                MiniResourceTrend(values: model.trends.map(\.memory), color: MoPanelTheme.accent, ceiling: 100)
+                MiniResourceTrend(observations: model.trends.map { $0.observation($0.memory) }, color: MoPanelTheme.accent, ceiling: 100)
             }
             storage(snapshot)
             network(snapshot)
@@ -112,7 +112,7 @@ struct MenuBarPanel: View {
         return MonitorTile(title: model.t("網路", "Network"), symbol: "network", tint: MoPanelTheme.chartSecondary,
                            badge: network.map { model.networkName($0.name) } ?? "—", value: MonitorFormat.rate(network?.rxRateMbs),
                            detail: "↑ " + MonitorFormat.rate(network?.txRateMbs)) {
-            MiniResourceTrend(values: model.trends.map { $0.networkInterfaces[model.selectedNetwork]?.rxRateMbs }, color: MoPanelTheme.chartSecondary)
+            MiniResourceTrend(observations: model.trends.map { $0.observation($0.networkInterfaces[model.selectedNetwork]?.rxRateMbs) }, color: MoPanelTheme.chartSecondary)
         }
     }
 
@@ -287,26 +287,27 @@ private struct CoreUsageBars: View {
 }
 
 private struct MiniResourceTrend: View {
-    let values: [Double?]
+    let observations: [ResourceTrendObservation]
     let color: Color
     var ceiling: Double? = nil
     var body: some View {
         GeometryReader { proxy in
-            let samples = Array(values.suffix(40))
-            let maximum = ceiling ?? max(samples.compactMap { $0 }.filter { $0.isFinite && $0 >= 0 }.max() ?? 0, 0.001)
-            if samples.count >= 2 {
+            let plot = ResourceTrendPlot.make(Array(observations.suffix(40)))
+            let maximum = ceiling ?? max(plot.points.map(\.value).max() ?? 0, 0.001)
+            if !plot.points.isEmpty, let domain = plot.dateDomain {
                 Path { path in
-                    var connected = false
-                    for (index, sample) in samples.enumerated() {
-                        guard let sample, sample.isFinite, sample >= 0 else { connected = false; continue }
-                        let point = CGPoint(x: proxy.size.width * Double(index) / Double(samples.count - 1),
-                                            y: proxy.size.height * (1 - min(sample / maximum, 1)))
-                        if connected { path.addLine(to: point) } else { path.move(to: point) }
-                        connected = true
+                    var previousSegment: Int?
+                    let span = domain.upperBound.timeIntervalSince(domain.lowerBound)
+                    for sample in plot.points {
+                        let point = CGPoint(x: proxy.size.width * sample.date.timeIntervalSince(domain.lowerBound) / span,
+                                            y: proxy.size.height * (1 - min(sample.value / maximum, 1)))
+                        if previousSegment == sample.segment { path.addLine(to: point) } else { path.move(to: point) }
+                        if sample.isolated { path.addEllipse(in: CGRect(x: point.x - 1, y: point.y - 1, width: 2, height: 2)) }
+                        previousSegment = sample.segment
                     }
                 }.stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
             } else {
-                Rectangle().fill(.primary.opacity(0.08)).frame(height: 1).frame(maxHeight: .infinity)
+                Text("—").font(.caption).foregroundStyle(.tertiary).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }.accessibilityHidden(true)
     }

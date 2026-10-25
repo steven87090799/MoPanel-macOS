@@ -149,6 +149,18 @@ import MoPanelCore
         model.cleanupReview.sourceDate = Date()
         model.cleanupReview.message = "合成掃描結果；此模式無法移除檔案。"
         model.cleanupReview.recommend()
+        if ProcessInfo.processInfo.environment["MOPANEL_SMOKE_PREVIEW_KIND"] == "trend-gaps" {
+            model.stopMonitoring()
+            let start = Date().addingTimeInterval(-424)
+            let seconds: [Double] = [0, 2, 4, 6, 420, 422, 424]
+            let cpu: [Double] = [15, 35, 67, 50, 17, 39, model.status?.cpu.usage ?? 31]
+            let memory: [Double] = [78, 78, 79, 80, 77, 78, model.status?.memory.usedPercent ?? 78]
+            model.trends = seconds.enumerated().map { index, time in
+                TrendSample(date: start.addingTimeInterval(time), cpu: cpu[index], memory: memory[index],
+                            diskRead: index.isMultiple(of: 2) ? 2 : 0.3, diskWrite: index.isMultiple(of: 2) ? 0.2 : 1,
+                            down: nil, up: nil, gpu: 20, sampleInterval: 2, startsNewSegment: index == 4)
+            }
+        }
     }
 
     /// Fixed stage names only. Diagnostic output is restricted to an explicit
