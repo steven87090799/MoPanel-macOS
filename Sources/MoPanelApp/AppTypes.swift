@@ -74,14 +74,6 @@ struct CLIInstallation {
     var stableVersion: Bool { !version.lowercased().contains("nightly") && !version.lowercased().contains("main") }
 }
 
-struct ReleaseInfo: Decodable {
-    let tagName: String
-    let htmlUrl: URL
-    let prerelease: Bool
-    let draft: Bool
-    let publishedAt: String?
-}
-
 struct PendingOperation: Identifiable {
     let id = UUID()
     let invocation: MoleInvocation
@@ -215,6 +207,21 @@ struct PageHeading: View {
             }
             Spacer()
         }.padding(.bottom, 8)
+    }
+}
+
+/// Keep page-level scan actions in the same top-right location on every page.
+struct PageHeader<Actions: View>: View {
+    let title: String
+    let subtitle: String
+    let symbol: String
+    @ViewBuilder var actions: () -> Actions
+    var body: some View {
+        HStack(alignment: .top, spacing: 20) {
+            PageHeading(title: title, subtitle: subtitle, symbol: symbol)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 10, content: actions).fixedSize().padding(.top, 8)
+        }
     }
 }
 

@@ -24,4 +24,17 @@ final class CleanupPreviewTests: XCTestCase {
             XCTAssertTrue(ReviewPathPolicy.permits(path, home: "/Users/test"), path)
         }
     }
+    func testKnownDeveloperCacheChildrenAreSelectableButToolRootsAndSecretsAreNot() {
+        for path in [".npm/_cacache/content-v2", ".npm/_logs/last.log", ".gradle/caches/modules-2", "Library/Developer/Xcode/DerivedData/Example"] {
+            let full = "/Users/test/" + path
+            XCTAssertTrue(ReviewPathPolicy.permits(full, home: "/Users/test"), full)
+            XCTAssertTrue(CleanupItemKind.classify(full, home: "/Users/test").recommended)
+        }
+        for path in [".npm", ".npmrc", ".npm/_cacache", ".npm/_cacache-credentials/file", ".gradle", ".gradle/gradle.properties", "Library/Developer/Xcode/Archives", "Library/Developer/Xcode/DerivedData/../Archives"] {
+            XCTAssertFalse(ReviewPathPolicy.permits("/Users/test/" + path, home: "/Users/test"), path)
+        }
+        XCTAssertEqual(CleanupItemKind.classify("/Users/test/.npm/_cacache/content-v2", home: "/Users/test"), .packageCache)
+        XCTAssertEqual(CleanupItemKind.classify("/Users/test/.npmrc", home: "/Users/test"), .unknown)
+        XCTAssertFalse(CleanupItemKind.classify("/Users/test/.Trash/file", home: "/Users/test").recommended)
+    }
 }

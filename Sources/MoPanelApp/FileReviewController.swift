@@ -69,7 +69,7 @@ struct ReviewMoveReceipt: Identifiable {
     }
     func categoryPurpose(_ items: [ReviewFile]) -> String {
         if items.allSatisfy({ $0.recommended }) { return "快取、紀錄或可重建內容，已預選建議項目。" }
-        if items.allSatisfy({ !$0.selectable }) { return "僅供查看；展開可確認保護或權限原因。" }
+        if items.allSatisfy({ !$0.selectable }) { return "需要另外處理；展開查看原因與處理方式。" }
         return "包含需確認用途的資料，建議保留；展開後可逐項選擇。"
     }
     var chosen: [ReviewFile] { files.filter { selected.contains($0.id) && $0.selectable } }
@@ -132,7 +132,7 @@ struct ReviewMoveReceipt: Identifiable {
             var output: [ReviewFile] = []
             for app in apps {
                 let identityMatches = !app.bundleID.isEmpty && Self.bundleIdentifier(at: app.path) == app.bundleID
-                let block = !identityMatches ? "App 識別已變更或無法確認，請重新掃描" : app.source.lowercased().contains("cask") || app.source.lowercased().contains("brew") ? "由套件管理工具安裝，請使用進階中的官方完整模式" : running.contains(app.path) ? "App 正在執行，請先結束後重新選取" : nil
+                let block = !identityMatches ? "App 識別已變更或無法確認，請重新掃描" : app.source.lowercased().contains("cask") || app.source.lowercased().contains("brew") ? "這個 App 由 Homebrew 管理；請從下方「完整卸載」處理，以免留下套件紀錄。" : running.contains(app.path) ? "App 正在執行，請先結束後重新選取" : nil
                 var appFile = Self.describe(URL(fileURLWithPath: app.path), category: app.path, size: app.size,
                     purpose: "App 本體；移除後可重新安裝。", defaultRecommended: true, extraBlock: block)
                 appFile.associatedApp = app.path; appFile.expectedBundleID = app.bundleID
@@ -260,11 +260,15 @@ struct ReviewMoveReceipt: Identifiable {
 
     nonisolated private static func describe(_ url: URL, category: String, size: String?, purpose: String?, defaultRecommended: Bool?, extraBlock: String?) -> ReviewFile {
         var info = stat(); let exists = lstat(url.path, &info) == 0
-        let cache = url.path.contains("/Caches/") || url.path.contains("/Logs/") || url.path.contains("/.cache/")
-        let recommended = defaultRecommended ?? cache
         let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let kind = CleanupItemKind.classify(url.path, home: home)
+        let recommended = defaultRecommended ?? kind.recommended
         var block = extraBlock
-        if !ReviewPathPolicy.permits(url.path, home: home) { block = "此位置交由官方完整模式處理，這裡不直接變更" }
+        if !ReviewPathPolicy.permits(url.path, home: home) {
+            block = kind == .trash ? "已在垃圾桶中，請到 Finder 確認後清空。"
+                : url.path.hasPrefix("/Library/") || url.path.hasPrefix("/System/") ? "系統資料，需要管理員授權；可用下方「完整清理」重新檢查與處理。"
+                : "這個位置尚未確認可安全清理，先保留；可在 Finder 查看內容。"
+        }
         if !exists { block = "檔案已不存在" }
         if exists && info.st_mode & S_IFMT != S_IFDIR && info.st_mode & S_IFMT != S_IFREG { block = "特殊檔案或連結，僅供查看" }
         if exists && info.st_uid != getuid() { block = "不屬於目前使用者，僅供查看" }
@@ -275,7 +279,7 @@ struct ReviewMoveReceipt: Identifiable {
         if identity == nil, block == nil { block = "路徑、檔案身分或權限尚未通過驗證" }
         let displaySize = size ?? (block != nil ? "未讀取大小" : directory ? directorySize(url) : ByteCountFormatter.string(fromByteCount: max(0, info.st_size), countStyle: .binary))
         return ReviewFile(url: url, category: category, title: url.lastPathComponent, size: displaySize,
-            purpose: purpose ?? (cache ? "快取或診斷紀錄；可能會在下次使用時重新建立。" : "Mole 掃描列出的項目。用途需確認，建議先保留。"),
+            purpose: purpose ?? kind.explanation,
             recommended: recommended, blockedReason: block, device: info.st_dev, inode: info.st_ino,
             modified: info.st_mtimespec, directory: directory, identity: identity)
     }
@@ -315,6 +319,7 @@ struct FileReviewView: View {
     var showsActions = true
     var showsCategories = true
     @State private var expanded = Set<String>()
+    @State private var expandedFiles = Set<String>()
     private func t(_ zh: String, _ en: String) -> String { language == "en" ? en : zh }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -340,13 +345,22 @@ struct FileReviewView: View {
                                 HStack(alignment: .top, spacing: 10) {
                                     Toggle("", isOn: Binding(get: { controller.selected.contains(file.id) }, set: { controller.set([file.id], selected: $0) })).labelsHidden().accessibilityLabel(file.title).disabled(!file.selectable)
                                     VStack(alignment: .leading, spacing: 5) {
-                                        HStack { Text(file.title).font(.callout.weight(.medium)); Spacer(); Text(file.size).font(.caption.monospacedDigit()) }
-                                        Text(file.url.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                                        HStack {
+                                            Text(file.title).font(.callout.weight(.medium)); Spacer(); Text(file.size).font(.caption.monospacedDigit())
+                                            Button {
+                                                if expandedFiles.contains(file.id) { expandedFiles.remove(file.id) } else { expandedFiles.insert(file.id) }
+                                            } label: { Image(systemName: "info.circle") }.buttonStyle(.plain).help(t("詳細資訊", "Details"))
+                                                .accessibilityLabel(t("查看 ", "Details for ") + file.title)
+                                        }
                                         Text(file.purpose).font(.caption).foregroundStyle(.secondary)
-                                        Text(file.blockedReason ?? (file.recommended ? t("建議移除", "Recommended") : t("建議保留；確認用途後再選取", "Keep unless you understand its contents")))
-                                            .font(.caption.weight(.medium)).foregroundStyle(file.selectable && file.recommended ? MoPanelTheme.positive : .red)
+                                        Text(!file.selectable ? t("需要另外處理", "Needs another action") : file.recommended ? t("建議清理", "Recommended") : t("建議保留", "Recommended to keep"))
+                                            .font(.caption.weight(.medium)).foregroundStyle(!file.selectable ? Color.orange : file.recommended ? MoPanelTheme.positive : .red)
+                                        if expandedFiles.contains(file.id) {
+                                            Text(file.url.path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                                            if let reason = file.blockedReason { Text(reason).font(.caption).foregroundStyle(.secondary) }
+                                            Button(t("在 Finder 查看內容", "Inspect in Finder")) { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }.font(.caption)
+                                        }
                                     }
-                                    Button { NSWorkspace.shared.activateFileViewerSelecting([file.url]) } label: { Image(systemName: "folder") }.buttonStyle(.plain).help(t("在 Finder 中顯示", "Show in Finder"))
                                 }.padding(.vertical, 4)
                             }
                         }.padding(.top, 12)

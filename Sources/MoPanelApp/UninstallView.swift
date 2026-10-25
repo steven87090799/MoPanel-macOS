@@ -21,7 +21,11 @@ struct UninstallView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                PageHeading(title: model.t("卸載 App", "Uninstall Apps"), subtitle: model.t("選擇 App，勾選要一起移除的檔案；未勾選的資料會保留。", "Select apps and related files to remove. Unchecked data stays in place."), symbol: "square.grid.2x2")
+                PageHeader(title: model.t("卸載 App", "Uninstall Apps"), subtitle: model.t("選擇 App，勾選要一起移除的檔案；未勾選的資料會保留。", "Select apps and related files to remove. Unchecked data stays in place."), symbol: "square.grid.2x2") {
+                    NativeActionButton(model.t("掃描／重新整理", "Scan / Refresh"), identifier: "mopanel.uninstall.scan") {
+                        Task { await model.loadApps(); model.uninstallReview.reconcileInventory(); await model.uninstallReview.prepareApps(model.apps.filter { selected.contains($0.id) && !model.uninstallReview.removedPaths.contains($0.path) }, force: true) }
+                    }.disabled(!model.canStart)
+                }
                 HStack {
                     TextField(model.t("搜尋 App、Bundle ID 或路徑", "Search app, bundle ID or path"), text: $search).textFieldStyle(.roundedBorder)
                     Picker(model.t("排序", "Sort"), selection: $sort) {
@@ -29,9 +33,7 @@ struct UninstallView: View {
                         Text(model.t("容量（官方顯示值）", "Size (display estimate)")).tag("size")
                         Text(model.t("來源", "Source")).tag("source")
                     }.frame(width: 210)
-                    NativeActionButton(model.t("掃描／重新整理", "Scan / Refresh"), identifier: "mopanel.uninstall.scan") {
-                        Task { await model.loadApps(); model.uninstallReview.reconcileInventory(); await model.uninstallReview.prepareApps(model.apps.filter { selected.contains($0.id) && !model.uninstallReview.removedPaths.contains($0.path) }, force: true) }
-                    }.disabled(!model.canStart)
+
                 }
                 if model.apps.isEmpty {
                     ContentUnavailableView(model.t("尚無 App 清單", "No App Inventory"), systemImage: "app.dashed", description: Text(model.t("按「掃描」取得官方清單；無權限或掃描失敗會顯示錯誤。", "Scan to retrieve the official inventory. Permission or scan failures appear explicitly.")))
@@ -69,15 +71,22 @@ struct UninstallView: View {
                     Text("\(rows.count) " + model.t("個 App；選取 ", "apps; selected ") + "\(selected.intersection(Set(rows.map(\.id))).count)").font(.caption).foregroundStyle(.secondary)
                 }
                 if !selected.isEmpty || !model.uninstallReview.message.isEmpty { FileReviewView(controller: model.uninstallReview, language: model.language, operationInProgress: model.hasRunningOperation, showsCategories: selected.intersection(Set(rows.map(\.id))).isEmpty) }
-                DisclosureGroup(model.t("進階與官方完整模式", "Advanced and Full CLI Mode")) {
+                if model.apps.contains(where: { selected.contains($0.id) && ($0.source.lowercased().contains("brew") || $0.source.lowercased().contains("cask")) }) {
+                    HStack {
+                        Text(model.t("選取的 App 包含 Homebrew 套件，需透過完整卸載更新套件紀錄；接下來會重新確認移除範圍。", "Your selection includes Homebrew packages. Full Uninstall updates package records and asks you to review its scope again.")).font(.callout)
+                        Spacer()
+                        Button(model.t("完整卸載…", "Full Uninstall…")) { model.request(.uninstall) }.disabled(!model.canStart)
+                    }.padding(14).moPanelGlass(cornerRadius: 14)
+                }
+                DisclosureGroup(model.t("更多卸載選項", "More Uninstall Options")) {
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {
-                        Toggle(model.t("預選個人資料（--with-data；預設關閉）", "Preselect personal data (--with-data; off by default)"), isOn: $withData)
+                        Toggle(model.t("一併選取個人資料（可能含設定與登入資訊）", "Also select personal data (may include settings and sign-ins)"), isOn: $withData)
                         Toggle(model.t("詳細診斷（--debug）", "Detailed diagnostics (--debug)"), isOn: $debug)
                         DisclosureGroup(model.t("進階刪除方式", "Advanced Removal Mode")) {
                             Toggle(model.t("永久刪除，不放入垃圾桶（--permanent）", "Delete permanently, bypassing Trash (--permanent)"), isOn: $permanent)
                         }
-                        Text(model.t("同名 App、無法唯一對應的 Homebrew 名稱或特殊檔名，請使用「官方選取器」。確認畫面的實際路徑才是最終移除範圍。", "For duplicate app names, ambiguous cask aliases or special filenames, use the official selector. Actual paths in its final review determine the removal scope."))
+                        Text(model.t("由 Homebrew 安裝的 App 請使用下方完整卸載流程，讓套件紀錄一併更新。執行前會再次確認 App 與移除範圍。", "For duplicate app names, ambiguous cask aliases or special filenames, use the official selector. Actual paths in its final review determine the removal scope."))
                             .font(.caption).foregroundStyle(.secondary)
                     }.padding(8)
                 }
@@ -86,8 +95,8 @@ struct UninstallView: View {
                         .buttonStyle(.borderedProminent).disabled(selected.isEmpty || !model.canStart)
                     Button(model.t("確認卸載…", "Review Uninstall…")) { Task { await model.uninstall(selected: selected, preview: false, withData: withData, permanent: permanent, debug: debug) } }.disabled(selected.isEmpty || !model.canStart)
                     Spacer()
-                    Button(model.t("官方選取器／預覽", "Official Selector / Preview")) { model.request(.uninstall, options: [.dryRun] + (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)
-                    Button(model.t("官方選取器／卸載", "Official Selector / Uninstall")) { model.request(.uninstall, options: (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)
+                    Button(model.t("檢查完整卸載範圍", "Review Full Removal")) { model.request(.uninstall, options: [.dryRun] + (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)
+                    Button(model.t("完整卸載（含 Homebrew 項目）…", "Full Uninstall (including Homebrew)…")) { model.request(.uninstall, options: (debug ? [.debug] : []) + (withData ? [.withData] : []) + (permanent ? [.permanent] : [])) }.disabled(!model.canStart)
                     Button(model.t("說明", "Help")) { model.request(.uninstall, options: [.help]) }.disabled(!model.canStart)
                 }
                 }

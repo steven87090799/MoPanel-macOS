@@ -19,7 +19,9 @@ struct MaintenanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                PageHeading(title: model.t(section.zh, section.en), subtitle: subtitle, symbol: section.symbol)
+                PageHeader(title: model.t(section.zh, section.en), subtitle: subtitle, symbol: section.symbol) {
+                    scanAction
+                }
                 if section == .clean && (model.cleanupReview.sourceDate != nil || !model.cleanupReview.files.isEmpty || !model.cleanupReview.errors.isEmpty) { FileReviewView(controller: model.cleanupReview, language: model.language, operationInProgress: model.hasRunningOperation) }
                 GlassEffectContainer(spacing: 18) {
                     GlassCard {
@@ -27,16 +29,7 @@ struct MaintenanceView: View {
                         Text(model.t(section == .clean ? "掃描後勾選要移除的項目，再移至垃圾桶；未勾選的內容會保留。" : "先檢查建議與工作範圍，再開始操作。需要調整時展開進階選項。", section == .clean ? "Scan, select items and move them to Trash. Unchecked items stay in place." : "Review the suggested scope, then start. Expand advanced options for more control."))
                             .foregroundStyle(.secondary)
                         HStack {
-                            if model.canOpenSelection(command) {
-                                NativeActionButton(model.t("掃描並選擇", "Scan and Choose"), identifier: "mopanel.maintenance.\(command.rawValue).preview", systemImage: "magnifyingglass", appearance: .prominent) {
-                                    model.openSelection(command, options: options, title: model.t(section.zh, section.en))
-                                }.controlSize(.large)
-                            } else {
-                            NativeActionButton(model.t("掃描", "Scan"),
-                                               identifier: "mopanel.maintenance.\(command.rawValue).preview",
-                                               systemImage: "magnifyingglass", appearance: section == .clean ? .prominent : .standard) {
-                                model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en))
-                            }.controlSize(.large)
+                            if !model.canOpenSelection(command) {
                             if section != .clean || model.fixtureMode {
                             NativeActionButton(model.t("開始操作…", "Start…"),
                                                identifier: "mopanel.maintenance.\(command.rawValue).review",
@@ -50,11 +43,21 @@ struct MaintenanceView: View {
                         }.disabled(!model.canStart || (section == .clean && external && volume.isEmpty))
                     }
                 }
-                DisclosureGroup(model.t("進階選項與官方完整模式", "Advanced Options and Full CLI Mode")) {
+                if section == .clean, model.cleanupReview.files.contains(where: { !$0.selectable }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.t("有些項目需要另外處理", "Some items need another action")).font(.headline)
+                            Text(model.t("系統資料可能需要管理員授權。完整清理會重新檢查全部項目，再由你確認範圍。", "System data may require administrator approval. Full Cleanup reviews all eligible items again before you confirm the scope.")).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button(model.t("完整清理…", "Full Cleanup…")) { model.request(.clean, options: options) }.disabled(!model.canStart)
+                    }.padding(16).moPanelGlass(cornerRadius: 16)
+                }
+                DisclosureGroup(model.t("更多選項", "More Options")) {
                 if model.canOpenSelection(command) {
                     Button(model.t("只做預覽，不變更檔案", "Preview Only")) { model.request(command, options: options + [.dryRun]) }.disabled(!model.canStart)
                 }
-                if section == .clean { Button(model.t("使用 Mole 官方完整清理…", "Full Mole Cleanup…")) { model.request(.clean, options: options) }.disabled(!model.canStart) }
+                if section == .clean { Button(model.t("完整清理（含需要授權的項目）…", "Full Cleanup (including items requiring approval)…")) { model.request(.clean, options: options) }.disabled(!model.canStart) }
                 Notice(text: safetyText, warning: section != .optimize)
                 GroupBox(model.t("操作選項", "Options")) {
                     VStack(alignment: .leading, spacing: 16) {
@@ -94,16 +97,29 @@ struct MaintenanceView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }.padding(12)
                 }
-                Notice(text: model.t("官方完整模式保留 Mole 的選取與確認；上方可勾選清單則使用 macOS 移至垃圾桶。兩種模式會分別顯示實際執行方式。", "Full CLI mode preserves Mole's selection and confirmation. The selectable list above uses macOS Trash. Each mode shows its own execution method."))
+                Text(model.t("一般清理將勾選項目移至垃圾桶。「完整清理」使用 Mole 的完整檢查與確認流程，範圍需重新選擇。", "Standard cleanup moves checked items to Trash. Full Cleanup uses Mole's full review and confirmation flow, with its scope selected separately.")).font(.caption).foregroundStyle(.secondary)
                 HStack {
                     Button(model.t("查看操作歷史與實際結果", "View History and Actual Results")) { model.section = .history; Task { await model.loadHistory() } }
                         .disabled(!model.canStart)
                     Spacer()
-                    Text(model.t("執行中的停止按鈕位於操作視窗。", "Stop is available in the operation window.")).font(.caption).foregroundStyle(.secondary)
+                    Text(model.t("執行進度與停止按鈕會顯示在本頁下方。", "Progress and Stop appear at the bottom of this page.")).font(.caption).foregroundStyle(.secondary)
                 }
                 }
             }.padding(26)
         }.task { if section == .clean && !model.fixtureMode { await model.cleanupReview.loadCleanupPreview() } }
+    }
+    @ViewBuilder private var scanAction: some View {
+        Group {
+            if model.canOpenSelection(command) {
+                NativeActionButton(model.t("掃描並選擇", "Scan and Choose"), identifier: "mopanel.maintenance.\(command.rawValue).preview", systemImage: "magnifyingglass", appearance: .prominent) {
+                    model.openSelection(command, options: options, title: model.t(section.zh, section.en))
+                }
+            } else {
+                NativeActionButton(model.t("掃描", "Scan"), identifier: "mopanel.maintenance.\(command.rawValue).preview", systemImage: "magnifyingglass", appearance: .prominent) {
+                    model.request(command, options: options + [.dryRun], title: model.t("安全預覽 · ", "Preview · ") + model.t(section.zh, section.en))
+                }
+            }
+        }.controlSize(.large).disabled(!model.canStart || (section == .clean && external && volume.isEmpty))
     }
     private var subtitle: String {
         switch section {

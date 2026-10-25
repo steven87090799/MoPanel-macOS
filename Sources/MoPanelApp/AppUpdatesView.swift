@@ -83,8 +83,11 @@ struct AppUpdatesView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(t("App 更新", "App Updates"), systemImage: "arrow.triangle.2.circlepath.circle").font(.largeTitle.bold())
-            Text(t("先檢查可用更新，再選擇要更新的 App。", "Check available updates, then choose apps to update.")).foregroundStyle(.secondary)
+            PageHeader(title: t("App 更新", "App Updates"), subtitle: t("先檢查可用更新，再選擇要更新的 App。", "Check available updates, then choose apps to update."), symbol: "arrow.triangle.2.circlepath.circle") {
+                Button(t("讀取本機 App", "Read Local Apps")) { Task { await controller.scanLocalApplications() } }.disabled(locked)
+                Button(t("檢查 Homebrew 更新", "Check Homebrew Updates")) { Task { await controller.checkHomebrew() } }
+                    .buttonStyle(.borderedProminent).disabled(locked)
+            }
             DisclosureGroup(t("更多資訊", "More Information")) {
             Text(t("不自動檢查或更新。Homebrew 版本來自你目前的索引；其他 App 僅辨識本機更新來源，不會上傳 App 清單、讀取帳號憑證或抓取任意安裝檔。", "No automatic checks or updates. Homebrew versions come from your current metadata. Other apps are identified locally; MoPanel does not upload the app inventory, read account credentials or fetch arbitrary installers.")).font(.callout)
             }
@@ -97,12 +100,11 @@ struct AppUpdatesView: View {
         GroupBox {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Label("Homebrew Casks", systemImage: "shippingbox").font(.title2.bold())
+                    Label(t("Homebrew 安裝的 App", "Apps Installed with Homebrew"), systemImage: "shippingbox").font(.title2.bold())
                     Spacer()
                     Button(t("選擇 Homebrew…", "Choose Homebrew…")) { controller.chooseHomebrew() }.disabled(locked)
-                    Button(t("檢查更新", "Check Updates")) { Task { await controller.checkHomebrew() } }
-                        .buttonStyle(.borderedProminent).disabled(locked)
                 }
+                DisclosureGroup(t("版本來源與更新方式", "Version Source and Update Method")) {
                 if let path = controller.homebrewPath {
                     Text((controller.homebrewVersion ?? "Homebrew") + " · " + path).font(.caption.monospaced()).textSelection(.enabled)
                 }
@@ -115,6 +117,7 @@ struct AppUpdatesView: View {
                         .disabled(locked || !controller.canRefreshMetadata)
                 }
                 Text(t("檢查時停用 Homebrew 自動更新與遙測；Homebrew 首次缺少快取時仍可能自行下載公開中繼資料。需要新索引時，請明確確認上方更新操作。", "Homebrew auto-update and analytics are disabled during checks. Homebrew may still fetch public metadata if its cache is missing. Explicitly confirm the metadata update above when you want fresh indexes.")).font(.caption).foregroundStyle(.secondary)
+                }
                 if controller.lastChecked != nil && !controller.canUpgrade {
                     Text(t("目前 Homebrew 的安全更新參數未通過驗證，僅提供版本資訊。", "The installed Homebrew has not passed the safe upgrade argument checks; version information remains available.")).foregroundStyle(.orange)
                 }
@@ -170,10 +173,12 @@ struct AppUpdatesView: View {
                     Label(t("其他 App 的更新入口", "Other App Update Sources"), systemImage: "square.stack.3d.up").font(.title2.bold())
                     Spacer()
                     Button(t("開啟 App Store", "Open App Store")) { controller.openAppStore() }.disabled(locked)
-                    Button(t("讀取本機 App", "Read Local Apps")) { Task { await controller.scanLocalApplications() } }.disabled(locked)
                 }
+                Text(t("App Store 的 App 請到 App Store 更新；其他 App 可從下方開啟自己的更新入口。", "Update App Store apps in the App Store. Other apps can open their own update source below.")).font(.callout).foregroundStyle(.secondary)
+                DisclosureGroup(t("更新來源詳細資訊", "Update Source Details")) {
                 Text(t("App Store：開啟後選擇側邊欄「更新」，由 Apple 顯示及確認可用版本。這裡不讀取 Apple 帳號或偽造 App Store 更新數量。", "App Store: choose Updates in its sidebar after opening; Apple displays and confirms available versions. This view does not access your Apple Account or invent App Store update counts.")).font(.callout)
                 Text(t("Sparkle：只讀取已安裝 App 的 SUFeedURL。通過本機簽章檢查且不含帳密或 query 的 HTTPS URL 可顯示；不抓取 feed、不執行其中的安裝檔，也不宣稱已查到最新版本。", "Sparkle: reads the installed app's SUFeedURL. An HTTPS URL without credentials or query data is displayed only after a local signature check. Feeds and installers are not fetched, and no latest version is claimed.")).font(.caption).foregroundStyle(.secondary)
+                }
                 if localApps.isEmpty {
                     Text(controller.localInventoryLoaded ? t("沒有符合搜尋的本機 App。", "No local apps match the search.") : t("按讀取本機 App，檢視 /Applications 與 ~/Applications 的 App 資訊與必要簽章；不掃描個人文件。", "Read local apps to inspect app metadata and relevant signatures in /Applications and ~/Applications. Personal documents are not scanned.")).foregroundStyle(.secondary)
                 }

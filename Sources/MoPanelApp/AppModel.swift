@@ -13,6 +13,9 @@ import MoPanelProcess
     @Published var language: String { didSet { if !isTestLaunch { UserDefaults.standard.set(language, forKey: "language") } } }
     @Published var appearance: String { didSet { if !isTestLaunch { UserDefaults.standard.set(appearance, forKey: "appearance") } } }
     @Published var customPath: String { didSet { if !isTestLaunch { UserDefaults.standard.set(customPath, forKey: "cliPath") } } }
+    @Published var dashboardLayout = DashboardLayout() {
+        didSet { if !isTestLaunch, oldValue != dashboardLayout { dashboardLayout.save(to: .standard) } }
+    }
     @Published var monitoringInterval = 2 { didSet { if oldValue != monitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarMonitoringInterval = 5 { didSet { if oldValue != menuBarMonitoringInterval { monitoringPreferencesChanged() } } }
     @Published var menuBarEnabled = false {
@@ -27,8 +30,7 @@ import MoPanelProcess
     @Published private(set) var systemSleeping = false
     @Published private(set) var lowPowerMode = false
     @Published var installation: CLIInstallation?
-    @Published var release: ReleaseInfo?
-    @Published var releaseError: String?
+    @Published private(set) var releaseCheck = ReleaseCheckState()
     @Published var isDetecting = false
     @Published var busy: String?
     @Published private(set) var activeScanCommand: MoleCommand?
@@ -127,6 +129,7 @@ import MoPanelProcess
         uninstallReview.onBusyChanged = { [weak self] value in self?.nativeRemovalRunning = value; self?.updateMonitoringDemand() }
         menuBarEnabled = !isTestLaunch && UserDefaults.standard.bool(forKey: "menuBarEnabled")
         if !isTestLaunch {
+            dashboardLayout = DashboardLayout(defaults: .standard)
             let saved = MonitoringPreferences(defaults: .standard)
             monitoringInterval = saved.interval
             menuBarMonitoringInterval = saved.menuBarInterval
@@ -254,9 +257,23 @@ import MoPanelProcess
     }
 
     func checkRelease() async {
-        guard !isTestLaunch else { return }
-        do { release = try await CLIProbe.latestRelease(); releaseError = nil }
-        catch { releaseError = error.localizedDescription }
+        guard !shuttingDown, testLaunchError == nil, (!isTestLaunch || fixtureMode), releaseCheck.begin() else { return }
+        do {
+            let release: ReleaseInfo
+            if fixtureMode {
+                // Fixture launches never contact GitHub or use the installed CLI.
+                guard let url = AppResources.bundle?.url(forResource: "latest-release", withExtension: "json", subdirectory: "Fixtures") else {
+                    throw ReleaseCheckFailure.invalidResponse
+                }
+                try await Task.sleep(for: .milliseconds(500))
+                guard let fixture = try OfficialReleaseClient.decode(Data(contentsOf: url), statusCode: 200).first else {
+                    throw ReleaseCheckFailure.invalidResponse
+                }
+                release = fixture
+            } else { release = try await OfficialReleaseClient.latestRelease() }
+            try Task.checkCancellation()
+            releaseCheck.complete(release)
+        } catch { releaseCheck.fail(ReleaseCheckFailure(error: error)) }
     }
 
     private func validatedInstallation(for invocation: MoleInvocation) throws -> CLIInstallation {

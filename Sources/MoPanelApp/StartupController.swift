@@ -3,6 +3,7 @@ import AppKit
 import Combine
 import Darwin
 import ServiceManagement
+import UniformTypeIdentifiers
 import MoPanelCore
 import MoPanelProcess
 
@@ -39,6 +40,9 @@ private struct StartupCommandResult {
     @Published private(set) var isBusy = false
     @Published private(set) var progress: Double = 0
     @Published private(set) var statusMessage = ""
+    @Published private(set) var backgroundItems: [BackgroundStartupItem] = []
+    @Published private(set) var backgroundReadAt: Date?
+    @Published private(set) var backgroundReadError: String?
     @Published var pendingPlan: StartupCommandPlan?
     @Published var errorMessage: String?
     var language: String
@@ -103,6 +107,8 @@ private struct StartupCommandResult {
             rows = inventory.items.map { .init(item: $0, override: nil, loadState: .unknown("Not queried"), duplicateLabel: false) }
             markDuplicateLabels()
             hasLoaded = true
+            if mockRunner == nil { await readBackgroundItems() }
+            try checkCancellation()
             var maps: [String: [String: StartupOverride]] = [:]
             for domain in Set(rows.map { domain(for: $0.item.scope) }).sorted() {
                 do { maps[domain] = try await readOverrides(domain: domain) }
@@ -128,10 +134,60 @@ private struct StartupCommandResult {
                 catch { rows[index].loadState = .unknown(error.localizedDescription) }
             }
             progress = 1
-            statusMessage = t("已讀取 ", "Read ") + String(rows.count) + t(" 個 plist。載入狀態和啟動覆寫分開顯示。", " plists. Loaded state and startup overrides are shown separately.")
+            statusMessage = backgroundReadAt != nil
+                ? t("已讀取登入項目、背景 App 與服務。點右側詳細資訊可查看來源與設定。", "Login items, background apps and services loaded. Use Details to inspect their source and settings.")
+                : t("已讀取 ", "Read ") + String(rows.count) + t(" 個背景服務；登入項目與背景 App 尚未完成讀取。", " background services; login items and background apps have not been read.")
         } catch is CancellationError {
             statusMessage = t("已取消；已顯示的項目可能只是部分結果。", "Cancelled; displayed rows may be partial results.")
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    func refreshBackgroundItems() async {
+        guard begin(t("讀取完整登入與背景清單…", "Reading login and background items…")) else { return }
+        defer { finish() }
+        await readBackgroundItems()
+    }
+
+    private func readBackgroundItems() async {
+        guard !testLaunchBlocked, mockRunner == nil else { return }
+        let process = ManagedProcess()
+        activeProcess = process
+        defer { activeProcess = nil }
+        do {
+            try process.start(request: .init(executable: URL(fileURLWithPath: "/usr/bin/sfltool"), arguments: ["dumpbtm"],
+                environment: ["LC_ALL": "C", "LANG": "C"], timeout: 8, outputLimit: 2 * 1024 * 1024))
+            let result = await process.wait()
+            try checkCancellation()
+            guard result.exitCode == 0, !result.timedOut, !result.outputTruncated else { throw StartupContractError.unverifiableState }
+            let items = try BackgroundStartupParser.parse(String(decoding: result.stdout, as: UTF8.self), userID: userID)
+            backgroundItems = items; backgroundReadAt = Date(); backgroundReadError = nil
+        } catch {
+            backgroundReadError = t("macOS 尚未提供完整清單。目前仍可查看背景服務；登入項目與背景 App 可在系統設定查看，或從更多選項匯入系統清單。", "macOS has not provided the complete list. Background services remain available. View login and background apps in System Settings, or import a system report under More Options.")
+        }
+    }
+
+    func importBackgroundItems() {
+        guard !testLaunchBlocked, !isBusy, externalOperationInProgress?() != true else { return }
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
+        panel.message = t("選擇 macOS sfltool dumpbtm 產生的清單；只讀取，不會變更設定。", "Choose a report produced by macOS sfltool dumpbtm. It is read only; no settings are changed.")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey, .contentModificationDateKey])
+            guard values.isRegularFile == true, let size = values.fileSize, size <= 2 * 1024 * 1024 else { throw StartupContractError.invalidOutput }
+            let items = try BackgroundStartupParser.parse(String(contentsOf: url, encoding: .utf8), userID: userID)
+            backgroundItems = items; backgroundReadAt = values.contentModificationDate ?? Date(); backgroundReadError = nil
+            statusMessage = t("已匯入系統清單；啟用狀態以清單產生時間為準。", "System report imported. Its enabled states reflect the report's creation time.")
+        } catch { errorMessage = t("無法讀取這份系統清單，請確認是 sfltool dumpbtm 的完整輸出。", "This report could not be read. Use complete sfltool dumpbtm output.") }
+    }
+
+    func backgroundItem(matching row: StartupRow) -> BackgroundStartupItem? {
+        backgroundItems.first { $0.kind == .service && ($0.url?.standardizedFileURL == row.item.url.standardizedFileURL || $0.launchLabel == row.item.snapshot?.label) }
+    }
+
+    func plistRow(matching item: BackgroundStartupItem) -> StartupRow? {
+        rows.first { $0.item.url.standardizedFileURL == item.url?.standardizedFileURL || $0.item.snapshot?.label == item.launchLabel }
     }
 
     func inspectState(id: String) async {

@@ -107,10 +107,13 @@ final class ApplicationUsageReader {
 
 struct ApplicationUsageList: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var sortByCPU = false
     @State private var showAll = false
     @State private var search = ""
     @State private var expanded: String?
+    @State private var processDetails: ProcessDetails?
+    @State private var readingDetails = false
     var compact = false
     private var rows: [ApplicationUsage] {
         let rows = model.applicationUsage.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }
@@ -124,22 +127,56 @@ struct ApplicationUsageList: View {
                 Spacer()
                 Button(model.t("記憶體", "Memory")) { sortByCPU = false }.buttonStyle(.plain).frame(width: compact ? 70 : 100, alignment: .trailing).foregroundStyle(sortByCPU ? Color.secondary : MoPanelTheme.accent)
                 Button("CPU") { sortByCPU = true }.buttonStyle(.plain).frame(width: compact ? 50 : 65, alignment: .trailing).foregroundStyle(sortByCPU ? MoPanelTheme.accent : Color.secondary)
+                Color.clear.frame(width: 22)
             }
             if !compact { TextField(model.t("搜尋程式", "Search apps"), text: $search).textFieldStyle(.roundedBorder) }
             ForEach(rows) { row in
                 VStack(alignment: .leading, spacing: 7) {
-                    Button { expanded = expanded == row.id ? nil : row.id } label: {
+                    HStack(spacing: 6) {
+                    Button { toggleDetails(row) } label: {
                         HStack(spacing: 8) {
-                            if !compact { AppIcon(path: row.appPath ?? row.id, size: 26) }
+                            AppIcon(path: row.appPath ?? row.id, size: compact ? 20 : 26)
                             Text(row.name).font(.callout.weight(.medium)).lineLimit(1)
                             Spacer(minLength: 4)
                             Text(DisplayFormat.bytes(row.memory)).frame(width: compact ? 70 : 100, alignment: .trailing)
                             Text(row.cpu.map { String(format: "%.1f%%", $0) } ?? "…").frame(width: compact ? 50 : 65, alignment: .trailing)
                         }.font(.caption).monospacedDigit().contentShape(Rectangle())
                     }.buttonStyle(.plain)
+                    NativeActionButton(row.name + " · " + model.t("為什麼在執行？", "Why is it running?"), identifier: "mopanel.usage.details." + row.id, systemImage: "ellipsis", appearance: .icon) {
+                        toggleDetails(row)
+                    }.frame(width: 22).help(model.t("詳細資訊", "Details"))
+                    }
                     if expanded == row.id {
-                        Text("PID \(row.pid) · \(row.processCount) " + model.t("個程序", "processes")).font(.caption).foregroundStyle(.secondary)
-                        if let path = row.appPath { Text(path).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled) }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(model.t("為什麼在執行？", "Why is it running?")).font(.callout.weight(.semibold))
+                            Text(processPurpose(row)).font(.caption).foregroundStyle(.secondary)
+                            LabeledContent(model.t("記憶體用量", "Memory usage"), value: DisplayFormat.bytes(row.memory))
+                            LabeledContent("CPU", value: row.cpu.map { String(format: "%.1f%%", $0) } ?? model.t("等待下次取樣", "Waiting for next sample"))
+                            LabeledContent(model.t("包含程序", "Grouped processes"), value: String(row.processCount))
+                            LabeledContent("PID", value: String(row.pid))
+                            if readingDetails { ProgressView().controlSize(.small) }
+                            if let details = processDetails, details.pid == row.pid {
+                                LabeledContent(model.t("上層程序", "Parent process"), value: (details.parentName ?? "—") + " · \(details.parentPID)")
+                                LabeledContent(model.t("啟動時間", "Started"), value: details.startedAt.formatted(date: .abbreviated, time: .standard))
+                                LabeledContent(model.t("執行緒", "Threads"), value: String(details.threads))
+                                LabeledContent(model.t("開啟檔案", "Open files"), value: details.openFiles.map(String.init) ?? "—")
+                                LabeledContent(model.t("累計磁碟讀寫", "Lifetime disk I/O"), value: "↓ " + DisplayFormat.bytes(details.bytesRead) + "  ↑ " + DisplayFormat.bytes(details.bytesWritten))
+                                Text(details.executable).font(.caption2.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                            } else if !readingDetails {
+                                Text(model.t("程序可能已結束或無法確認歸屬，暫時無法讀取更多資料。", "The process may have exited or its identity could not be verified. More details are unavailable.")).font(.caption2).foregroundStyle(.secondary)
+                            }
+                            if let path = row.appPath { Text(path).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled) }
+                            Text(model.t("數值包含可確認歸屬的子程序；CPU 以單一核心滿載為 100%。", "Includes child processes with a verified owner. One fully used core equals 100% CPU."))
+                                .font(.caption2).foregroundStyle(.secondary)
+                            HStack {
+                                if let path = row.appPath { Button(model.t("在 Finder 顯示", "Show in Finder")) { model.reveal(path) }.disabled(model.isTestLaunch) }
+                                Spacer()
+                                Button(model.t("活動監視器", "Activity Monitor")) {
+                                    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.ActivityMonitor") { NSWorkspace.shared.open(url) }
+                                }.disabled(model.isTestLaunch)
+                            }
+                        }.font(.caption).padding(12).background(.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10))
+                            .accessibilityIdentifier("mopanel.usage.expanded." + row.id)
                     }
                 }.padding(.vertical, 4)
             }
@@ -151,6 +188,29 @@ struct ApplicationUsageList: View {
                     if let date = model.nativeCollectedAt { Text(date.formatted(date: .abbreviated, time: .standard)).font(.caption2).foregroundStyle(.secondary) }
                 }
             }
+        }
+    }
+    private func toggleDetails(_ row: ApplicationUsage) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { expanded = expanded == row.id ? nil : row.id }
+        processDetails = nil
+        guard expanded == row.id, !model.isTestLaunch else { readingDetails = false; return }
+        readingDetails = true
+        Task {
+            let value = await Task.detached(priority: .utility) { ProcessDetailsReader.read(pid: row.pid, expectedAppPath: row.appPath) }.value
+            guard expanded == row.id else { return }
+            processDetails = value; readingDetails = false
+        }
+    }
+    private func processPurpose(_ row: ApplicationUsage) -> String {
+        switch row.name.lowercased() {
+        case "chronod": return model.t("macOS 小工具的時間軸服務，用來更新桌面與通知中心的小工具。", "A macOS widget timeline service that updates desktop and Notification Center widgets.")
+        case "windowserver": return model.t("macOS 的畫面與視窗服務；顯示視窗、動畫及外接螢幕都會使用它。", "The macOS display and window service, used for windows, animations and connected displays.")
+        case "mds", "mds_stores", "mdworker_shared": return model.t("Spotlight 搜尋索引服務，會在檔案變更後更新搜尋資料。", "Spotlight indexing services update the search index when files change.")
+        case "launchd": return model.t("macOS 的程序與服務管理程式，負責依需要啟動背景工作。", "The macOS process and service manager starts background jobs when needed.")
+        default:
+            return row.appPath != nil
+                ? model.t("這個 App 目前正在執行，用量包含可確認屬於它的背景程序。macOS 未提供可驗證的手動或自動啟動原因。", "This app is running. Usage includes background processes with a verified association. macOS has not provided a verifiable manual or automatic launch reason.")
+                : model.t("這是一個獨立背景程序。下方可查看執行位置與上層程序；目前無法確認觸發它的具體原因。", "This is a separate background process. Its executable and parent are shown below; the specific launch trigger has not been verified.")
         }
     }
 }

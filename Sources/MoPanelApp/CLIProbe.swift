@@ -159,37 +159,4 @@ enum CLIProbe {
                                compatibility: MoleCompatibility.assess(versionOutput: output, mainHelp: help[.help] ?? "", helps: help, installationChannel: receiptChannel))
     }
 
-    static func latestRelease() async throws -> ReleaseInfo {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 15
-        configuration.timeoutIntervalForResource = 20
-        let session = URLSession(configuration: configuration)
-        defer { session.invalidateAndCancel() }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        func fetch(_ suffix: String) async throws -> Data {
-            var request = URLRequest(url: URL(string: "https://api.github.com/repos/tw93/Mole/releases" + suffix)!)
-            request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-            request.setValue("MoPanel/0.1", forHTTPHeaderField: "User-Agent")
-            let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200, data.count < 2 * 1024 * 1024 else {
-                throw MoleError.invalidOutput("Unable to check the official latest release (network or API rate limit).")
-            }
-            return data
-        }
-        func isMacStable(_ release: ReleaseInfo) -> Bool {
-            !release.prerelease && !release.draft && release.htmlUrl.scheme == "https" &&
-            release.htmlUrl.host == "github.com" && release.htmlUrl.path.hasPrefix("/tw93/Mole/releases/tag/") &&
-            MoleVersion(string: release.tagName)?.isStable == true
-        }
-        let latest = try decoder.decode(ReleaseInfo.self, from: await fetch("/latest"))
-        if isMacStable(latest) { return latest }
-        // This repository also publishes -windows tags. They must never be
-        // advertised as a newer macOS engine if GitHub's latest pointer changes.
-        let releases = try decoder.decode([ReleaseInfo].self, from: await fetch("?per_page=30"))
-        guard let release = releases.first(where: isMacStable) else {
-            throw MoleError.invalidOutput("No official stable macOS Mole release was found.")
-        }
-        return release
-    }
 }

@@ -5,13 +5,20 @@ import MoPanelCore
 struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var hardwareExpanded = true
-    @State private var showDetails = false
+    @State private var editingLayout = false
+    @State private var dragSession = UUID().uuidString
     var body: some View {
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                PageHeading(title: model.t("看見 Mac 的當下", "Your Mac, right now"), subtitle: model.t("Mole 提供即時資源資料，macOS 補充記憶體壓力與硬體讀值。點選摘要卡可查看詳細資料。", "Live resources from Mole, with memory pressure and hardware readings from macOS. Select a summary card for details."), symbol: "waveform.path.ecg")
+                PageHeader(title: model.t("看見 Mac 的當下", "Your Mac, right now"), subtitle: model.t("Mole 提供即時資源資料，macOS 補充記憶體壓力與硬體讀值。點選摘要卡可查看詳細資料。", "Live resources from Mole, with memory pressure and hardware readings from macOS. Select a summary card for details."), symbol: "waveform.path.ecg") {
+                    NativeActionButton(model.t("單次快照", "Snapshot"), identifier: "mopanel.dashboard.snapshot") {
+                        Task { await model.takeSnapshot() }
+                    }.disabled(!model.canStart)
+                    Button(model.monitoring ? model.t("暫停", "Pause") : model.t("開始監控", "Start Monitoring")) {
+                        if model.monitoring { model.pauseMonitoring() } else { model.resumeMonitoring() }
+                    }.buttonStyle(.borderedProminent).disabled(model.installation == nil || model.hasRunningOperation)
+                }
                 HStack {
                     Label(model.monitoring ? model.t("即時監控中", "Live") : model.t("監控已暫停", "Paused"), systemImage: model.monitoring ? "record.circle" : "pause.circle")
                         .foregroundStyle(model.monitoring ? MoPanelTheme.accent : Color.secondary)
@@ -20,35 +27,36 @@ struct DashboardView: View {
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    NativeActionButton(model.t("單次快照", "Snapshot"), identifier: "mopanel.dashboard.snapshot") {
-                        Task { await model.takeSnapshot() }
-                    }.disabled(!model.canStart)
-                    Button(model.monitoring ? model.t("暫停", "Pause") : model.t("開始監控", "Start Monitoring")) {
-                        if model.monitoring { model.pauseMonitoring() } else { model.resumeMonitoring() }
-                    }.buttonStyle(.borderedProminent).disabled(model.installation == nil || model.hasRunningOperation)
+
+                }
+                HStack {
+                    Spacer()
+                    if editingLayout {
+                        NativeActionButton(model.t("重設排列", "Reset Layout"), identifier: "mopanel.dashboard.layout.reset") {
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { model.dashboardLayout = DashboardLayout() }
+                        }
+                    }
+                    NativeActionButton(model.t(editingLayout ? "完成排列" : "編輯排列", editingLayout ? "Done" : "Edit Layout"), identifier: "mopanel.dashboard.layout.edit", systemImage: editingLayout ? "checkmark" : "slider.horizontal.3") {
+                        editingLayout.toggle()
+                    }
+                }
+                if editingLayout {
+                    Text(model.t("拖曳把手可調整區塊、摘要卡與圖表位置，也可以用箭頭移動；排列會自動儲存。", "Drag a handle to arrange sections, summary cards or charts, or use the arrow buttons. Your layout saves automatically."))
+                        .font(.callout).foregroundStyle(.secondary)
                 }
                 if let s = model.status {
-                    summary(s) { target in
-                        showDetails = true
-                        DispatchQueue.main.async { withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(target, anchor: .top) } }
-                    }
-                    quickResources(s) { target in
-                        showDetails = true
-                        DispatchQueue.main.async { withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(target, anchor: .top) } }
-                    }
-                    if !model.fixtureMode || !model.applicationUsage.isEmpty { GroupBox { ApplicationUsageList().padding(10) } }
-                    DisclosureGroup(model.t("資源趨勢", "Resource Trends")) {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        TrendCard(title: "CPU", unit: "%", metric: .cpu)
-                        TrendCard(title: model.t("記憶體", "Memory"), unit: "%", metric: .memory)
-                        TrendCard(title: model.t("磁碟讀寫", "Disk I/O"), unit: "MB/s", metric: .disk)
-                        TrendCard(title: model.t("網路", "Network") + " · " + model.selectedNetwork, unit: "MB/s", metric: .network)
-                    }
+                    ForEach(model.dashboardLayout.items(in: .sections), id: \.self) { section in
+                        VStack(alignment: .leading, spacing: 10) {
+                            if editingLayout { layoutControls(section, in: .sections) }
+                            module(section, snapshot: s) { target in
+                                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(target, anchor: .top) }
+                            }
+                        }
+                        .dropDestination(for: String.self) { payloads, _ in _ = acceptDrop(payloads, before: section, in: .sections) }
                     }
                     if !model.monitorWarnings.isEmpty {
                         Notice(text: model.t("部分指標可能無法取得；官方診斷：\n", "Some metrics may be unavailable. Mole diagnostics:\n") + model.monitorWarnings, warning: true)
                     }
-                    DisclosureGroup(model.t("更多系統資料與進階控制", "More System Details and Controls"), isExpanded: $showDetails) { detail(s) }
                 } else {
                     ContentUnavailableView(model.t("等待第一筆真實資料", "Waiting for real metrics"), systemImage: "waveform.path.ecg", description: Text(model.t("可開始監控或取得單次快照；尚未提供的數據不會以假數字代替。", "Start monitoring or request a snapshot. Missing data is never replaced by invented values.")))
                 }
@@ -60,43 +68,56 @@ struct DashboardView: View {
     private func summary(_ s: StatusSnapshot, navigate: @escaping (String) -> Void) -> some View {
         GlassEffectContainer(spacing: 16) {
             HStack(alignment: .top, spacing: 16) {
-                summaryCard("system-details", title: model.t("系統健康", "System Health"), navigate: navigate) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(s.healthScore.map(String.init) ?? "—").font(.system(size: 42, weight: .light, design: .rounded))
-                        Text("/ 100").foregroundStyle(.secondary)
-                    }
-                    Text(model.t("Mole CLI 評分", "Mole CLI score")).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    Text(s.hardware?.model ?? s.host ?? model.unavailable).font(.callout).lineLimit(1)
-                    Text(s.hardware?.cpuModel ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                ForEach(model.dashboardLayout.items(in: .summary), id: \.self) { metric in
+                    VStack(alignment: .leading, spacing: 8) {
+                        if editingLayout { layoutControls(metric, in: .summary) }
+                        summaryMetric(metric, snapshot: s, navigate: navigate)
+                    }.frame(maxWidth: .infinity)
+                    .dropDestination(for: String.self) { payloads, _ in _ = acceptDrop(payloads, before: metric, in: .summary) }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder private func summaryMetric(_ metric: String, snapshot s: StatusSnapshot, navigate: @escaping (String) -> Void) -> some View {
+        switch metric {
+        case "cpu":
                 summaryCard("cpu-details", title: "CPU", navigate: navigate) {
                     Text(s.cpu.logicalCPU > 0 ? DisplayFormat.percent(s.cpu.usage) : "—").font(.system(size: 42, weight: .light, design: .rounded))
                     Text("\(s.cpu.logicalCPU) " + model.t("邏輯核心", "logical cores")).font(.callout).foregroundStyle(.secondary)
                     Text(model.t("1 分鐘負載 ", "1-minute load ") + DisplayFormat.number(s.cpu.load1, suffix: "")).font(.caption)
                     Text(model.t("溫度 ", "Temperature ") + positive(model.cpuTemperature, suffix: " °C")).font(.caption).foregroundStyle(.secondary)
                 }
+        case "gpu":
+            summaryCard("gpu-details", title: "GPU", navigate: navigate) {
+                Text(DisplayFormat.percent(s.gpu.first.flatMap { model.gpuUsage($0) } ?? model.nativeHardware.gpuUsage))
+                    .font(.system(size: 42, weight: .light, design: .rounded))
+                Text(s.gpu.first?.name ?? model.t("圖形處理器", "Graphics processor")).font(.callout).foregroundStyle(.secondary).lineLimit(1)
+                Text(s.gpu.first?.coreCount.map { "\($0) " + model.t("核心", "cores") } ?? "—").font(.caption)
+                Text(model.t("溫度 ", "Temperature ") + positive(model.gpuTemperature, suffix: " °C")).font(.caption).foregroundStyle(.secondary)
+            }
+        default:
                 summaryCard("memory-details", title: model.t("記憶體", "Memory"), navigate: navigate) {
                     Text(s.memory.total > 0 ? DisplayFormat.percent(s.memory.usedPercent) : "—").font(.system(size: 42, weight: .light, design: .rounded))
                     Text(DisplayFormat.bytes(s.memory.used) + " / " + DisplayFormat.bytes(s.memory.total)).font(.callout).foregroundStyle(.secondary)
                     Text(model.t("壓力：", "Pressure: ") + model.memoryPressureText).font(.caption).foregroundStyle(pressureColor)
                     Text(model.t("可用 ", "Available ") + DisplayFormat.bytes(s.memory.available) + " · Swap " + DisplayFormat.bytes(s.memory.swapUsed)).font(.caption).lineLimit(1)
                 }
-            }
         }
     }
 
-    @ViewBuilder private func detail(_ s: StatusSnapshot) -> some View {
+    @ViewBuilder private func detail(_ section: String, _ s: StatusSnapshot) -> some View {
+        switch section {
+        case "system":
         GroupBox(model.t("系統詳細資訊", "System Details")) {
             VStack(spacing: 12) {
                 LabeledContent(model.t("機型", "Model"), value: s.hardware?.model ?? s.host ?? "—")
                 LabeledContent(model.t("晶片", "Chip"), value: s.hardware?.cpuModel ?? "—")
                 LabeledContent(model.t("系統版本", "System version"), value: s.hardware?.osVersion ?? s.platform ?? "—")
                 LabeledContent(model.t("連續開機", "Uptime"), value: s.uptime ?? "—")
-                LabeledContent(model.t("健康分數", "Health score"), value: s.healthScore.map { "\($0) / 100" } ?? "—")
-                LabeledContent(model.t("狀態與原因", "Status and Reasons"), value: DisplayFormat.healthMessage(s.healthScoreMsg, language: model.language))
-                Text(model.t("此分數來自 Mole CLI，與商業版 App 的評分方式可能不同。請搭配磁碟空間、記憶體壓力與負載判斷。", "This score comes from Mole CLI; the commercial app may use a different calculation. Review storage, memory pressure and load alongside it.")).font(.caption).foregroundStyle(.secondary)
             }.padding(10)
         }.id("system-details")
+        case "cpu":
         GroupBox(model.t("CPU 詳細資訊", "CPU Details")) {
             VStack(alignment: .leading, spacing: 12) {
                 LabeledContent(model.t("目前使用率", "Current usage"), value: DisplayFormat.percent(s.cpu.usage))
@@ -116,6 +137,7 @@ struct DashboardView: View {
             } else { unavailableRow() }
             }.padding(10)
         }.id("cpu-details")
+        case "memory":
         GroupBox(model.t("記憶體詳細資訊", "Memory Details")) {
             VStack(spacing: 12) {
                 LabeledContent(model.t("記憶體壓力", "Memory pressure")) { Text(model.memoryPressureText).foregroundStyle(pressureColor) }
@@ -130,6 +152,7 @@ struct DashboardView: View {
                 Text(model.t("壓力採 macOS 實際等級：正常、偏高、過高；與已使用百分比不同。", "Pressure uses macOS's actual normal, warning or critical state; it differs from percentage used.")).font(.caption).foregroundStyle(.secondary)
             }.padding(10)
         }.id("memory-details")
+        case "disk":
         GroupBox(model.t("磁碟與檔案系統", "Disks and Filesystems")) {
             VStack(spacing: 12) {
                 ForEach(s.disks) { disk in
@@ -146,6 +169,7 @@ struct DashboardView: View {
                 if s.disks.isEmpty { unavailableRow() }
             }.padding(10)
         }.id("disk-details")
+        case "network":
         GroupBox(model.t("網路介面", "Network Interfaces")) {
             VStack(alignment: .leading, spacing: 10) {
                 if model.networks.isEmpty { unavailableRow() }
@@ -169,6 +193,7 @@ struct DashboardView: View {
                 }
             }.padding(10)
         }.id("network-details")
+        case "thermal":
         GroupBox(model.t("電池、溫度與功耗", "Battery, Thermals and Power")) {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(Array(s.batteries.enumerated()), id: \.offset) { index, battery in
@@ -190,10 +215,12 @@ struct DashboardView: View {
                 Text(model.t("硬體資料由 Mole 與 macOS 唯讀感測提供；風扇停轉時顯示 0 RPM。", "Read-only Mole and macOS hardware readings; a stopped fan reports 0 RPM.")).font(.caption).foregroundStyle(.secondary)
             }.padding(10)
         }.id("thermal-details")
+        case "processes":
         GroupBox(model.t("高資源使用率行程", "Top Processes")) {
             ProcessInspectorView(snapshot: s).padding(10)
         }
-        DisclosureGroup(model.t("GPU 與其他硬體讀值", "GPU and Other Hardware"), isExpanded: $hardwareExpanded) {
+        case "hardware":
+        GroupBox(model.t("GPU 與其他硬體讀值", "GPU and Other Hardware")) {
             VStack(alignment: .leading, spacing: 20) {
                 if !s.gpu.isEmpty {
                     hardwareSectionHeading(model.t("圖形處理器", "Graphics Processors"), symbol: "cpu", count: s.gpu.count)
@@ -232,23 +259,102 @@ struct DashboardView: View {
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .moPanelGlass(cornerRadius: 18)
-        .id("gpu-details")
+        .id("gpu-details")        default: EmptyView()
+        }
+    }
+
+    @ViewBuilder private func module(_ section: String, snapshot: StatusSnapshot, navigate: @escaping (String) -> Void) -> some View {
+        switch section {
+        case "summary": summary(snapshot, navigate: navigate)
+        case "resources": quickResources(snapshot, navigate: navigate)
+        case "applications":
+            if !model.fixtureMode || !model.applicationUsage.isEmpty { GroupBox { ApplicationUsageList().padding(10) } }
+        case "trends":
+            VStack(alignment: .leading, spacing: 10) {
+                Text(model.t("資源趨勢", "Resource Trends")).font(.headline)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    ForEach(model.dashboardLayout.items(in: .trends), id: \.self) { metric in
+                        VStack(alignment: .leading, spacing: 8) {
+                            if editingLayout { layoutControls(metric, in: .trends) }
+                            trend(metric)
+                        }.dropDestination(for: String.self) { payloads, _ in _ = acceptDrop(payloads, before: metric, in: .trends) }
+                    }
+                }
+            }
+        default: detail(section, snapshot)
+        }
+    }
+
+    @ViewBuilder private func trend(_ metric: String) -> some View {
+        switch metric {
+        case "cpu": TrendCard(title: "CPU", unit: "%", metric: .cpu)
+        case "memory": TrendCard(title: model.t("記憶體", "Memory"), unit: "%", metric: .memory)
+        case "disk": TrendCard(title: model.t("磁碟讀寫", "Disk I/O"), unit: "MB/s", metric: .disk)
+        default: TrendCard(title: model.t("網路", "Network") + " · " + model.selectedNetwork, unit: "MB/s", metric: .network)
+        }
+    }
+
+    private func layoutTitle(_ id: String) -> String {
+        switch id {
+        case "summary": return model.t("摘要卡", "Summary Cards")
+        case "trends": return model.t("資源趨勢", "Resource Trends")
+        case "resources": return model.t("空間、網路與風扇", "Storage, Network and Fans")
+        case "applications": return model.t("高佔用 App", "Application Usage")
+        case "cpu": return "CPU"
+        case "gpu": return "GPU"
+        case "memory": return model.t("記憶體", "Memory")
+        case "disk": return model.t("磁碟", "Disks")
+        case "network": return model.t("網路", "Network")
+        case "thermal": return model.t("電池、溫度與功耗", "Battery, Thermals and Power")
+        case "processes": return model.t("行程", "Processes")
+        case "hardware": return model.t("GPU 與其他硬體", "GPU and Other Hardware")
+        default: return model.t("系統資訊", "System Information")
+        }
+    }
+
+    private func layoutControls(_ item: String, in group: DashboardLayout.Group) -> some View {
+        let order = model.dashboardLayout.items(in: group)
+        return HStack(spacing: 8) {
+            Image(systemName: "line.3.horizontal")
+                .padding(6).contentShape(Rectangle())
+                .draggable("mopanel-dashboard:" + dragSession + ":" + group.rawValue + ":" + item) {
+                    Label(layoutTitle(item), systemImage: "line.3.horizontal").padding(12)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+                .help(model.t("拖曳調整位置", "Drag to rearrange"))
+            Text(layoutTitle(item)).font(.caption.weight(.medium)).lineLimit(1)
+            Spacer(minLength: 0)
+            NativeActionButton(model.t("向前移動 ", "Move earlier: ") + layoutTitle(item), identifier: "mopanel.dashboard.layout.\(group.rawValue).\(item).up", systemImage: group == .summary ? "arrow.left" : "arrow.up", appearance: .icon) {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { model.dashboardLayout.move(item, by: -1, in: group) }
+            }.disabled(order.first == item)
+            NativeActionButton(model.t("向後移動 ", "Move later: ") + layoutTitle(item), identifier: "mopanel.dashboard.layout.\(group.rawValue).\(item).down", systemImage: group == .summary ? "arrow.right" : "arrow.down", appearance: .icon) {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { model.dashboardLayout.move(item, by: 1, in: group) }
+            }.disabled(order.last == item)
+        }.foregroundStyle(.secondary)
+    }
+
+    private func acceptDrop(_ payloads: [String], before target: String, in group: DashboardLayout.Group) -> Bool {
+        guard editingLayout, payloads.count == 1 else { return false }
+        let prefix = "mopanel-dashboard:" + dragSession + ":" + group.rawValue + ":"
+        guard let payload = payloads.first, payload.hasPrefix(prefix) else { return false }
+        let source = String(payload.dropFirst(prefix.count))
+        guard source != target, model.dashboardLayout.items(in: group).contains(source) else { return false }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { model.dashboardLayout.move(source, before: target, in: group) }
+        return true
     }
 
     private func quickResources(_ s: StatusSnapshot, navigate: @escaping (String) -> Void) -> some View {
-        let gpu = s.gpu.first.flatMap { model.gpuUsage($0) } ?? model.nativeHardware.gpuUsage
         let disk = s.disks.first(where: { $0.mount == "/" }) ?? s.disks.first
         let available = disk.flatMap { $0.total >= $0.used && $0.total > 0 ? $0.total - $0.used : nil }
         let network = model.networks.first { $0.name == model.selectedNetwork }
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            quickCard("GPU", value: DisplayFormat.percent(gpu), detail: positive(model.gpuTemperature, suffix: " °C"), target: "gpu-details", navigate: navigate)
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
             quickCard(model.t("可用空間", "Free Space"), value: DisplayFormat.storage(available), detail: disk.map { DisplayFormat.storage($0.total) + model.t(" 總容量", " total") } ?? "", target: "disk-details", navigate: navigate)
             quickCard(model.t("網路", "Network"), value: "↓ " + MonitorFormat.rate(network?.rxRateMbs), detail: "↑ " + MonitorFormat.rate(network?.txRateMbs) + " · " + model.networkName(model.selectedNetwork), target: "network-details", navigate: navigate)
             quickCard(model.t("風扇", "Fans"), value: model.fanSpeeds.isEmpty ? "—" : model.fanSpeeds.map { String(format: "%.0f", $0) }.joined(separator: " / ") + " RPM", detail: model.fanSpeeds.isEmpty ? model.t("等待讀值", "Waiting for readings") : "\(model.fanSpeeds.count) " + model.t("個風扇", "fans"), target: "thermal-details", navigate: navigate)
         }
     }
     private func quickCard(_ title: String, value: String, detail: String, target: String, navigate: @escaping (String) -> Void) -> some View {
-        Button { navigate(target) } label: {
+        Button { if !editingLayout { navigate(target) } } label: {
             VStack(alignment: .leading, spacing: 7) {
                 HStack { Text(title).font(.callout.weight(.semibold)); Spacer(); Text(model.t("詳情", "Details")).font(.caption2).foregroundStyle(.secondary) }
                 Text(value).font(.system(size: 23, weight: .semibold, design: .rounded)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
@@ -262,7 +368,7 @@ struct DashboardView: View {
     }
     private func summaryCard<Content: View>(_ target: String, title: String, navigate: @escaping (String) -> Void,
                                            @ViewBuilder content: () -> Content) -> some View {
-        Button { navigate(target) } label: {
+        Button { if !editingLayout { navigate(target) } } label: {
             GlassCard(minHeight: 208) {
                 HStack { Text(title).font(.headline); Spacer(); Text(model.t("查看詳情", "Details")).font(.caption).foregroundStyle(.secondary) }
                 content()

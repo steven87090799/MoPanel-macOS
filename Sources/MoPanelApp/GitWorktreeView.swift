@@ -72,18 +72,19 @@ struct GitWorktreeView: View {
     }
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
-            PageHeading(title: t("Git 工作目錄", "Git Worktrees"),
-                        subtitle: t("只檢查你選擇的倉庫。保護主目錄、未提交內容與無法驗證的狀態；移除前保留復原分支，不使用 force。", "Inspects only your selected repository. Main, modified and unverifiable worktrees stay protected. A recovery branch is retained before removal; force is never used."), symbol: "arrow.triangle.branch")
-            HStack {
-                Button(t("選擇倉庫…", "Choose Repository…")) { controller.chooseRepository() }.disabled(disabled)
-                    .accessibilityIdentifier("mopanel.worktrees.choose")
+            PageHeader(title: t("Git 工作目錄", "Git Worktrees"),
+                        subtitle: t("只檢查你選擇的倉庫。保護主目錄、未提交內容與無法驗證的狀態；移除前保留復原分支，不使用 force。", "Inspects only your selected repository. Main, modified and unverifiable worktrees stay protected. A recovery branch is retained before removal; force is never used."), symbol: "arrow.triangle.branch") {
                 Button(t("重新掃描", "Scan Again")) { Task { await controller.refresh() } }
                     .buttonStyle(.borderedProminent).disabled(disabled || controller.selectedRepository == nil)
                     .accessibilityIdentifier("mopanel.worktrees.scan")
+            }
+            HStack {
+                Button(t("選擇倉庫…", "Choose Repository…")) { controller.chooseRepository() }.disabled(disabled)
+                    .accessibilityIdentifier("mopanel.worktrees.choose")
                 Spacer()
             }
             if let repository = controller.selectedRepository { Text(repository.path).font(.caption.monospaced()).textSelection(.enabled) }
-            if let path = controller.gitPath { Text((controller.gitVersion ?? "Git") + " · " + path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) }
+            if let path = controller.gitPath { DisclosureGroup(t("Git 工具詳細資訊", "Git Tool Details")) { Text((controller.gitVersion ?? "Git") + " · " + path).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled) } }
             if operationInProgress { Text(t("其他作業執行中，暫停 Git 操作。", "Git actions are paused while another operation is running.")).foregroundStyle(.orange) }
             if !controller.actionsAllowed { Text(t("測試／效能模式不會存取真實 Git 倉庫。", "Test and benchmark launches do not access real Git repositories.")).foregroundStyle(.orange) }
         }

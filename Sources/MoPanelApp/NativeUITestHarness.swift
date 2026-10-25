@@ -118,6 +118,10 @@ private enum NativeUIControl: String, CaseIterable {
     case sidebarDashboard = "mopanel.sidebar.route.dashboard"
     case sidebarUninstall = "mopanel.sidebar.route.uninstall"
     case snapshot = "mopanel.dashboard.snapshot"
+    case layoutEdit = "mopanel.dashboard.layout.edit"
+    case layoutReset = "mopanel.dashboard.layout.reset"
+    case layoutGPUUp = "mopanel.dashboard.layout.summary.gpu.up"
+    case releaseCheck = "mopanel.settings.release.check"
     case appScan = "mopanel.uninstall.scan"
     case overview = "mopanel.analyze.overview"
     case rescan = "mopanel.analyze.rescan"
@@ -427,7 +431,37 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: statusActivity, command: statusCommand) && self.model.status?.host == "fixture-only"
             }
             try record("snapshot_button_loaded_fixture_metrics", model.error == nil)
+            try record("snapshot_action_is_at_top_right", try await isTopRight(.snapshot))
             try verifyLastPress(.snapshot)
+
+            try record("dashboard_defaults_cpu_gpu_memory_and_trends_second", model.dashboardLayout.items(in: .summary) == ["cpu", "gpu", "memory"] && model.dashboardLayout.items(in: .sections).prefix(2) == ["summary", "trends"])
+            try await press(.layoutEdit)
+            _ = try await find(.layoutGPUUp, enabled: true)
+            try verifyLastPress(.layoutEdit)
+            try await press(.layoutGPUUp)
+            try await waitFor("GPU summary moves before CPU") { self.model.dashboardLayout.items(in: .summary) == ["gpu", "cpu", "memory"] }
+            try record("dashboard_layout_buttons_reorder_real_cards", true)
+            try verifyLastPress(.layoutGPUUp)
+            try await press(.layoutReset)
+            try await waitFor("default dashboard layout restored") { self.model.dashboardLayout == DashboardLayout() }
+            try record("dashboard_layout_reset_restores_defaults", true)
+            try verifyLastPress(.layoutReset)
+            try await press(.layoutEdit)
+            try record("layout_editing_does_not_change_monitoring_or_metrics", model.status?.host == "fixture-only" && !model.monitoring)
+            try verifyLastPress(.layoutEdit)
+
+            model.section = .settings
+            try await press(.releaseCheck)
+            try await waitFor("release check shows progress") { self.model.releaseCheck.isChecking }
+            _ = try await find(.releaseCheck, enabled: false)
+            try await waitFor("release check completed visibly") { self.model.releaseCheck.outcome(installed: self.model.installation?.version) != nil }
+            let checkedAt = model.releaseCheck.checkedAt
+            try record("release_button_finishes_even_when_already_current", model.releaseCheck.outcome(installed: model.installation?.version) == .upToDate && checkedAt != nil)
+            try verifyLastPress(.releaseCheck)
+            try await press(.releaseCheck)
+            try await waitFor("second release check produces a new completion") { self.model.releaseCheck.checkedAt != checkedAt && !self.model.releaseCheck.isChecking }
+            try record("release_button_can_check_same_version_again", model.releaseCheck.failure == nil)
+            try verifyLastPress(.releaseCheck)
 
             model.section = .uninstall
             let inventoryActivity = model.activities.first?.id
@@ -437,6 +471,7 @@ private enum NativeUIFailure: LocalizedError {
                 self.completedActivity(after: inventoryActivity, command: inventoryCommand) && self.model.apps.count == 3
             }
             try record("inventory_button_loaded_fixture_apps", model.error == nil && model.apps.allSatisfy { $0.bundleID.hasPrefix("org.example.fixture.") })
+            try record("inventory_scan_is_at_top_right", try await isTopRight(.appScan))
             try verifyLastPress(.appScan)
 
             model.section = .analyze
@@ -448,6 +483,7 @@ private enum NativeUIFailure: LocalizedError {
             }
             try record("overview_button_preserved_partial_and_unavailable", model.error == nil && model.analysis?.scanStatus == .partial &&
                        model.analysis?.entries.contains(where: { $0.scanStatus == .unavailable && $0.measuredBytes == nil }) == true)
+            try record("analysis_scan_is_at_top_right", try await isTopRight(.overview))
             try verifyLastPress(.overview)
 
             let rescanActivity = model.activities.first?.id
@@ -486,6 +522,7 @@ private enum NativeUIFailure: LocalizedError {
             try verifyLastPress(.dismissError)
 
             model.section = .clean
+            try record("cleanup_scan_is_at_top_right", try await isTopRight(.preview))
             try await press(.preview)
             let previewCommand = try MoleInvocation.make(command: .clean, options: [.dryRun]).displayCommand
             try await waitFor("dry-run operation sheet opened") {
@@ -555,7 +592,7 @@ private enum NativeUIFailure: LocalizedError {
             try await waitFor("confirmed operation sheet closed") { !self.model.showOperation && self.window.attachedSheet == nil }
             try record("confirmed_operation_returned_to_page", !model.hasRunningOperation && model.error == nil)
             try verifyLastPress(.operationClose)
-            try record("all_23_dispatches_have_verified_postconditions", actions.count == 23 &&
+            try record("all_29_dispatches_have_verified_postconditions", actions.count == 29 &&
                        actions.allSatisfy { $0.hasSingleSuccessfulDispatch && $0.postconditionVerified })
             try validateContext()
             checks["fixture_guard_retained_after_all_actions"] = true
@@ -632,7 +669,8 @@ private enum NativeUIFailure: LocalizedError {
         case .sidebarToggle, .sidebarDashboard, .sidebarUninstall:
             valid = !model.hasRunningOperation && model.pending == nil && !model.showOperation
         case .sidebarRegion: valid = false // Geometry only; never an action target.
-        case .snapshot: valid = model.section == .dashboard && model.canStart
+        case .snapshot, .layoutEdit, .layoutReset, .layoutGPUUp: valid = model.section == .dashboard && model.canStart
+        case .releaseCheck: valid = model.section == .settings && !model.releaseCheck.isChecking
         case .appScan: valid = model.section == .uninstall && model.canStart
         case .overview, .rescan, .parent: valid = model.section == .analyze && model.canStart
         case .scanStop: valid = model.section == .analyze && model.busy == "mo analyze --json"
@@ -644,6 +682,11 @@ private enum NativeUIFailure: LocalizedError {
             valid = model.section == .clean && model.showOperation && ["mo clean", "mo clean --dry-run"].contains(model.operationCommand)
         }
         guard valid else { throw NativeUIFailure.unexpectedState("action context for \(control.rawValue)") }
+    }
+
+    private func isTopRight(_ control: NativeUIControl) async throws -> Bool {
+        guard let frame = try await find(control, enabled: true).accessibilityFrame() else { return false }
+        return frame.midX > window.frame.midX && frame.maxY > window.frame.maxY - 220
     }
 
     private func record(_ name: String, _ value: Bool) throws {

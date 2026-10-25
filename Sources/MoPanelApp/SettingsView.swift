@@ -12,6 +12,7 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 PageHeading(title: model.t("設定與工具", "Settings and Tools"), subtitle: model.t("介面與 CLI 分別更新。系統變更仍交由官方 Mole 執行。", "The interface and CLI update independently. Mole remains responsible for system changes."), symbol: "gearshape")
+                releaseUpdates
                 appearance
                 monitor
                 DisclosureGroup(model.t("Mole 引擎與更新", "Mole Engine and Updates")) { engine }
@@ -71,11 +72,6 @@ struct SettingsView: View {
                 } else { Text(model.t("尚未找到可用的 Mole。", "No usable Mole installation found.")).foregroundStyle(.secondary) }
                 Divider()
                 HStack {
-                    LabeledContent(model.t("官方最新穩定版", "Latest Official Stable"), value: model.release?.tagName ?? model.t("尚未取得", "Not checked"))
-                    Button(model.t("檢查更新", "Check for Updates")) { Task { await model.checkRelease() } }
-                }
-                if let error = model.releaseError { Text(error).font(.caption).foregroundStyle(.orange) }
-                HStack {
                     Button(model.canRecoverStable ? model.t("返回官方穩定版…", "Return to Official Stable…") : model.t("更新官方 CLI…", "Update Official CLI…")) { model.request(.update, options: forceUpdate ? [.force] : []) }.disabled(!model.canStart || model.installation?.source == .nix)
                     Button(model.t("安裝 Mole…", "Install Mole…")) { model.homebrewConfirmation = true }.disabled(model.brewURL == nil || model.hasRunningOperation)
                     Link(model.t("官方 Releases", "Official Releases"), destination: URL(string: "https://github.com/tw93/Mole/releases")!)
@@ -97,6 +93,66 @@ struct SettingsView: View {
             }.textSelection(.enabled).padding(12)
         }
     }
+    private var releaseUpdates: some View {
+        GroupBox(model.t("Mole 更新", "Mole Updates")) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(model.t("目前版本 ", "Installed ") + (model.installation?.version ?? model.t("尚未安裝", "Not installed")))
+                        if let release = model.releaseCheck.release {
+                            Text(model.t("官方最新穩定版 ", "Latest official stable ") + release.tagName)
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    if model.releaseCheck.isChecking { ProgressView().controlSize(.small).accessibilityLabel(model.t("正在檢查更新", "Checking for updates")) }
+                    NativeActionButton(model.releaseCheck.isChecking ? model.t("檢查中…", "Checking…") : model.t("檢查更新", "Check for Updates"), identifier: "mopanel.settings.release.check") {
+                        Task { await model.checkRelease() }
+                    }.disabled(model.releaseCheck.isChecking)
+                }
+                if model.releaseCheck.isChecking {
+                    Text(model.t("正在連線至 GitHub，確認 Mole 最新穩定版…", "Contacting GitHub for the latest stable Mole release…"))
+                        .font(.callout).foregroundStyle(.secondary)
+                } else if let failure = model.releaseCheck.failure {
+                    Label(model.t("檢查失敗：", "Could not check: ") + releaseFailure(failure), systemImage: "exclamationmark.circle")
+                        .font(.callout).foregroundStyle(.orange)
+                } else if let outcome = model.releaseCheck.outcome(installed: model.installation?.version) {
+                    Label(releaseOutcome(outcome), systemImage: outcome == .upToDate ? "checkmark.circle.fill" : "info.circle")
+                        .font(.callout).foregroundStyle(outcome == .upToDate ? Color.green : MoPanelTheme.accent)
+                        .accessibilityIdentifier("mopanel.settings.release.result")
+                }
+                if let date = model.releaseCheck.checkedAt {
+                    Text(model.t("上次成功檢查：", "Last successful check: ") + date.formatted(date: .abbreviated, time: .standard))
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
+                Text(model.t("這裡檢查的是 Mole 引擎版本；檢查不會自動安裝。需要更新時，展開下方「Mole 引擎與更新」執行。", "This checks the Mole engine version and does not install automatically. To update, expand Mole Engine and Updates below."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }.padding(12)
+        }
+    }
+
+    private func releaseOutcome(_ outcome: ReleaseCheckState.Outcome) -> String {
+        switch outcome {
+        case .upToDate: return model.t("已是最新穩定版，不需要更新。", "You're running the latest stable version.")
+        case .updateAvailable: return model.t("有新版本可用，可在下方更新 Mole。", "A new version is available. Update Mole below.")
+        case .localNewer: return model.t("目前版本比官方穩定版更新，不需要降版。", "Your installed version is newer than the published stable release.")
+        case .differentChannel: return model.t("已取得最新穩定版；目前版本屬其他通道，請查看下方版本資訊。", "Latest stable release found. Your installed version uses a different channel; see its details below.")
+        case .notInstalled: return model.t("已取得最新穩定版；這台 Mac 尚未偵測到 Mole。", "Latest stable release found. Mole has not been detected on this Mac.")
+        }
+    }
+
+    private func releaseFailure(_ failure: ReleaseCheckFailure) -> String {
+        switch failure {
+        case .offline: return model.t("目前沒有網路連線，連線後再試一次。", "You're offline. Connect to the internet and try again.")
+        case .timedOut: return model.t("連線逾時，請再試一次。", "The connection timed out. Please try again.")
+        case .rateLimited: return model.t("GitHub 暫時限制查詢次數，請稍後再試。", "GitHub is temporarily limiting requests. Please try later.")
+        case .server(let status): return model.t("GitHub 暫時無法回應（", "GitHub could not complete the request (") + "\(status)" + model.t("），請稍後再試。", "). Please try later.")
+        case .invalidResponse: return model.t("收到無法辨識的版本資料，請再試一次或查看官方 Releases。", "The release response could not be verified. Retry or view the official releases.")
+        case .noStableRelease: return model.t("目前查不到適用 macOS 的穩定版，請查看官方 Releases。", "No stable macOS release was found. View the official releases.")
+        case .cancelled: return model.t("檢查已取消，可以重新檢查。", "The check was cancelled. You can try again.")
+        case .connection: return model.t("無法連線至 GitHub，請確認網路後再試一次。", "Couldn't connect to GitHub. Check your connection and try again.")
+        }
+    }
     private var monitor: some View {
         GroupBox(model.t("低負載監控", "Monitoring")) {
             VStack(alignment: .leading, spacing: 14) {
@@ -104,6 +160,7 @@ struct SettingsView: View {
                 Text(model.t("預設關閉。開啟後，即使切換頁面或使用其他 App，也會共用現有的單一監控串流。關閉最後一個 MoPanel 視窗或結束 App 時全部停止。", "Off by default. When enabled, the existing single stream continues across pages and while using other apps. Closing the last MoPanel window or quitting stops it."))
                     .font(.caption).foregroundStyle(.secondary)
                 Picker(model.t("總覽更新間隔", "Dashboard Interval"), selection: $model.monitoringInterval) { ForEach(MonitoringPreferences.foregroundIntervals, id: \.self) { Text("\($0) s").tag($0) } }.pickerStyle(.segmented)
+                DisclosureGroup(model.t("更多監控設定", "More Monitoring Settings")) {
                 Picker(model.t("只有選單列時", "Menu Bar Only Interval"), selection: $model.menuBarMonitoringInterval) { ForEach(MonitoringPreferences.menuBarIntervals, id: \.self) { Text("\($0) s").tag($0) } }.pickerStyle(.segmented)
                 Toggle(model.t("官方高 CPU 行程警示", "Mole high-CPU process alerts"), isOn: $model.processAlertsEnabled)
                 Stepper(value: $model.processCPUThreshold, in: 0...3200, step: 25) { Text(model.t("CPU 門檻：", "CPU Threshold: ") + DisplayFormat.percent(model.processCPUThreshold)) }
@@ -111,6 +168,7 @@ struct SettingsView: View {
                 Text(model.t("設定會自動儲存並套用。最多保留 120 筆樣本；睡眠時停止採樣，喚醒後依原本需求恢復。低耗電模式至少間隔 5 秒更新。選單列模式不會比總覽更頻繁。", "Settings save and apply automatically. Keeps at most 120 samples. Sampling stops for sleep and resumes on demand after wake. Low Power Mode uses at least five seconds; menu-bar-only monitoring never runs faster than Dashboard."))
                     .font(.caption).foregroundStyle(.secondary)
                 Button(model.t("開啟官方 TUI 儀表板", "Open Official TUI Dashboard")) { model.request(.status) }.disabled(!model.canStart)
+                }
             }.padding(12)
         }
     }
